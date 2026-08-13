@@ -1,0 +1,39 @@
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider = "sqlite"
+    url = env("DATABASE_URL")
+}
+
+enum InviteType{
+    SINGLE
+    COUPLE
+    FAMILY
+}
+
+model Guest {
+    id String @id  @default(cuid())
+    token String @unique @default(cuid())
+    displayName String
+    salutation String
+    InviteType InviteType
+    tableNumber Int
+    notes String?
+    viewedAt DateTime?
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+}
+
+model EventSettings {
+    id String @id @default("singleton")
+    coupleNames String @default("Ranudha & Dimuthu")
+    eventDate DateTime
+    venueName String
+    venueAddress String
+    venueLat Float
+    venueLng Float
+    heroImageUrl String?
+    musicUrl String? @default("/audio/background.mp3")
+}
