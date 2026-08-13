@@ -18,7 +18,7 @@ model Guest {
     token String @unique @default(cuid())
     displayName String
     salutation String
-    InviteType InviteType
+    inviteType  InviteType
     tableNumber Int
     notes String?
     viewedAt DateTime?
