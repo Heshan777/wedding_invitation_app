@@ -39,7 +39,7 @@ export default function AdminLoginPage() {
         className="w-full max-w-sm bg-[#FFF8F0] rounded-2xl p-8 shadow-2xl border border-[#D4AF37]/40"
       >
         <h1 className="text-2xl font-serif text-[#800020] mb-1 text-center">Admin Login</h1>
-        <p className="text-sm text-[#1A181C]/60 text-center mb-6">Homecoming Invitation Manager</p>
+        <p className="text-sm text-[#1A181C]/60 text-center mb-6">Wedding Invitation Manager</p>
 
         {error && (
           <div className="mb-4 text-sm text-[#800020] bg-[#800020]/10 border border-[#800020]/30 rounded-lg px-3 py-2">
