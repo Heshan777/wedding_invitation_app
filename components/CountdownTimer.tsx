@@ -15,17 +15,30 @@ function getTimeLeft(target: Date) {
 }
 
 export default function CountdownTimer({ targetDate }: { targetDate: Date }) {
-  const [time, setTime] = useState(() => getTimeLeft(targetDate));
+  const [time, setTime] = useState<ReturnType<typeof getTimeLeft> | null>(null);
 
   useEffect(() => {
+    setTime(getTimeLeft(targetDate));
     const id = setInterval(() => setTime(getTimeLeft(targetDate)), 1000);
     return () => clearInterval(id);
   }, [targetDate]);
 
-  if (time.done) {
+  // Placeholder shown on server AND on client's first render — identical, so no mismatch
+  if (!time) {
     return (
-      <p className="text-center font-serif text-xl text-[#FFC107]">The celebration has begun! 🎉</p>
+      <div className="grid grid-cols-4 gap-2 sm:gap-3">
+        {["Days", "Hours", "Minutes", "Seconds"].map((label) => (
+          <div key={label} className="bg-[#FFF8F0]/5 border border-[#D4AF37]/30 rounded-xl py-3 text-center">
+            <div className="font-serif text-2xl sm:text-3xl text-[#FFC107]">--</div>
+            <div className="text-[10px] sm:text-xs uppercase tracking-wide text-[#D4AF37] mt-1">{label}</div>
+          </div>
+        ))}
+      </div>
     );
+  }
+
+  if (time.done) {
+    return <p className="text-center font-serif text-xl text-[#FFC107]">The celebration has begun! 🎉</p>;
   }
 
   const units = [
@@ -38,16 +51,9 @@ export default function CountdownTimer({ targetDate }: { targetDate: Date }) {
   return (
     <div className="grid grid-cols-4 gap-2 sm:gap-3">
       {units.map((u) => (
-        <div
-          key={u.label}
-          className="bg-[#FFF8F0]/5 border border-[#D4AF37]/30 rounded-xl py-3 text-center"
-        >
-          <div className="font-serif text-2xl sm:text-3xl text-[#FFC107]">
-            {String(u.value).padStart(2, "0")}
-          </div>
-          <div className="text-[10px] sm:text-xs uppercase tracking-wide text-[#D4AF37] mt-1">
-            {u.label}
-          </div>
+        <div key={u.label} className="bg-[#FFF8F0]/5 border border-[#D4AF37]/30 rounded-xl py-3 text-center">
+          <div className="font-serif text-2xl sm:text-3xl text-[#FFC107]">{String(u.value).padStart(2, "0")}</div>
+          <div className="text-[10px] sm:text-xs uppercase tracking-wide text-[#D4AF37] mt-1">{u.label}</div>
         </div>
       ))}
     </div>

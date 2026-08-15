@@ -61,8 +61,9 @@ export default function InvitationView({ guest, settings }: { guest: Guest; sett
         </p>
 
         {/* Couple names with hero illustration */}
-        <div className="relative mb-8">
-          <Image
+        <div className="relative left-1/2 -translate-x-1/2 w-screen max-w-2xl mb-8">
+          <div className="relative h-[420px] sm:h-[520px]">
+            <Image
             src="/images/couple-hero.png"
             alt=""
             width={500}
@@ -94,6 +95,7 @@ export default function InvitationView({ guest, settings }: { guest: Guest; sett
               {settings.coupleNames.split("&")[1]}
             </h2>
             <div className="w-32 h-px bg-[#1A181C]/40 mx-auto mt-4" />
+          </div>
           </div>
         </div>
 

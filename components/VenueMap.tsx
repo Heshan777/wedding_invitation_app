@@ -18,6 +18,10 @@ export default function VenueMap({
   useEffect(() => {
     if (!mapRef.current || mapInstance.current) return;
 
+    if ((mapRef.current as any)._leaflet_id) {
+    (mapRef.current as any)._leaflet_id = null;
+  }
+
     (async () => {
       const L = (await import("leaflet")).default;
 
