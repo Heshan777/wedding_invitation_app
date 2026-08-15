@@ -116,7 +116,7 @@ export default function AdminDashboard(){
                         <label className="block text-sm mb-1">Invite Category</label>
                         <select className="w-full px-3 py-2 rounded-lg border border-[#D4AF37]/50"
                         value={form.inviteType}
-                        onChange={(e) => setForm({...form, tableNumber:e.target.value})} >
+                        onChange={(e) => setForm({ ...form, inviteType: e.target.value as Guest["inviteType"] })} >
                             <option value ="SINGLE">1 Person (Mr / Mrs)</option>
                             <option value = "COUPLE">2 Persons (Mr & Mrs)</option>
                             <option value= "FAMILY">Family</option>

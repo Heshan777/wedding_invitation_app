@@ -18,7 +18,7 @@ model Guest {
     token String @unique @default(cuid())
     displayName String
     salutation String
-    inviteType  InviteType
+    inviteType  InviteType @default(SINGLE)
     tableNumber Int
     notes String?
     viewedAt DateTime?
@@ -29,6 +29,8 @@ model Guest {
 model EventSettings {
     id String @id @default("singleton")
     coupleNames String @default("Ranudha & Dimuthu")
+    hostIntro     String   @default("With gratitude and joyful hearts, we cordially invite")
+    invitationBody String  @default("to join us as we celebrate this special day...")
     eventDate DateTime
     venueName String
     venueAddress String

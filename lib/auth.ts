@@ -12,6 +12,7 @@ export async function verifyAdminCredentials(username: string, password: string)
 
 export async function createAdminSession(){
     const token = await new SignJWT({ role:"admin"})
+        .setProtectedHeader({ alg: "HS256", typ: "JWT" })
         .setIssuedAt()
         .setExpirationTime("12h")
         .sign(secret);

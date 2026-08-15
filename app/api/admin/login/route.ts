@@ -4,6 +4,10 @@ import { verifyAdminCredentials, createAdminSession } from '@/lib/auth';
 export async function POST(req: NextRequest) {
     const {username, password } = await req.json();
 
+    console.log("DEBUG username env:", process.env.ADMIN_USERNAME);
+    console.log("DEBUG hash env:", process.env.ADMIN_PASSWORD_HASH);
+    console.log("DEBUG received username:", username);
+
     if (!username || !password) {
         return NextResponse.json({ error: "Missing credentials" }, { status: 400 });
     }
