@@ -3,22 +3,16 @@ generator client {
 }
 
 datasource db {
-    provider = "postgresql"
+    provider = "sqlite"
     url = env("DATABASE_URL")
 }
 
-enum InviteType{
-    SINGLE
-    COUPLE
-    FAMILY
-}
-
 model Guest {
-    id String @id  @default(cuid())
+    id String @id @default(cuid())
     token String @unique @default(cuid())
     displayName String
     salutation String
-    inviteType  InviteType @default(SINGLE)
+    inviteType String @default("SINGLE")
     tableNumber Int
     notes String?
     viewedAt DateTime?
@@ -28,9 +22,9 @@ model Guest {
 
 model EventSettings {
     id String @id @default("singleton")
-    coupleNames String @default("Ranudha & Dimuthu")
-    hostIntro     String   @default("With gratitude and joyful hearts, we cordially invite")
-    invitationBody String  @default("to join us as we celebrate this special day...")
+    coupleNames String @default("Sandharu & Sanduni")
+    hostIntro String @default("With gratitude and joyful hearts, we cordially invite")
+    invitationBody String @default("to join us as we celebrate this special day...")
     eventDate DateTime
     venueName String
     venueAddress String
@@ -38,4 +32,4 @@ model EventSettings {
     venueLng Float
     heroImageUrl String?
     musicUrl String? @default("/audio/background.mp3")
-}
+}

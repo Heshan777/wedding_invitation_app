@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { jwtVerify } from 'jose';
 
-const secret = new TextEncoder().encode(process.env.SESSION_SECRET!);
+const DEFAULT_SECRET = "wedding_luxury_secret_session_jwt_key_2026_super_secure_royal_pass";
+const SESSION_SECRET = process.env.SESSION_SECRET || DEFAULT_SECRET;
+const secret = new TextEncoder().encode(SESSION_SECRET);
 
 export async function middleware(req: NextRequest) {
     const pathname = req.nextUrl.pathname;
@@ -23,4 +25,4 @@ export async function middleware(req: NextRequest) {
 
 export const config = {
     matcher: ["/admin/:path*"],
-};
+};
