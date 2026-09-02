@@ -20,6 +20,12 @@ import {
   Compass,
   MessageSquareHeart,
   Music,
+  ChevronLeft,
+  ChevronRight,
+  Maximize2,
+  X,
+  Camera,
+  ZoomIn,
 } from "lucide-react";
 import CountdownTimer from "./CountdownTimer";
 import VenueMap from "./VenueMap";
@@ -30,12 +36,19 @@ import { formatEventDate } from "@/lib/date";
 import { generateICS } from "@/lib/calendar";
 
 type Guest = {
+  id?: string;
   token: string;
   displayName: string;
   salutation: string;
   inviteType: string;
   tableNumber: number;
   notes?: string | null;
+  phone?: string | null;
+  rsvpStatus?: string | null;
+  attendeeCount?: number | null;
+  dietary?: string | null;
+  rsvpMessage?: string | null;
+  rsvpSubmittedAt?: Date | string | null;
 };
 
 
@@ -48,9 +61,56 @@ type Settings = {
   venueAddress: string;
   venueLat: number;
   venueLng: number;
-  heroImageUrl: string | null;
-  musicUrl: string | null;
+  heroImageUrl?: string | null;
+  galleryJson?: string | null;
+  blessingImageUrl?: string | null;
+  welcomeImageUrl?: string | null;
+  placeCardImageUrl?: string | null;
+  placeCardNote?: string | null;
+  musicUrl?: string | null;
+  dressCodeTitle?: string | null;
+  dressCodeDescription?: string | null;
+  timelineJson?: string | null;
+  contactPhone?: string | null;
 };
+
+type GuestbookWish = {
+  id: string;
+  authorName: string;
+  message: string;
+  likes: number;
+  createdAt: string;
+};
+
+
+
+
+const coupleGallery = [
+  {
+    src: "/images/couple-portrait-1.jpg",
+    title: "A Timeless Bond",
+    subtitle: "Two souls, one sacred journey under the stars",
+    tag: "Pre-Wedding Shoot",
+  },
+  {
+    src: "/images/couple-portrait-2.jpg",
+    title: "Golden Hour Romance",
+    subtitle: "Embracing a lifetime of love and shared dreams",
+    tag: "Tender Moments",
+  },
+  {
+    src: "/images/couple-portrait-3.jpg",
+    title: "Walking into Forever",
+    subtitle: "Hand in hand towards a bright new chapter",
+    tag: "Celebration",
+  },
+  {
+    src: "/images/couple-portrait-4.jpg",
+    title: "The Sacred Promise",
+    subtitle: "Tokens of love and eternal devotion",
+    tag: "Wedding Rings",
+  },
+];
 
 const timelineEvents = [
   { time: "06:30 PM", title: "Guest Arrival & Welcome", desc: "Welcome drinks & traditional Sri Lankan treats" },
@@ -60,6 +120,7 @@ const timelineEvents = [
   { time: "08:30 PM", title: "Dinner Buffet Banquet", desc: "Lavish multi-cuisine dining experience" },
   { time: "09:30 PM", title: "Music, DJ & Dancing", desc: "Let the celebrations and dance floor begin!" },
 ];
+
 
 function formatInviteLine(guest: Guest) {
   if (guest.inviteType === "FAMILY") {
@@ -80,15 +141,177 @@ export default function InvitationView({
   const [qrDataUrl, setQrDataUrl] = useState<string>("");
   const [envelopeOpened, setEnvelopeOpened] = useState(false);
 
+  // Photo Gallery & Lightbox state
+  const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+  const [loveCount, setLoveCount] = useState(142);
+  const [hasLiked, setHasLiked] = useState(false);
+
   // RSVP Form state
-  const [rsvpStatus, setRsvpStatus] = useState<"attending" | "declined" | "">("");
-  const [rsvpCount, setRsvpCount] = useState<number>(guest.inviteType === "COUPLE" ? 2 : 1);
-  const [rsvpWish, setRsvpWish] = useState("");
-  const [rsvpSubmitted, setRsvpSubmitted] = useState(false);
+  const [rsvpStatus, setRsvpStatus] = useState<"attending" | "declined" | "">(
+    guest.rsvpStatus === "ATTENDING" ? "attending" : guest.rsvpStatus === "DECLINED" ? "declined" : ""
+  );
+  const maxAttendees = guest.inviteType === "SINGLE" ? 1 : guest.inviteType === "COUPLE" ? 2 : 5;
+  const [rsvpCount, setRsvpCount] = useState<number>(
+    guest.attendeeCount ? Math.min(guest.attendeeCount, maxAttendees) : guest.inviteType === "COUPLE" ? 2 : 1
+  );
+  const [dietary, setDietary] = useState<string>(guest.dietary || "NONE");
+  const [rsvpWish, setRsvpWish] = useState(guest.rsvpMessage || "");
+  const [rsvpSubmitted, setRsvpSubmitted] = useState(Boolean(guest.rsvpSubmittedAt || guest.rsvpStatus));
   const [submittingRsvp, setSubmittingRsvp] = useState(false);
+
+  // Digital Guestbook wishes state
+  const [wishes, setWishes] = useState<GuestbookWish[]>([]);
+  const [loadingWishes, setLoadingWishes] = useState(false);
+  const [likedWishIds, setLikedWishIds] = useState<string[]>([]);
+  const [calendarMenuOpen, setCalendarMenuOpen] = useState(false);
+
+  async function loadWishes() {
+    try {
+      setLoadingWishes(true);
+      const res = await fetch("/api/wishes");
+      if (res.ok) {
+        const data = await res.json();
+        setWishes(Array.isArray(data) ? data : []);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingWishes(false);
+    }
+  }
+
+  useEffect(() => {
+    loadWishes();
+  }, []);
+
+  async function handleLikeWish(wishId: string) {
+    if (likedWishIds.includes(wishId)) return;
+    setLikedWishIds((prev) => [...prev, wishId]);
+    setWishes((prev) =>
+      prev.map((w) => (w.id === wishId ? { ...w, likes: w.likes + 1 } : w))
+    );
+    try {
+      await fetch("/api/wishes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "like", id: wishId }),
+      });
+    } catch {}
+  }
 
   const date = formatEventDate(settings.eventDate);
   const eventDateObj = new Date(settings.eventDate);
+
+  // Dynamically compute monogram initials from coupleNames
+  const monogram = (() => {
+    const parts = (settings.coupleNames || "").split(/&|and|\+/i).map((s) => s.trim()).filter(Boolean);
+    if (parts.length >= 2) {
+      return `${parts[0][0]?.toUpperCase() || "S"} & ${parts[1][0]?.toUpperCase() || "S"}`;
+    }
+    const words = (settings.coupleNames || "").trim().split(/\s+/);
+    if (words.length >= 2) {
+      return `${words[0][0]?.toUpperCase() || "S"} & ${words[words.length - 1][0]?.toUpperCase() || "S"}`;
+    }
+    return (settings.coupleNames || "").slice(0, 2).toUpperCase() || "S & S";
+  })();
+
+  // Parse custom gallery from settings or fallback to coupleGallery presets
+  const parsedGallery = (() => {
+    if (settings.galleryJson) {
+      try {
+        const parsed = JSON.parse(settings.galleryJson);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch {}
+    }
+    return coupleGallery;
+  })();
+
+  // Parse custom timeline or fallback to default
+  const parsedTimeline = (() => {
+    if (settings.timelineJson) {
+      try {
+        const parsed = JSON.parse(settings.timelineJson);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch {}
+    }
+    return timelineEvents;
+  })();
+
+  const heroImageSrc = settings.heroImageUrl || parsedGallery[0]?.src || "/images/couple-portrait-1.jpg";
+  const blessingImageSrc = settings.blessingImageUrl || parsedGallery[1]?.src || "/images/couple-portrait-2.jpg";
+  const welcomeImageSrc = settings.welcomeImageUrl || "/images/couple-welcome.jpg";
+  const placeCardImageSrc = settings.placeCardImageUrl || "/images/couple-sweet.jpg";
+  const placeCardNote = settings.placeCardNote || "Thank you for sharing our joy and celebrating with us!";
+
+  const [activeReaction, setActiveReaction] = useState<string | null>(null);
+
+  const triggerReaction = (type: "love" | "cheers" | "bless") => {
+    setActiveReaction(type);
+    if (type === "love") {
+      setLoveCount((prev) => prev + 1);
+      confetti({
+        particleCount: 45,
+        spread: 60,
+        origin: { y: 0.6 },
+        colors: ["#ff4d6d", "#c5a059", "#dfba73", "#ffffff"],
+      });
+    } else if (type === "cheers") {
+      setLoveCount((prev) => prev + 1);
+      confetti({
+        particleCount: 50,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ["#ffd700", "#c5a059", "#ffffff", "#800020"],
+      });
+    } else {
+      setLoveCount((prev) => prev + 1);
+      confetti({
+        particleCount: 40,
+        spread: 55,
+        origin: { y: 0.6 },
+        colors: ["#dfba73", "#ffc0cb", "#fff8ea", "#c5a059"],
+      });
+    }
+  };
+
+  // Lightbox keyboard navigation
+  useEffect(() => {
+    if (!isLightboxOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setIsLightboxOpen(false);
+      if (e.key === "ArrowLeft") handlePrevPhoto();
+      if (e.key === "ArrowRight") handleNextPhoto();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isLightboxOpen, parsedGallery.length]);
+
+  const handleSendLove = () => {
+    if (!hasLiked) {
+      setLoveCount((prev) => prev + 1);
+      setHasLiked(true);
+      confetti({
+        particleCount: 40,
+        spread: 50,
+        origin: { y: 0.6 },
+        colors: ["#ff4d6d", "#c5a059", "#dfba73", "#ffffff"],
+      });
+    }
+  };
+
+  const handlePrevPhoto = () => {
+    setCurrentPhotoIndex((prev) => (prev === 0 ? parsedGallery.length - 1 : prev - 1));
+  };
+
+  const handleNextPhoto = () => {
+    setCurrentPhotoIndex((prev) => (prev === parsedGallery.length - 1 ? 0 : prev + 1));
+  };
+
+  const openLightbox = (index: number) => {
+    setCurrentPhotoIndex(index);
+    setIsLightboxOpen(true);
+  };
 
   // Map URLs
   const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${settings.venueLat},${settings.venueLng}`;
@@ -96,6 +319,9 @@ export default function InvitationView({
     settings.venueName
   )}`;
   const wazeUrl = `https://waze.com/ul?ll=${settings.venueLat},${settings.venueLng}&navigate=yes`;
+  const uberUrl = `https://m.uber.com/ul/?action=setPickup&pickup=my_location&dropoff[latitude]=${settings.venueLat}&dropoff[longitude]=${settings.venueLng}&dropoff[nickname]=${encodeURIComponent(
+    settings.venueName
+  )}`;
 
   // Google Calendar direct web URL
   const gCalStart = eventDateObj.toISOString().replace(/-|:|\.\d\d\d/g, "");
@@ -109,6 +335,20 @@ export default function InvitationView({
   )}&location=${encodeURIComponent(
     `${settings.venueName}, ${settings.venueAddress}`
   )}`;
+
+  const yahooCalendarWebUrl = `https://calendar.yahoo.com/?v=60&title=${encodeURIComponent(
+    `${settings.coupleNames} — Wedding & Homecoming`
+  )}&st=${gCalStart}&et=${gCalEnd}&desc=${encodeURIComponent(
+    `Homecoming celebration for ${settings.coupleNames}`
+  )}&in_loc=${encodeURIComponent(`${settings.venueName}, ${settings.venueAddress}`)}`;
+
+  const outlookCalendarWebUrl = `https://outlook.live.com/calendar/0/deeplink/compose?path=/calendar/action/compose&rru=addevent&subject=${encodeURIComponent(
+    `${settings.coupleNames} — Wedding & Homecoming`
+  )}&startdt=${eventDateObj.toISOString()}&enddt=${new Date(
+    eventDateObj.getTime() + 5 * 60 * 60 * 1000
+  ).toISOString()}&body=${encodeURIComponent(
+    `Homecoming celebration for ${settings.coupleNames}`
+  )}&location=${encodeURIComponent(`${settings.venueName}, ${settings.venueAddress}`)}`;
 
   // Generate dynamic QR Code for guest VIP pass
   useEffect(() => {
@@ -184,17 +424,19 @@ export default function InvitationView({
         body: JSON.stringify({
           token: guest.token,
           status: rsvpStatus,
-          guestCount: rsvpStatus === "attending" ? rsvpCount : 0,
+          attendeeCount: rsvpStatus === "attending" ? rsvpCount : 0,
+          dietary: rsvpStatus === "attending" ? dietary : "NONE",
           message: rsvpWish,
         }),
       });
 
       setRsvpSubmitted(true);
+      loadWishes();
       // Confetti for RSVP
       if (rsvpStatus === "attending") {
         confetti({
-          particleCount: 60,
-          spread: 60,
+          particleCount: 70,
+          spread: 70,
           origin: { y: 0.7 },
           colors: ["#c5a059", "#dfba73", "#800020", "#ffffff"],
         });
@@ -205,6 +447,7 @@ export default function InvitationView({
       setSubmittingRsvp(false);
     }
   };
+
 
   return (
     <div className="relative min-h-screen bg-[#121013] text-[#fdfbf7] selection:bg-[#c5a059]/30 selection:text-[#f7e4be] overflow-x-hidden">
@@ -240,7 +483,7 @@ export default function InvitationView({
           <div className="text-center pt-2 mb-4">
             <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-[#800020]/10 border border-[#c5a059]/50 shadow-inner mb-3">
               <span className="font-cinzel text-xl font-bold text-[#800020]">
-                S & S
+                {monogram}
               </span>
             </div>
             <p className="text-[11px] sm:text-xs uppercase tracking-[0.35em] text-[#8c6a2b] font-cinzel font-semibold">
@@ -262,57 +505,55 @@ export default function InvitationView({
             Together with our families, we cordially invite you to celebrate the joyous union & homecoming of
           </p>
 
-          {/* Couple Hero Section */}
-          <div className="relative left-1/2 -translate-x-1/2 w-full max-w-lg my-6">
-            <div className="relative h-[260px] sm:h-[320px] rounded-2xl overflow-hidden bg-gradient-to-b from-[#800020]/5 to-[#c5a059]/10 border border-[#c5a059]/30 flex items-center justify-center">
-              {/* Couple Backdrop image with gentle opacity */}
-              <Image
-                src="/images/couple-hero.png"
-                alt="Couple Silhouette"
-                width={480}
-                height={520}
-                className="absolute inset-0 w-full h-full object-contain opacity-25 -z-10"
-                priority
-              />
-
-              {/* Groom illustration */}
-              <div className="absolute left-2 sm:left-4 bottom-2 sm:bottom-4 filter drop-shadow-md">
+          {/* Luxury Couple Hero Photo Portrait Card */}
+          <div className="relative w-full my-6">
+            <div className="relative rounded-3xl overflow-hidden border-2 border-[#c5a059]/60 shadow-2xl bg-[#1a1215] group">
+              {/* Main Couple Photo with subtle zoom on hover */}
+              <div className="relative h-72 sm:h-96 w-full overflow-hidden">
                 <Image
-                  src="/images/groom-small.png"
-                  alt="Groom"
-                  width={75}
-                  height={120}
-                  className="w-16 sm:w-20 h-auto"
+                  src={heroImageSrc}
+                  alt={settings.coupleNames}
+                  fill
+                  sizes="(max-width: 640px) 100vw, 550px"
+                  className="object-cover object-top transition duration-700 group-hover:scale-105"
+                  priority
                 />
-              </div>
 
-              {/* Bride illustration */}
-              <div className="absolute right-2 sm:right-4 bottom-2 sm:bottom-4 filter drop-shadow-md">
-                <Image
-                  src="/images/bride-small.png"
-                  alt="Bride"
-                  width={75}
-                  height={120}
-                  className="w-16 sm:w-20 h-auto"
-                />
-              </div>
+                <div className="absolute inset-0 bg-gradient-to-t from-[#12080c] via-[#12080c]/30 to-transparent" />
 
-              {/* Couple Names Calligraphy Typography */}
-              <div className="text-center px-4 relative z-10">
-                <h2 className="font-serif italic text-4xl sm:text-5xl text-[#6b0f24] font-bold leading-none tracking-tight">
-                  {settings.coupleNames.split("&")[0]?.trim() || "Sandharu"}
-                </h2>
-                <div className="my-1.5 flex items-center justify-center gap-2">
-                  <div className="h-px w-8 bg-[#c5a059]" />
-                  <span className="font-alex text-3xl sm:text-4xl text-[#996515]">&</span>
-                  <div className="h-px w-8 bg-[#c5a059]" />
+                {/* Luxury Gold Frame Filigree Accents inside photo */}
+                <div className="absolute top-3 left-3 text-[#edd892] text-sm select-none opacity-80">⚜</div>
+                <div className="absolute top-3 right-3 text-[#edd892] text-sm select-none opacity-80">⚜</div>
+
+                {/* Lightbox Trigger Button */}
+                <button
+                  type="button"
+                  onClick={() => openLightbox(0)}
+                  className="absolute top-3 right-3 z-10 p-2 rounded-full bg-black/40 hover:bg-[#800020] text-[#edd892] backdrop-blur-md border border-[#c5a059]/40 transition shadow-lg cursor-pointer"
+                  title="View Fullscreen"
+                >
+                  <Maximize2 className="w-4 h-4" />
+                </button>
+
+                {/* Couple Names Calligraphy Overlaid at base of photo */}
+                <div className="absolute bottom-0 inset-x-0 p-4 sm:p-6 text-center text-[#fdfbf7]">
+                  <p className="text-[10px] sm:text-xs uppercase tracking-[0.3em] text-[#edd892] font-cinzel font-semibold mb-1">
+                    The Happy Couple
+                  </p>
+                  <div className="flex items-center justify-center gap-2 sm:gap-3 flex-wrap">
+                    <h2 className="font-serif italic text-3xl sm:text-4xl text-[#fff8ea] font-bold tracking-tight drop-shadow-md">
+                      {settings.coupleNames.split("&")[0]?.trim() || "Sandharu"}
+                    </h2>
+                    <span className="font-alex text-3xl sm:text-4xl text-[#edd892] drop-shadow">&</span>
+                    <h2 className="font-serif italic text-3xl sm:text-4xl text-[#fff8ea] font-bold tracking-tight drop-shadow-md">
+                      {settings.coupleNames.split("&")[1]?.trim() || "Sanduni"}
+                    </h2>
+                  </div>
                 </div>
-                <h2 className="font-serif italic text-4xl sm:text-5xl text-[#6b0f24] font-bold leading-none tracking-tight">
-                  {settings.coupleNames.split("&")[1]?.trim() || "Sanduni"}
-                </h2>
               </div>
             </div>
           </div>
+
 
           {/* Host Intro */}
           <p className="text-center text-sm sm:text-base text-[#3d3238] font-sans leading-relaxed my-6 px-2">
@@ -326,6 +567,67 @@ export default function InvitationView({
             </div>
             <div className="font-serif italic text-2xl sm:text-3xl font-bold tracking-wide">
               {formatInviteLine(guest)}
+            </div>
+          </div>
+
+          {/* SWEET COUPLE WARM WELCOME VIGNETTE */}
+          <div className="relative my-8 rounded-3xl overflow-hidden border-2 border-[#c5a059]/60 bg-gradient-to-b from-[#2a1721] via-[#1c0e16] to-[#12080e] text-[#fdfbf7] p-6 sm:p-8 shadow-2xl">
+            {/* Ornate Corner Stars */}
+            <div className="absolute top-3 left-3 text-[#edd892]/60 text-xs select-none">✦</div>
+            <div className="absolute top-3 right-3 text-[#edd892]/60 text-xs select-none">✦</div>
+            <div className="absolute bottom-3 left-3 text-[#edd892]/60 text-xs select-none">✦</div>
+            <div className="absolute bottom-3 right-3 text-[#edd892]/60 text-xs select-none">✦</div>
+
+            <div className="flex flex-col sm:flex-row items-center gap-5 sm:gap-6">
+              {/* Sweet Couple Portrait Cameo */}
+              <div className="relative w-32 h-32 sm:w-40 sm:h-40 rounded-full overflow-hidden border-4 border-[#dfba73] shadow-[0_0_25px_rgba(223,186,115,0.4)] flex-shrink-0 group">
+                <Image
+                  src={welcomeImageSrc}
+                  alt="Warm Welcome from Couple"
+                  fill
+                  sizes="160px"
+                  className="object-cover transition duration-700 group-hover:scale-110"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+              </div>
+
+              {/* Sweet Welcome Narrative */}
+              <div className="text-center sm:text-left flex-1">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#800020]/80 text-[#edd892] text-[10px] sm:text-xs font-cinzel font-semibold mb-2 border border-[#dfba73]/40">
+                  <Heart className="w-3.5 h-3.5 fill-[#ffd700] text-[#ffd700]" /> With All Our Love
+                </div>
+                <h3 className="font-serif italic text-2xl sm:text-3xl text-[#fff8ea] font-bold">
+                  We Can&apos;t Wait to Welcome You!
+                </h3>
+                <p className="font-sans text-xs sm:text-sm text-[#edd892]/90 leading-relaxed mt-2">
+                  Dearest <span className="font-semibold text-white">{formatInviteLine(guest)}</span>, having your gracious presence and blessings on our most auspicious day fills our hearts with immense happiness and gratitude.
+                </p>
+
+                {/* Sweet Interactive Reaction Buttons */}
+                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mt-4">
+                  <button
+                    type="button"
+                    onClick={() => triggerReaction("love")}
+                    className="px-3 py-1.5 rounded-full bg-white/10 hover:bg-[#800020] border border-[#c5a059]/40 text-[#edd892] text-xs font-sans font-semibold flex items-center gap-1.5 transition cursor-pointer active:scale-95"
+                  >
+                    💖 Sweet Couple
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => triggerReaction("cheers")}
+                    className="px-3 py-1.5 rounded-full bg-white/10 hover:bg-[#800020] border border-[#c5a059]/40 text-[#edd892] text-xs font-sans font-semibold flex items-center gap-1.5 transition cursor-pointer active:scale-95"
+                  >
+                    🥂 Cheers & Love
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => triggerReaction("bless")}
+                    className="px-3 py-1.5 rounded-full bg-white/10 hover:bg-[#800020] border border-[#c5a059]/40 text-[#edd892] text-xs font-sans font-semibold flex items-center gap-1.5 transition cursor-pointer active:scale-95"
+                  >
+                    ✨ Auspicious Blessings
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -355,45 +657,80 @@ export default function InvitationView({
             </p>
           </div>
 
-          {/* VIP Guest Pass & Seating Access Card */}
-          <div className="my-8 rounded-2xl border-2 border-dashed border-[#c5a059] bg-[#fffdfa] p-5 shadow-lg relative">
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+          {/* VIRTUAL LUXURY TABLE SEATING PLACE CARD */}
+          <div className="my-8 rounded-3xl border-2 border-[#c5a059] bg-gradient-to-b from-[#fffdfa] via-[#faf5ec] to-[#f5eedf] p-6 sm:p-7 shadow-2xl relative overflow-hidden text-[#1a1517]">
+            {/* Ornate Gold Border Filigrees */}
+            <div className="absolute inset-2 rounded-2xl border border-[#c5a059]/30 pointer-events-none" />
+            <div className="absolute top-3 left-3 text-[#c5a059] text-xs select-none">⚜</div>
+            <div className="absolute top-3 right-3 text-[#c5a059] text-xs select-none">⚜</div>
+            <div className="absolute bottom-3 left-3 text-[#c5a059] text-xs select-none">⚜</div>
+            <div className="absolute bottom-3 right-3 text-[#c5a059] text-xs select-none">⚜</div>
+
+            {/* Header Couple Cameo & Title */}
+            <div className="flex flex-col items-center text-center pb-4 border-b border-[#c5a059]/30">
+              <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden border-2 border-[#c5a059] shadow-md mb-2 bg-[#800020]/10">
+                <Image
+                  src={placeCardImageSrc}
+                  alt={settings.coupleNames}
+                  fill
+                  sizes="80px"
+                  className="object-cover object-top"
+                />
+              </div>
+              <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.25em] text-[#800020] font-cinzel font-bold">
+                {settings.coupleNames}
+              </p>
+              <span className="text-[9px] uppercase tracking-wider text-[#8c6a2b] font-cinzel">
+                Banquet Seating Reservation
+              </span>
+            </div>
+
+            {/* Guest & Table Details */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 py-4">
               <div className="text-center sm:text-left">
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#800020]/10 text-[#800020] text-xs font-cinzel font-semibold mb-2">
-                  <QrCode className="w-3.5 h-3.5" /> VIP Check-in Pass
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#800020]/10 text-[#800020] text-xs font-cinzel font-semibold mb-1">
+                  <QrCode className="w-3.5 h-3.5" /> VIP Place Setting
                 </div>
-                <h3 className="font-cinzel text-lg font-bold text-[#1a1517]">
-                  {guest.displayName}
+                <h3 className="font-serif italic text-2xl sm:text-3xl font-bold text-[#6b0f24]">
+                  {formatInviteLine(guest)}
                 </h3>
-                <div className="flex items-center gap-2 mt-1 text-xs text-[#5a483e]">
+                <div className="flex items-center justify-center sm:justify-start gap-2 mt-1 text-xs text-[#5a483e]">
                   <Users className="w-3.5 h-3.5 text-[#800020]" />
-                  <span>Category: <strong>{guest.inviteType}</strong></span>
+                  <span>Category: <strong>{guest.inviteType === "COUPLE" ? "2 Persons (Couple)" : guest.inviteType === "FAMILY" ? "Family Group" : "1 Person"}</strong></span>
                 </div>
-                <div className="mt-3">
-                  <span className="text-xs text-[#5a483e]">Reserved Table:</span>
-                  <div className="inline-block ml-2 px-4 py-1.5 rounded-xl bg-[#800020] text-[#fdfbf7] font-cinzel font-bold text-lg shadow-md">
+                <div className="mt-3 flex items-center justify-center sm:justify-start gap-2">
+                  <span className="text-xs text-[#5a483e] font-sans font-medium">Reserved:</span>
+                  <div className="px-4 py-1.5 rounded-xl bg-[#800020] text-[#fdfbf7] font-cinzel font-bold text-base shadow-md">
                     Table #{String(guest.tableNumber).padStart(2, "0")}
                   </div>
                 </div>
               </div>
 
-              {/* QR Code Scannable Check-in */}
+              {/* QR Code Scannable Reception Pass */}
               {qrDataUrl && (
-                <div className="flex flex-col items-center bg-white p-2 rounded-xl border border-[#c5a059]/40 shadow-sm">
+                <div className="flex flex-col items-center bg-white p-2.5 rounded-2xl border border-[#c5a059]/50 shadow-md">
                   <Image
                     src={qrDataUrl}
-                    alt="Guest Check-in QR Code"
+                    alt="Guest Reception QR Code"
                     width={110}
                     height={110}
                     className="w-24 h-24 sm:w-28 sm:h-28"
                   />
-                  <span className="text-[9px] uppercase tracking-wider text-[#800020] font-cinzel font-semibold mt-1">
-                    Scan for Reception
+                  <span className="text-[9px] uppercase tracking-wider text-[#800020] font-cinzel font-bold mt-1">
+                    Scan At Reception
                   </span>
                 </div>
               )}
             </div>
+
+            {/* Sweet Couple Note */}
+            <div className="pt-3 border-t border-[#c5a059]/30 text-center">
+              <p className="font-serif italic text-xs sm:text-sm text-[#6b0f24] font-medium">
+                &ldquo;{placeCardNote}&rdquo;
+              </p>
+            </div>
           </div>
+
 
           {/* Live Countdown Section */}
           <div className="my-8">
@@ -412,12 +749,12 @@ export default function InvitationView({
             </div>
 
             <div className="space-y-3">
-              {timelineEvents.map((evt, idx) => (
+              {parsedTimeline.map((evt: any, idx: number) => (
                 <div
                   key={idx}
-                  className="flex items-start gap-3.5 p-3 rounded-xl bg-[#fbf7ee] border border-[#c5a059]/25 hover:border-[#c5a059] transition duration-200"
+                  className="flex items-start gap-3.5 p-3.5 rounded-2xl bg-[#fbf7ee] border border-[#c5a059]/30 hover:border-[#c5a059] shadow-sm transition duration-200"
                 >
-                  <div className="min-w-[76px] px-2 py-1 rounded-lg bg-[#800020]/10 text-[#800020] font-cinzel text-xs font-bold text-center">
+                  <div className="min-w-[80px] px-2.5 py-1.5 rounded-xl bg-[#800020]/10 text-[#800020] font-cinzel text-xs font-bold text-center border border-[#800020]/20 shadow-xs">
                     {evt.time}
                   </div>
                   <div>
@@ -430,6 +767,170 @@ export default function InvitationView({
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+
+          {/* DRESS CODE & STYLE PALETTE SECTION */}
+          <div className="my-10 p-6 rounded-3xl bg-gradient-to-b from-[#fffdfa] to-[#fbf6eb] border-2 border-[#c5a059]/40 shadow-xl text-center">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#800020]/10 text-[#800020] text-xs font-cinzel font-semibold mb-2">
+              <Sparkles className="w-3.5 h-3.5 text-[#c5a059]" /> Dress Code & Style Guide
+            </div>
+            <h3 className="font-serif italic text-2xl sm:text-3xl text-[#6b0f24] font-bold">
+              {settings.dressCodeTitle || "Royal Splendor & Black Tie"}
+            </h3>
+            <p className="text-xs sm:text-sm text-[#5a483e] max-w-md mx-auto mt-2 leading-relaxed">
+              {settings.dressCodeDescription ||
+                "Traditional Sri Lankan elegance or formal evening attire in warm tones of gold, burgundy, and ivory."}
+            </p>
+
+            {/* Color Palette Swatches */}
+            <div className="mt-5 pt-4 border-t border-[#c5a059]/30">
+              <span className="text-[10px] uppercase tracking-widest text-[#8c6a2b] font-cinzel font-semibold block mb-3">
+                Suggested Color Palette
+              </span>
+              <div className="flex items-center justify-center gap-3 sm:gap-4">
+                {[
+                  { name: "Royal Velvet", hex: "#6b0f24", text: "#fff" },
+                  { name: "Champagne Gold", hex: "#dfba73", text: "#1a1517" },
+                  { name: "Pearl Ivory", hex: "#faf5eb", text: "#1a1517", border: true },
+                  { name: "Deep Emerald", hex: "#1b4332", text: "#fff" },
+                ].map((c, i) => (
+                  <div key={i} className="flex flex-col items-center gap-1.5">
+                    <div
+                      className={`w-9 h-9 sm:w-11 sm:h-11 rounded-full shadow-md transition-transform hover:scale-110 flex items-center justify-center ${
+                        c.border ? "border border-[#c5a059]" : "border-2 border-white/80"
+                      }`}
+                      style={{ backgroundColor: c.hex }}
+                    />
+                    <span className="text-[9px] font-cinzel text-[#5a483e] font-medium">
+                      {c.name}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Moments of Love & Pre-Wedding Gallery Section */}
+          <div className="my-10 p-5 sm:p-6 rounded-3xl bg-gradient-to-b from-[#fffdfa] to-[#fbf6eb] border-2 border-[#c5a059]/50 shadow-xl">
+            <div className="text-center mb-6">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#800020]/10 text-[#800020] text-xs font-cinzel font-semibold mb-2">
+                <Camera className="w-3.5 h-3.5 text-[#c5a059]" /> Romantic Photo Gallery
+              </div>
+              <h3 className="font-serif italic text-2xl sm:text-3xl text-[#6b0f24] font-bold">
+                Moments of Love
+              </h3>
+              <p className="font-serif italic text-xs sm:text-sm text-[#8c6a2b] mt-1">
+                &ldquo;Every love story is beautiful, but ours is our favorite.&rdquo;
+              </p>
+            </div>
+
+            {/* Interactive Featured Photo Carousel Card */}
+            <div className="relative rounded-2xl overflow-hidden border border-[#c5a059]/60 shadow-lg bg-[#140e11] group">
+              <div className="relative h-64 sm:h-80 w-full overflow-hidden">
+                <Image
+                  src={parsedGallery[currentPhotoIndex]?.src || heroImageSrc}
+                  alt={parsedGallery[currentPhotoIndex]?.title || settings.coupleNames}
+                  fill
+                  sizes="(max-width: 640px) 100vw, 550px"
+                  className="object-cover transition-all duration-700 group-hover:scale-105"
+                  priority
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30" />
+
+                {/* Tag Badge */}
+                <div className="absolute top-3 left-3 z-10 px-3 py-1 rounded-full bg-black/50 backdrop-blur-md border border-[#c5a059]/40 text-[#edd892] text-[10px] font-cinzel font-semibold">
+                  {parsedGallery[currentPhotoIndex]?.tag || "Wedding Shoot"}
+                </div>
+
+                {/* Lightbox Expand Button */}
+                <button
+                  type="button"
+                  onClick={() => openLightbox(currentPhotoIndex)}
+                  className="absolute top-3 right-3 z-10 p-2 rounded-full bg-black/50 hover:bg-[#800020] text-[#edd892] backdrop-blur-md border border-[#c5a059]/40 transition shadow-md cursor-pointer"
+                  title="Expand to Fullscreen"
+                >
+                  <Maximize2 className="w-4 h-4" />
+                </button>
+
+                {/* Carousel Left & Right Navigation Arrows */}
+                <button
+                  type="button"
+                  onClick={handlePrevPhoto}
+                  className="absolute left-2 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full bg-black/40 hover:bg-[#800020] text-white backdrop-blur-md border border-[#c5a059]/30 transition opacity-80 hover:opacity-100 cursor-pointer"
+                  title="Previous Photo"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={handleNextPhoto}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full bg-black/40 hover:bg-[#800020] text-white backdrop-blur-md border border-[#c5a059]/30 transition opacity-80 hover:opacity-100 cursor-pointer"
+                  title="Next Photo"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+
+                {/* Photo Caption Overlay */}
+                <div className="absolute bottom-0 inset-x-0 p-4 text-white z-10">
+                  <h4 className="font-cinzel text-base sm:text-lg font-bold text-[#fff8ea]">
+                    {parsedGallery[currentPhotoIndex]?.title}
+                  </h4>
+                  <p className="text-xs text-[#dfba73] font-sans mt-0.5">
+                    {parsedGallery[currentPhotoIndex]?.subtitle}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Thumbnail Strip Selector */}
+            <div className="grid grid-cols-4 gap-2 mt-3">
+              {parsedGallery.map((item: any, idx: number) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => setCurrentPhotoIndex(idx)}
+                  className={`relative h-14 sm:h-16 rounded-xl overflow-hidden border-2 transition cursor-pointer ${
+                    currentPhotoIndex === idx
+                      ? "border-[#800020] ring-2 ring-[#dfba73] scale-[1.02] shadow-md"
+                      : "border-[#c5a059]/40 opacity-70 hover:opacity-100"
+                  }`}
+                >
+                  <Image
+                    src={item.src}
+                    alt={item.title || `Photo ${idx + 1}`}
+                    fill
+                    sizes="100px"
+                    className="object-cover"
+                  />
+                </button>
+              ))}
+            </div>
+
+            {/* Interactive Love Reaction Bar */}
+            <div className="mt-5 pt-4 border-t border-[#c5a059]/30 flex items-center justify-between">
+              <span className="text-xs text-[#5a483e] font-sans">
+                Shower the couple with your love:
+              </span>
+              <button
+                type="button"
+                onClick={handleSendLove}
+                className={`px-4 py-2 rounded-full text-xs font-cinzel font-bold flex items-center gap-2 transition cursor-pointer shadow-md ${
+                  hasLiked
+                    ? "bg-[#800020] text-[#fdfbf7] scale-105 border border-[#c5a059]"
+                    : "bg-white text-[#800020] hover:bg-[#800020]/10 border border-[#c5a059]/50"
+                }`}
+              >
+                <Heart
+                  className={`w-4 h-4 ${
+                    hasLiked ? "fill-current text-[#edd892] animate-bounce" : "text-[#800020]"
+                  }`}
+                />
+                <span>{hasLiked ? "Sent with Love!" : "Send Love"}</span>
+                <span className="px-1.5 py-0.5 rounded-full bg-black/10 text-[10px]">
+                  {loveCount}
+                </span>
+              </button>
             </div>
           </div>
 
@@ -454,31 +955,39 @@ export default function InvitationView({
               venueName={settings.venueName}
             />
 
-            {/* Quick Navigation Buttons */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 mt-4">
+            {/* Quick Navigation Buttons (Including Ride Booking) */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-4">
               <a
                 href={googleMapsUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="btn-gold-shimmer py-3 px-4 rounded-xl text-center text-xs font-cinzel font-semibold flex items-center justify-center gap-2 shadow-md hover:scale-[1.02] transition"
+                className="btn-gold-shimmer py-2.5 px-3 rounded-xl text-center text-xs font-cinzel font-semibold flex items-center justify-center gap-1.5 shadow-md hover:scale-[1.02] transition"
               >
-                <Compass className="w-4 h-4" /> Google Maps
+                <Compass className="w-3.5 h-3.5" /> Google Maps
               </a>
               <a
                 href={appleMapsUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="bg-[#1a1517] text-[#fdfbf7] hover:bg-black py-3 px-4 rounded-xl text-center text-xs font-cinzel font-semibold flex items-center justify-center gap-2 shadow-md hover:scale-[1.02] transition"
+                className="bg-[#1a1517] text-[#fdfbf7] hover:bg-black py-2.5 px-3 rounded-xl text-center text-xs font-cinzel font-semibold flex items-center justify-center gap-1.5 shadow-md hover:scale-[1.02] transition"
               >
-                <Navigation className="w-4 h-4 text-[#dfba73]" /> Apple Maps
+                <Navigation className="w-3.5 h-3.5 text-[#dfba73]" /> Apple Maps
               </a>
               <a
                 href={wazeUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="bg-[#2a1a20] text-[#edd892] hover:bg-[#800020] py-3 px-4 rounded-xl text-center text-xs font-cinzel font-semibold flex items-center justify-center gap-2 shadow-md hover:scale-[1.02] transition"
+                className="bg-[#2a1a20] text-[#edd892] hover:bg-[#800020] py-2.5 px-3 rounded-xl text-center text-xs font-cinzel font-semibold flex items-center justify-center gap-1.5 shadow-md hover:scale-[1.02] transition"
               >
-                <MapPin className="w-4 h-4" /> Waze Nav
+                <MapPin className="w-3.5 h-3.5" /> Waze Nav
+              </a>
+              <a
+                href={uberUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-black text-white hover:bg-neutral-900 py-2.5 px-3 rounded-xl text-center text-xs font-cinzel font-semibold flex items-center justify-center gap-1.5 shadow-md hover:scale-[1.02] transition border border-[#c5a059]/40"
+              >
+                <Navigation className="w-3.5 h-3.5 text-emerald-400" /> Book Ride (Uber)
               </a>
             </div>
 
@@ -499,7 +1008,7 @@ export default function InvitationView({
             </button>
           </div>
 
-          {/* Calendar Integration Hub */}
+          {/* Calendar Integration Hub (Luxury Dropdown Suite) */}
           <div className="my-8 p-5 rounded-2xl bg-[#fbf7ee] border border-[#c5a059]/40 text-center">
             <div className="flex items-center justify-center gap-2 mb-2 text-[#800020]">
               <Calendar className="w-4 h-4" />
@@ -508,49 +1017,74 @@ export default function InvitationView({
               </span>
             </div>
             <p className="text-xs text-[#5a483e] mb-4">
-              Add this special day to your digital calendar with automatic reminders.
+              Sync this auspicious celebration with your digital calendar.
             </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               <a
                 href={googleCalendarWebUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="py-2.5 px-4 rounded-xl bg-[#800020] text-[#fdfbf7] hover:bg-[#5c0017] text-xs font-cinzel font-semibold flex items-center justify-center gap-2 shadow transition"
+                className="py-2 px-2.5 rounded-xl bg-[#800020] text-[#fdfbf7] hover:bg-[#5c0017] text-[11px] font-cinzel font-semibold flex items-center justify-center gap-1.5 shadow transition"
               >
-                <Calendar className="w-4 h-4 text-[#edd892]" /> Google Calendar
+                <Calendar className="w-3.5 h-3.5 text-[#edd892]" /> Google
               </a>
               <button
                 onClick={handleDownloadICS}
-                className="py-2.5 px-4 rounded-xl bg-[#1a1517] text-[#fdfbf7] hover:bg-black text-xs font-cinzel font-semibold flex items-center justify-center gap-2 shadow transition cursor-pointer"
+                className="py-2 px-2.5 rounded-xl bg-[#1a1517] text-[#fdfbf7] hover:bg-black text-[11px] font-cinzel font-semibold flex items-center justify-center gap-1.5 shadow transition cursor-pointer"
               >
-                <Calendar className="w-4 h-4 text-[#dfba73]" /> Apple / Outlook iCal
+                <Calendar className="w-3.5 h-3.5 text-[#dfba73]" /> Apple (.ics)
               </button>
+              <a
+                href={outlookCalendarWebUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="py-2 px-2.5 rounded-xl bg-[#0078d4] text-white hover:bg-[#005a9e] text-[11px] font-cinzel font-semibold flex items-center justify-center gap-1.5 shadow transition"
+              >
+                <Calendar className="w-3.5 h-3.5" /> Outlook
+              </a>
+              <a
+                href={yahooCalendarWebUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="py-2 px-2.5 rounded-xl bg-[#5f01d1] text-white hover:bg-[#4900a3] text-[11px] font-cinzel font-semibold flex items-center justify-center gap-1.5 shadow transition"
+              >
+                <Calendar className="w-3.5 h-3.5" /> Yahoo
+              </a>
             </div>
           </div>
 
-          {/* Interactive RSVP & Blessing Guestbook Form */}
-          <div className="my-10 p-6 rounded-2xl bg-gradient-to-b from-[#fffdfa] to-[#f7f2e7] border-2 border-[#c5a059]/50 shadow-xl">
+          {/* Interactive Production RSVP Suite with Dietary Tracker */}
+          <div className="my-10 p-6 sm:p-7 rounded-3xl bg-gradient-to-b from-[#fffdfa] to-[#f7f2e7] border-2 border-[#c5a059]/60 shadow-2xl">
             <div className="text-center mb-5">
               <div className="inline-flex items-center gap-1.5 text-[#800020] text-xs font-cinzel font-semibold mb-1">
                 <MessageSquareHeart className="w-4 h-4 text-[#c5a059]" /> RSVP & Heartfelt Wishes
               </div>
-              <h3 className="font-serif italic text-2xl text-[#6b0f24] font-bold">
+              <h3 className="font-serif italic text-2xl sm:text-3xl text-[#6b0f24] font-bold">
                 Will You Be Joining Us?
               </h3>
               <p className="text-xs text-[#5a483e] mt-1">
-                Please confirm your attendance and leave a blessing message for the couple.
+                Kindly confirm your attendance and select any dietary preferences.
               </p>
             </div>
 
-            {rsvpSubmitted ? (
-              <div className="text-center py-6 px-4 bg-[#800020]/10 rounded-xl border border-[#c5a059]/40">
-                <Heart className="w-8 h-8 text-[#800020] mx-auto mb-2 fill-[#800020] animate-pulse" />
+            {rsvpSubmitted && !submittingRsvp ? (
+              <div className="text-center py-6 px-4 bg-[#800020]/10 rounded-2xl border border-[#c5a059]/40 space-y-3">
+                <Heart className="w-10 h-10 text-[#800020] mx-auto fill-[#800020] animate-pulse" />
                 <h4 className="font-cinzel text-lg font-bold text-[#800020]">
-                  Thank You for Responding!
+                  RSVP Recorded: {rsvpStatus === "attending" ? "Joyfully Attending" : "Regretfully Declined"}
                 </h4>
-                <p className="text-xs text-[#3d3238] mt-1">
-                  Your response and warm blessings have been recorded with gratitude.
+                <p className="text-xs text-[#3d3238]">
+                  {rsvpStatus === "attending"
+                    ? `We are delighted to celebrate with you (${rsvpCount} ${rsvpCount === 1 ? "Guest" : "Guests"}).`
+                    : "Thank you for letting us know. You will be warmly celebrated in our hearts."}
                 </p>
+                <button
+                  type="button"
+                  onClick={() => setRsvpSubmitted(false)}
+                  className="text-xs text-[#800020] hover:underline font-cinzel font-semibold cursor-pointer pt-2"
+                >
+                  Need to update your response? Click here
+                </button>
               </div>
             ) : (
               <form onSubmit={handleRsvpSubmit} className="space-y-4">
@@ -559,9 +1093,9 @@ export default function InvitationView({
                   <button
                     type="button"
                     onClick={() => setRsvpStatus("attending")}
-                    className={`py-3 px-3 rounded-xl font-cinzel text-xs font-bold border transition cursor-pointer flex flex-col items-center gap-1 ${
+                    className={`py-3.5 px-3 rounded-2xl font-cinzel text-xs font-bold border transition cursor-pointer flex flex-col items-center gap-1 ${
                       rsvpStatus === "attending"
-                        ? "bg-[#800020] text-[#fdfbf7] border-[#800020] shadow-md scale-[1.02]"
+                        ? "bg-[#800020] text-[#fdfbf7] border-[#dfba73] shadow-md scale-[1.02]"
                         : "bg-white text-[#1a1517] border-[#c5a059]/40 hover:bg-[#800020]/5"
                     }`}
                   >
@@ -572,9 +1106,9 @@ export default function InvitationView({
                   <button
                     type="button"
                     onClick={() => setRsvpStatus("declined")}
-                    className={`py-3 px-3 rounded-xl font-cinzel text-xs font-bold border transition cursor-pointer flex flex-col items-center gap-1 ${
+                    className={`py-3.5 px-3 rounded-2xl font-cinzel text-xs font-bold border transition cursor-pointer flex flex-col items-center gap-1 ${
                       rsvpStatus === "declined"
-                        ? "bg-[#4a3b32] text-[#fdfbf7] border-[#4a3b32] shadow-md scale-[1.02]"
+                        ? "bg-[#4a3b32] text-[#fdfbf7] border-[#dfba73] shadow-md scale-[1.02]"
                         : "bg-white text-[#1a1517] border-[#c5a059]/40 hover:bg-[#800020]/5"
                     }`}
                   >
@@ -583,62 +1117,153 @@ export default function InvitationView({
                   </button>
                 </div>
 
-                {/* Headcount if attending */}
+                {/* Headcount & Dietary if attending */}
                 {rsvpStatus === "attending" && (
-                  <div>
-                    <label className="block text-xs font-cinzel font-semibold text-[#1a1517] mb-1">
-                      Attending Guest Count
-                    </label>
-                    <select
-                      value={rsvpCount}
-                      onChange={(e) => setRsvpCount(Number(e.target.value))}
-                      className="w-full px-3 py-2 rounded-xl bg-white border border-[#c5a059]/60 text-xs text-[#1a1517] focus:outline-none focus:ring-2 focus:ring-[#800020]"
-                    >
-                      <option value={1}>1 Guest (Myself)</option>
-                      <option value={2}>2 Guests</option>
-                      <option value={3}>3 Guests (Family)</option>
-                      <option value={4}>4 Guests (Family)</option>
-                      <option value={5}>5+ Guests</option>
-                    </select>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                    <div>
+                      <label className="block text-xs font-cinzel font-semibold text-[#1a1517] mb-1">
+                        Number of Attending Guests
+                      </label>
+                      <select
+                        value={rsvpCount}
+                        onChange={(e) => setRsvpCount(Number(e.target.value))}
+                        className="w-full px-3 py-2.5 rounded-xl bg-white border border-[#c5a059]/60 text-xs text-[#1a1517] focus:outline-none focus:ring-2 focus:ring-[#800020]"
+                      >
+                        {Array.from({ length: maxAttendees }, (_, i) => i + 1).map((num) => (
+                          <option key={num} value={num}>
+                            {num} {num === 1 ? "Guest (Myself)" : `${num} Guests`}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-cinzel font-semibold text-[#1a1517] mb-1">
+                        Dietary Preference
+                      </label>
+                      <select
+                        value={dietary}
+                        onChange={(e) => setDietary(e.target.value)}
+                        className="w-full px-3 py-2.5 rounded-xl bg-white border border-[#c5a059]/60 text-xs text-[#1a1517] focus:outline-none focus:ring-2 focus:ring-[#800020]"
+                      >
+                        <option value="NONE">Standard Gourmet Banquet</option>
+                        <option value="VEGETARIAN">Vegetarian</option>
+                        <option value="VEGAN">Vegan</option>
+                        <option value="HALAL">Halal</option>
+                        <option value="GLUTEN_FREE">Gluten-Free</option>
+                        <option value="OTHER">Other / Special Request</option>
+                      </select>
+                    </div>
                   </div>
                 )}
 
-                {/* Blessing Message */}
+                {/* Blessing Message directly linked to Digital Guestbook */}
                 <div>
                   <label className="block text-xs font-cinzel font-semibold text-[#1a1517] mb-1">
                     Your Blessing / Congratulatory Note
                   </label>
                   <textarea
                     rows={3}
-                    placeholder="Write a sweet message to Sandharu & Sanduni..."
+                    placeholder="Write a sweet message to the couple (will appear in the live guestbook)..."
                     value={rsvpWish}
                     onChange={(e) => setRsvpWish(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-white border border-[#c5a059]/60 text-xs text-[#1a1517] focus:outline-none focus:ring-2 focus:ring-[#800020] resize-none"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#c5a059]/60 text-xs text-[#1a1517] focus:outline-none focus:ring-2 focus:ring-[#800020] resize-none"
                   />
                 </div>
 
                 <button
                   type="submit"
                   disabled={!rsvpStatus || submittingRsvp}
-                  className="w-full py-3 rounded-xl btn-gold-shimmer text-xs font-cinzel font-bold uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg disabled:opacity-50 cursor-pointer"
+                  className="w-full py-3.5 rounded-xl btn-gold-shimmer text-xs font-cinzel font-bold uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg disabled:opacity-50 cursor-pointer"
                 >
                   <Send className="w-3.5 h-3.5" />
-                  {submittingRsvp ? "Submitting..." : "Send RSVP & Blessings"}
+                  {submittingRsvp ? "Submitting RSVP..." : "Submit RSVP & Wishes"}
                 </button>
               </form>
             )}
           </div>
 
-          {/* Blessing Illustration */}
+          {/* DIGITAL WISHES GUESTBOOK STREAM */}
+          <div className="my-10 p-6 rounded-3xl bg-gradient-to-b from-[#fffdfa] to-[#fbf6eb] border-2 border-[#c5a059]/50 shadow-xl">
+            <div className="text-center mb-6">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#800020]/10 text-[#800020] text-xs font-cinzel font-semibold mb-2">
+                <Heart className="w-3.5 h-3.5 text-[#c5a059] fill-[#c5a059]" /> Live Digital Guestbook
+              </div>
+              <h3 className="font-serif italic text-2xl sm:text-3xl text-[#6b0f24] font-bold">
+                Heartfelt Blessings & Wishes
+              </h3>
+              <p className="text-xs text-[#5a483e] mt-1">
+                Warm words from our beloved family, friends, and esteemed guests.
+              </p>
+            </div>
+
+            {loadingWishes ? (
+              <div className="text-center py-6 text-xs text-[#8c6a2b] font-cinzel">
+                Loading blessings...
+              </div>
+            ) : wishes.length === 0 ? (
+              <div className="text-center py-6 px-4 rounded-2xl bg-white/60 border border-[#c5a059]/30 text-xs text-[#5a483e] font-sans italic">
+                Be the first to leave a blessing for {settings.coupleNames} using the RSVP form above! 💖
+              </div>
+            ) : (
+              <div className="space-y-3 max-h-80 overflow-y-auto pr-1">
+                {wishes.map((w) => (
+                  <div
+                    key={w.id}
+                    className="p-4 rounded-2xl bg-white border border-[#c5a059]/40 shadow-sm flex items-start justify-between gap-3"
+                  >
+                    <div className="flex-1">
+                      <h5 className="font-cinzel text-xs font-bold text-[#800020]">
+                        {w.authorName}
+                      </h5>
+                      <p className="font-serif italic text-xs text-[#2a1d25] mt-1 leading-relaxed">
+                        &ldquo;{w.message}&rdquo;
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleLikeWish(w.id)}
+                      className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-cinzel transition cursor-pointer ${
+                        likedWishIds.includes(w.id)
+                          ? "bg-[#800020] text-white border border-[#c5a059]"
+                          : "bg-[#fbf6eb] text-[#800020] hover:bg-[#800020]/10 border border-[#c5a059]/30"
+                      }`}
+                    >
+                      <Heart
+                        className={`w-3 h-3 ${
+                          likedWishIds.includes(w.id) ? "fill-current text-[#dfba73]" : "text-[#800020]"
+                        }`}
+                      />
+                      <span>{w.likes}</span>
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+
+          {/* Blessing Illustration & Couple Moment */}
           <div className="my-8 text-center">
-            <Image
-              src="/images/couple-kneeling.png"
-              alt="Blessings from Couple"
-              width={260}
-              height={300}
-              className="mx-auto filter drop-shadow-md"
-            />
-            <p className="font-serif italic text-base sm:text-lg text-[#6b0f24] font-medium mt-4">
+            <div className="relative max-w-xs mx-auto rounded-2xl overflow-hidden border border-[#c5a059]/40 shadow-lg mb-4 group cursor-pointer" onClick={() => openLightbox(1)}>
+              <div className="relative h-48 w-full">
+                <Image
+                  src={blessingImageSrc}
+                  alt="Blessings from Couple"
+                  fill
+                  sizes="320px"
+                  className="object-cover transition duration-500 group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                <div className="absolute bottom-2 inset-x-0 text-center">
+                  <span className="text-[10px] font-cinzel text-[#edd892] uppercase tracking-widest font-semibold flex items-center justify-center gap-1">
+                    <Sparkles className="w-3 h-3 text-[#dfba73]" /> With Love & Gratitude
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <p className="font-serif italic text-base sm:text-lg text-[#6b0f24] font-medium mt-3">
               &ldquo;Your presence and blessings are sincerely appreciated.&rdquo;
             </p>
           </div>
@@ -668,6 +1293,76 @@ export default function InvitationView({
           </div>
         </div>
       </div>
+
+      {/* Fullscreen Luxury Darkroom Lightbox Modal */}
+      {isLightboxOpen && (
+        <div className="fixed inset-0 z-[999] bg-black/95 backdrop-blur-md flex flex-col items-center justify-between p-4 sm:p-8 animate-in fade-in duration-300">
+          {/* Top Bar: Counter & Close */}
+          <div className="w-full max-w-5xl flex items-center justify-between text-[#edd892] z-10">
+            <div className="flex items-center gap-2">
+              <span className="font-cinzel text-xs sm:text-sm font-semibold tracking-wider">
+                PHOTO {currentPhotoIndex + 1} OF {parsedGallery.length}
+              </span>
+              <span className="text-white/40">•</span>
+              <span className="text-xs text-[#dfba73] hidden sm:inline font-sans">
+                {parsedGallery[currentPhotoIndex]?.tag || "Wedding"}
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsLightboxOpen(false)}
+              className="p-2.5 rounded-full bg-white/10 hover:bg-[#800020] text-white border border-[#c5a059]/40 transition cursor-pointer shadow-lg"
+              title="Close (Esc)"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          {/* Main Photo Center Container */}
+          <div className="relative w-full max-w-4xl h-[60vh] sm:h-[72vh] flex items-center justify-center my-auto">
+            <Image
+              src={parsedGallery[currentPhotoIndex]?.src || heroImageSrc}
+              alt={parsedGallery[currentPhotoIndex]?.title || settings.coupleNames}
+              fill
+              sizes="(max-width: 1024px) 100vw, 1024px"
+              className="object-contain drop-shadow-2xl"
+              priority
+            />
+
+            {/* Left Nav */}
+            <button
+              type="button"
+              onClick={handlePrevPhoto}
+              className="absolute left-2 sm:-left-6 top-1/2 -translate-y-1/2 p-3 rounded-full bg-black/60 hover:bg-[#800020] text-white border border-[#c5a059]/50 transition cursor-pointer shadow-xl backdrop-blur-md"
+              title="Previous (Left Arrow)"
+            >
+              <ChevronLeft className="w-6 h-6" />
+            </button>
+
+            {/* Right Nav */}
+            <button
+              type="button"
+              onClick={handleNextPhoto}
+              className="absolute right-2 sm:-right-6 top-1/2 -translate-y-1/2 p-3 rounded-full bg-black/60 hover:bg-[#800020] text-white border border-[#c5a059]/50 transition cursor-pointer shadow-xl backdrop-blur-md"
+              title="Next (Right Arrow)"
+            >
+              <ChevronRight className="w-6 h-6" />
+            </button>
+          </div>
+
+          {/* Bottom Bar: Title & Subtitle */}
+          <div className="w-full max-w-xl text-center z-10">
+            <h4 className="font-cinzel text-lg sm:text-xl font-bold text-[#fff8ea]">
+              {parsedGallery[currentPhotoIndex]?.title}
+            </h4>
+            <p className="text-xs sm:text-sm text-[#edd892] font-sans mt-1 italic">
+              {parsedGallery[currentPhotoIndex]?.subtitle}
+            </p>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
+

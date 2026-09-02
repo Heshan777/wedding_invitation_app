@@ -1,4 +1,4 @@
-﻿import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { isAdminAuthenticated } from "@/lib/auth";
 
@@ -24,7 +24,17 @@ export async function PATCH(req: NextRequest) {
     venueAddress,
     venueLat,
     venueLng,
+    heroImageUrl,
+    galleryJson,
+    blessingImageUrl,
+    welcomeImageUrl,
+    placeCardImageUrl,
+    placeCardNote,
     musicUrl,
+    dressCodeTitle,
+    dressCodeDescription,
+    timelineJson,
+    contactPhone,
   } = body;
 
   const updated = await prisma.eventSettings.upsert({
@@ -36,9 +46,19 @@ export async function PATCH(req: NextRequest) {
       eventDate: eventDate ? new Date(eventDate) : undefined,
       venueName,
       venueAddress,
-      venueLat: venueLat ? Number(venueLat) : undefined,
-      venueLng: venueLng ? Number(venueLng) : undefined,
+      venueLat: venueLat !== undefined ? Number(venueLat) : undefined,
+      venueLng: venueLng !== undefined ? Number(venueLng) : undefined,
+      heroImageUrl,
+      galleryJson,
+      blessingImageUrl,
+      welcomeImageUrl,
+      placeCardImageUrl,
+      placeCardNote,
       musicUrl,
+      dressCodeTitle,
+      dressCodeDescription,
+      timelineJson,
+      contactPhone,
     },
     create: {
       id: "singleton",
@@ -50,9 +70,22 @@ export async function PATCH(req: NextRequest) {
       venueAddress: venueAddress || "Kadawatha",
       venueLat: Number(venueLat) || 7.00365,
       venueLng: Number(venueLng) || 79.9426,
+      heroImageUrl: heroImageUrl || "/images/couple-portrait-1.jpg",
+      galleryJson: galleryJson || null,
+      blessingImageUrl: blessingImageUrl || "/images/couple-portrait-2.jpg",
+      welcomeImageUrl: welcomeImageUrl || "/images/couple-welcome.jpg",
+      placeCardImageUrl: placeCardImageUrl || "/images/couple-sweet.jpg",
+      placeCardNote: placeCardNote || "Thank you for sharing our joy and celebrating with us!",
       musicUrl: musicUrl || "/audio/background.mp3",
+      dressCodeTitle: dressCodeTitle || "Royal Splendor & Black Tie",
+      dressCodeDescription: dressCodeDescription || "Traditional Sri Lankan elegance or formal evening attire in warm tones of gold, burgundy, and ivory.",
+      timelineJson: timelineJson || null,
+      contactPhone: contactPhone || "+94 77 123 4567",
     },
   });
 
   return NextResponse.json(updated);
 }
+
+
+

@@ -186,7 +186,115 @@
   animation-iteration-count: infinite;
 }
 
+/* 3D Envelope & Wax Seal Unfolding Animations */
+.perspective-1200 {
+  perspective: 1200px;
+}
+
+.preserve-3d {
+  transform-style: preserve-3d;
+}
+
+.backface-hidden {
+  backface-visibility: hidden;
+}
+
+@keyframes envelope-flap-open {
+  0% {
+    transform: rotateX(0deg);
+    z-index: 30;
+  }
+  50% {
+    transform: rotateX(90deg);
+    z-index: 30;
+  }
+  100% {
+    transform: rotateX(180deg);
+    z-index: 5;
+  }
+}
+
+.animate-flap-open {
+  transform-origin: top center;
+  animation: envelope-flap-open 0.85s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes card-slide-up {
+  0% {
+    transform: translateY(0) scale(0.95);
+    opacity: 0.9;
+  }
+  100% {
+    transform: translateY(-45%) scale(1.02);
+    opacity: 1;
+  }
+}
+
+.animate-card-slide-up {
+  animation: card-slide-up 1s 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes wax-seal-break {
+  0% {
+    transform: scale(1) rotate(0deg);
+    filter: brightness(1);
+  }
+  30% {
+    transform: scale(1.25) rotate(-5deg);
+    filter: brightness(1.8) drop-shadow(0 0 25px rgba(255, 215, 0, 0.9));
+  }
+  70% {
+    transform: scale(1.35) rotate(5deg);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0.4) rotate(15deg);
+    opacity: 0;
+  }
+}
+
+.animate-seal-break {
+  animation: wax-seal-break 0.7s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+@keyframes sparkle-twinkle {
+  0%, 100% {
+    opacity: 0.2;
+    transform: scale(0.8) translateY(0);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2) translateY(-8px);
+  }
+}
+
+.animate-sparkle {
+  animation: sparkle-twinkle 2.5s ease-in-out infinite;
+}
+
+@keyframes petal-float {
+  0% {
+    transform: translateY(-10vh) translateX(-15px) rotate(0deg) scale(0.8);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.85;
+  }
+  85% {
+    opacity: 0.85;
+  }
+  100% {
+    transform: translateY(115vh) translateX(35px) rotate(480deg) scale(1.1);
+    opacity: 0;
+  }
+}
+
+.animate-petal-float {
+  animation: petal-float 9s cubic-bezier(0.35, 0.1, 0.25, 1) infinite;
+}
+
 /* Custom Luxury Scrollbar */
+
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -204,4 +312,46 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #edd892;
 }
+
+/* Printable Banquet Table Place Cards */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 12mm;
+  }
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .printable-cards-container {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  .printable-cards-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 12mm !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  .printable-place-card {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    box-shadow: none !important;
+    border: 1.5px solid #c5a059 !important;
+    background: #fffdfa !important;
+    color: #1a1517 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
+
 

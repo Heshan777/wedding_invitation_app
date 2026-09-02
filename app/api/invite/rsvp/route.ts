@@ -1,9 +1,9 @@
-﻿import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 
 export async function POST(req: NextRequest) {
   try {
-    const { token, status, guestCount, message } = await req.json();
+    const { token, status, guestCount, attendeeCount, dietary, message } = await req.json();
 
     if (!token) {
       return NextResponse.json({ error: "Missing token" }, { status: 400 });
@@ -14,8 +14,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Guest not found" }, { status: 404 });
     }
 
-    // Format RSVP note
-    const rsvpEntry = `[RSVP: ${status.toUpperCase()} | Guests: ${guestCount || 1}${
+    const isAttending = String(status).toLowerCase() === "attending";
+    const finalRsvpStatus = isAttending ? "ATTENDING" : "DECLINED";
+    const finalCount = isAttending ? Math.max(1, Number(attendeeCount || guestCount || 1)) : 0;
+    const finalDietary = dietary || "NONE";
+
+    // Format RSVP note for compatibility
+    const rsvpEntry = `[RSVP: ${finalRsvpStatus} | Guests: ${finalCount} | Dietary: ${finalDietary}${
       message ? ` | Wish: "${message}"` : ""
     }]`;
     
@@ -25,10 +30,26 @@ export async function POST(req: NextRequest) {
     const updatedGuest = await prisma.guest.update({
       where: { id: guest.id },
       data: {
+        rsvpStatus: finalRsvpStatus,
+        attendeeCount: finalCount,
+        dietary: finalDietary,
+        rsvpMessage: message ? String(message).trim() : null,
+        rsvpSubmittedAt: new Date(),
         notes: updatedNotes,
         viewedAt: new Date(),
       },
     });
+
+    // If a sweet message was written, also publish to Guestbook
+    if (message && String(message).trim().length > 0) {
+      const author = guest.salutation ? `${guest.salutation} ${guest.displayName}` : guest.displayName;
+      await prisma.guestbookWish.create({
+        data: {
+          authorName: author,
+          message: String(message).trim(),
+        },
+      });
+    }
 
     return NextResponse.json({ success: true, guest: updatedGuest });
   } catch (err: any) {
@@ -36,3 +57,4 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Failed to record RSVP" }, { status: 500 });
   }
 }
+
