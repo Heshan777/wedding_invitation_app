@@ -2,13 +2,15 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import confetti from "canvas-confetti";
-import { Sparkles, Heart } from "lucide-react";
+import { Sparkles, Heart, Globe } from "lucide-react";
+import { translations, Locale } from "@/lib/translations";
 
 interface EnvelopeOpeningProps {
   guestName: string;
   salutation: string;
   coupleNames: string;
-  onOpen: () => void;
+  initialLocale?: Locale;
+  onOpen: (locale: Locale) => void;
 }
 
 // Synthesize a romantic royal harp chime using Web Audio API (100% reliable, zero external assets required)
@@ -49,17 +51,25 @@ export default function EnvelopeOpening({
   guestName,
   salutation,
   coupleNames,
+  initialLocale = "en",
   onOpen,
 }: EnvelopeOpeningProps) {
+  const [selectedLocale, setSelectedLocale] = useState<Locale>(initialLocale);
   const [isOpen, setIsOpen] = useState(false);
   const [isOpening, setIsOpening] = useState(false);
   const [hasDismissed, setHasDismissed] = useState(false);
   const [tilt, setTilt] = useState({ x: 0, y: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
 
+  const t = translations[selectedLocale];
+
   // Check if previously opened in this session to allow direct view on refresh if preferred
   useEffect(() => {
     const wasOpened = sessionStorage.getItem("invite_envelope_opened");
+    const savedLocale = sessionStorage.getItem("invite_locale") as Locale | null;
+    if (savedLocale && ["en", "si", "ta"].includes(savedLocale)) {
+      setSelectedLocale(savedLocale);
+    }
     if (wasOpened === "true") {
       setHasDismissed(true);
     }
@@ -90,6 +100,12 @@ export default function EnvelopeOpening({
     }
     return (coupleNames || "").slice(0, 2).toUpperCase() || "S & S";
   })();
+
+  const handleSelectLanguage = (e: React.MouseEvent, loc: Locale) => {
+    e.stopPropagation();
+    setSelectedLocale(loc);
+    sessionStorage.setItem("invite_locale", loc);
+  };
 
   const handleOpenEnvelope = () => {
     if (isOpening || isOpen) return;
@@ -144,7 +160,8 @@ export default function EnvelopeOpening({
     setTimeout(() => {
       setIsOpen(true);
       sessionStorage.setItem("invite_envelope_opened", "true");
-      onOpen();
+      sessionStorage.setItem("invite_locale", selectedLocale);
+      onOpen(selectedLocale);
     }, 550);
 
     // Smooth cinematic dissolve
@@ -157,7 +174,7 @@ export default function EnvelopeOpening({
 
   return (
     <div
-      className={`fixed inset-0 z-50 flex items-center justify-center bg-[#0d090c]/96 backdrop-blur-2xl transition-all duration-1000 overflow-hidden ${
+      className={`fixed inset-0 z-50 flex items-center justify-center bg-[#0d090c]/96 backdrop-blur-2xl transition-all duration-1000 overflow-y-auto p-4 ${
         isOpening && isOpen
           ? "opacity-0 pointer-events-none scale-110"
           : "opacity-100 scale-100"
@@ -219,17 +236,66 @@ export default function EnvelopeOpening({
         ref={containerRef}
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
-        className="relative z-10 w-full max-w-lg px-4 flex flex-col items-center select-none"
+        className="relative z-10 w-full max-w-lg px-2 flex flex-col items-center select-none my-auto py-6"
       >
+        {/* Language Selector Top Bar */}
+        <div className="flex flex-col items-center gap-2 mb-5">
+          <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/60 backdrop-blur-md border border-[#c5a059]/40 text-[#dfba73] text-[10px] sm:text-xs font-cinzel font-semibold shadow-lg">
+            <Globe className="w-3.5 h-3.5 text-[#ffd700]" />
+            <span>{t.selectLanguage}</span>
+          </div>
+
+          <div className="flex items-center gap-2 p-1 rounded-2xl bg-[#1a0f15]/90 border border-[#dfba73]/50 shadow-2xl backdrop-blur-md">
+            <button
+              type="button"
+              onClick={(e) => handleSelectLanguage(e, "en")}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-cinzel font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                selectedLocale === "en"
+                  ? "bg-gradient-to-r from-[#800020] to-[#6b0f24] text-[#ffd700] border border-[#ffd700] shadow-[0_0_15px_rgba(223,186,115,0.5)] scale-105"
+                  : "text-[#edd892]/70 hover:text-[#ffd700] hover:bg-white/5"
+              }`}
+            >
+              <span>🇬🇧</span>
+              <span>English</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={(e) => handleSelectLanguage(e, "si")}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-cinzel font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                selectedLocale === "si"
+                  ? "bg-gradient-to-r from-[#800020] to-[#6b0f24] text-[#ffd700] border border-[#ffd700] shadow-[0_0_15px_rgba(223,186,115,0.5)] scale-105"
+                  : "text-[#edd892]/70 hover:text-[#ffd700] hover:bg-white/5"
+              }`}
+            >
+              <span>🇱🇰</span>
+              <span>සිංහල</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={(e) => handleSelectLanguage(e, "ta")}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-cinzel font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                selectedLocale === "ta"
+                  ? "bg-gradient-to-r from-[#800020] to-[#6b0f24] text-[#ffd700] border border-[#ffd700] shadow-[0_0_15px_rgba(223,186,115,0.5)] scale-105"
+                  : "text-[#edd892]/70 hover:text-[#ffd700] hover:bg-white/5"
+              }`}
+            >
+              <span>🌺</span>
+              <span>தமிழ்</span>
+            </button>
+          </div>
+        </div>
+
         {/* Header Ribbon & Monogram */}
-        <div className="flex items-center gap-3 mb-6">
-          <div className="h-px w-12 sm:w-16 bg-gradient-to-r from-transparent via-[#dfba73] to-[#c5a059]" />
-          <span className="text-[#dfba73] text-xs sm:text-sm uppercase tracking-[0.35em] font-cinzel font-bold flex items-center gap-2 drop-shadow-md">
-            <Sparkles className="w-3.5 h-3.5 text-[#edd892] animate-spin-slow" />
-            Royal Wedding Invitation
-            <Sparkles className="w-3.5 h-3.5 text-[#edd892] animate-spin-slow" />
+        <div className="flex items-center gap-3 mb-5">
+          <div className="h-px w-10 sm:w-16 bg-gradient-to-r from-transparent via-[#dfba73] to-[#c5a059]" />
+          <span className="text-[#dfba73] text-xs sm:text-sm uppercase tracking-[0.3em] font-cinzel font-bold flex items-center gap-2 drop-shadow-md text-center">
+            <Sparkles className="w-3.5 h-3.5 text-[#edd892] animate-spin-slow flex-shrink-0" />
+            <span>{t.royalInvitation}</span>
+            <Sparkles className="w-3.5 h-3.5 text-[#edd892] animate-spin-slow flex-shrink-0" />
           </span>
-          <div className="h-px w-12 sm:w-16 bg-gradient-to-l from-transparent via-[#dfba73] to-[#c5a059]" />
+          <div className="h-px w-10 sm:w-16 bg-gradient-to-l from-transparent via-[#dfba73] to-[#c5a059]" />
         </div>
 
         {/* 3D Realistic Royal Envelope Wrapper */}
@@ -263,8 +329,8 @@ export default function EnvelopeOpening({
               <div className="absolute inset-1.5 rounded-xl border border-[#c5a059]/40 pointer-events-none" />
 
               <div className="pt-1">
-                <span className="text-[10px] uppercase tracking-[0.3em] text-[#8c6a2b] font-cinzel font-bold block">
-                  Specially Prepared For
+                <span className="text-[10px] uppercase tracking-[0.25em] text-[#8c6a2b] font-cinzel font-bold block">
+                  {t.speciallyPreparedFor}
                 </span>
                 <h2 className="font-serif italic text-2xl sm:text-3xl text-[#6b0f24] font-bold mt-1 tracking-wide leading-snug drop-shadow-xs">
                   {salutation} {guestName}
@@ -279,14 +345,14 @@ export default function EnvelopeOpening({
                 <div className="flex items-center justify-center gap-2 mt-1">
                   <div className="h-px w-8 bg-[#c5a059]/60" />
                   <span className="text-[10px] uppercase font-cinzel text-[#8c6a2b] tracking-widest font-semibold">
-                    Homecoming Celebration
+                    {t.homecomingCelebration}
                   </span>
                   <div className="h-px w-8 bg-[#c5a059]/60" />
                 </div>
               </div>
 
               <div className="text-[10px] font-cinzel font-semibold text-[#8c6a2b] pb-0.5 tracking-wider">
-                ✧ You Are Cordially Invited ✧
+                {t.cordiallyInvited}
               </div>
             </div>
 
@@ -343,8 +409,8 @@ export default function EnvelopeOpening({
 
               {/* Gentle Tap Hint */}
               {!isOpening && (
-                <span className="mt-2.5 px-3 py-0.5 rounded-full bg-black/60 backdrop-blur-sm border border-[#dfba73]/40 text-[#dfba73] text-[9px] font-cinzel tracking-widest uppercase font-semibold animate-pulse shadow">
-                  Tap to Break Seal
+                <span className="mt-2.5 px-3 py-0.5 rounded-full bg-black/60 backdrop-blur-sm border border-[#dfba73]/40 text-[#dfba73] text-[9px] font-cinzel tracking-widest uppercase font-semibold animate-pulse shadow text-center line-clamp-1 max-w-[160px]">
+                  {t.tapToBreakSeal}
                 </span>
               )}
             </div>
@@ -356,14 +422,13 @@ export default function EnvelopeOpening({
         <button
           onClick={handleOpenEnvelope}
           disabled={isOpening}
-          className="mt-8 btn-gold-shimmer px-9 py-3.5 rounded-full font-cinzel text-xs sm:text-sm tracking-[0.2em] uppercase font-bold flex items-center justify-center gap-2.5 shadow-[0_10px_25px_rgba(197,160,89,0.35)] hover:scale-105 active:scale-95 transition cursor-pointer border border-[#fff2cf]/50"
+          className="mt-6 btn-gold-shimmer px-8 sm:px-9 py-3.5 rounded-full font-cinzel text-xs sm:text-sm tracking-[0.15em] uppercase font-bold flex items-center justify-center gap-2.5 shadow-[0_10px_25px_rgba(197,160,89,0.35)] hover:scale-105 active:scale-95 transition cursor-pointer border border-[#fff2cf]/50"
         >
-          <Sparkles className="w-4 h-4 text-[#1a1517]" />
-          <span>{isOpening ? "Unfolding Royal Invitation..." : "Tap to Open Invitation"}</span>
-          <Sparkles className="w-4 h-4 text-[#1a1517]" />
+          <Sparkles className="w-4 h-4 text-[#1a1517] flex-shrink-0" />
+          <span className="text-center">{isOpening ? t.openingInvitation : t.tapToOpen}</span>
+          <Sparkles className="w-4 h-4 text-[#1a1517] flex-shrink-0" />
         </button>
       </div>
     </div>
   );
 }
-

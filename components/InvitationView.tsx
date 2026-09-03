@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-
 import Image from "next/image";
 import QRCode from "qrcode";
 import confetti from "canvas-confetti";
@@ -32,6 +31,7 @@ import {
   Volume2,
   VolumeX,
   Film,
+  Globe,
 } from "lucide-react";
 import CountdownTimer from "./CountdownTimer";
 import VenueMap from "./VenueMap";
@@ -40,6 +40,7 @@ import MusicPlayer from "./MusicPlayer";
 import EnvelopeOpening from "./EnvelopeOpening";
 import { formatEventDate } from "@/lib/date";
 import { generateICS } from "@/lib/calendar";
+import { translations, Locale } from "@/lib/translations";
 
 type Guest = {
   id?: string;
@@ -99,7 +100,6 @@ function getVimeoEmbedUrl(url: string) {
   return null;
 }
 
-
 type GuestbookWish = {
   id: string;
   authorName: string;
@@ -107,9 +107,6 @@ type GuestbookWish = {
   likes: number;
   createdAt: string;
 };
-
-
-
 
 const coupleGallery = [
   {
@@ -138,16 +135,6 @@ const coupleGallery = [
   },
 ];
 
-const timelineEvents = [
-  { time: "06:30 PM", title: "Guest Arrival & Welcome", desc: "Welcome drinks & traditional Sri Lankan treats" },
-  { time: "07:00 PM", title: "Sacred Poruwa Ceremony", desc: "Auspicious blessings & cultural rituals" },
-  { time: "07:30 PM", title: "Grand Couple Entrance", desc: "Welcoming the newly wedded couple with fireworks" },
-  { time: "08:00 PM", title: "Cake Cutting & Champagne Toast", desc: "Celebratory words & raising glasses to love" },
-  { time: "08:30 PM", title: "Dinner Buffet Banquet", desc: "Lavish multi-cuisine dining experience" },
-  { time: "09:30 PM", title: "Music, DJ & Dancing", desc: "Let the celebrations and dance floor begin!" },
-];
-
-
 function formatInviteLine(guest: Guest) {
   if (guest.inviteType === "FAMILY") {
     return `${guest.salutation} ${guest.displayName} and Family`;
@@ -162,6 +149,7 @@ export default function InvitationView({
   guest: Guest;
   settings: Settings;
 }) {
+  const [locale, setLocale] = useState<Locale>("en");
   const [copiedAddress, setCopiedAddress] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [qrDataUrl, setQrDataUrl] = useState<string>("");
@@ -181,6 +169,20 @@ export default function InvitationView({
   const heroVideoRef = useRef<HTMLVideoElement>(null);
   const modalVideoRef = useRef<HTMLVideoElement>(null);
 
+  // Read saved locale on mount
+  useEffect(() => {
+    const savedLocale = sessionStorage.getItem("invite_locale") as Locale | null;
+    if (savedLocale && ["en", "si", "ta"].includes(savedLocale)) {
+      setLocale(savedLocale);
+    }
+  }, []);
+
+  const handleLanguageChange = (newLocale: Locale) => {
+    setLocale(newLocale);
+    sessionStorage.setItem("invite_locale", newLocale);
+  };
+
+  const t = translations[locale] || translations.en;
 
   const youtubeEmbedUrl = settings.heroVideoUrl ? getYouTubeEmbedUrl(settings.heroVideoUrl) : null;
   const vimeoEmbedUrl = settings.heroVideoUrl ? getVimeoEmbedUrl(settings.heroVideoUrl) : null;
@@ -223,7 +225,6 @@ export default function InvitationView({
   }
 
   // RSVP Form state
-
   const [rsvpStatus, setRsvpStatus] = useState<"attending" | "declined" | "">(
     guest.rsvpStatus === "ATTENDING" ? "attending" : guest.rsvpStatus === "DECLINED" ? "declined" : ""
   );
@@ -240,7 +241,6 @@ export default function InvitationView({
   const [wishes, setWishes] = useState<GuestbookWish[]>([]);
   const [loadingWishes, setLoadingWishes] = useState(false);
   const [likedWishIds, setLikedWishIds] = useState<string[]>([]);
-  const [calendarMenuOpen, setCalendarMenuOpen] = useState(false);
 
   async function loadWishes() {
     try {
@@ -250,8 +250,8 @@ export default function InvitationView({
         const data = await res.json();
         setWishes(Array.isArray(data) ? data : []);
       }
-    } catch (err) {
-      console.error(err);
+    } catch {
+      // ignore
     } finally {
       setLoadingWishes(false);
     }
@@ -267,19 +267,47 @@ export default function InvitationView({
     setWishes((prev) =>
       prev.map((w) => (w.id === wishId ? { ...w, likes: w.likes + 1 } : w))
     );
+
     try {
-      await fetch("/api/wishes", {
-        method: "POST",
+      await fetch(`/api/wishes`, {
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "like", id: wishId }),
+        body: JSON.stringify({ id: wishId }),
       });
-    } catch {}
+    } catch {
+      // rollback if failed
+    }
   }
 
-  const date = formatEventDate(settings.eventDate);
-  const eventDateObj = new Date(settings.eventDate);
+  // Parse Gallery items if customized in settings
+  const parsedGallery = (() => {
+    if (settings.galleryJson) {
+      try {
+        const parsed = JSON.parse(settings.galleryJson);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch {}
+    }
+    return coupleGallery;
+  })();
 
-  // Dynamically compute monogram initials from coupleNames
+  // Parse Timeline items if customized in settings
+  const parsedTimeline = (() => {
+    if (settings.timelineJson) {
+      try {
+        const parsed = JSON.parse(settings.timelineJson);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch {}
+    }
+    return t.defaultTimeline;
+  })();
+
+  const date = formatEventDate(settings.eventDate);
+  const heroImageSrc = settings.heroImageUrl || "/images/couple-portrait-1.jpg";
+  const welcomeImageSrc = settings.welcomeImageUrl || "/images/couple-welcome.jpg";
+  const placeCardImageSrc = settings.placeCardImageUrl || "/images/couple-sweet.jpg";
+  const blessingImageSrc = settings.blessingImageUrl || "/images/couple-portrait-2.jpg";
+  const placeCardNote = settings.placeCardNote || t.cantWaitToWelcome;
+
   const monogram = (() => {
     const parts = (settings.coupleNames || "").split(/&|and|\+/i).map((s) => s.trim()).filter(Boolean);
     if (parts.length >= 2) {
@@ -292,95 +320,13 @@ export default function InvitationView({
     return (settings.coupleNames || "").slice(0, 2).toUpperCase() || "S & S";
   })();
 
-  // Parse custom gallery from settings or fallback to coupleGallery presets
-  const parsedGallery = (() => {
-    if (settings.galleryJson) {
-      try {
-        const parsed = JSON.parse(settings.galleryJson);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      } catch {}
-    }
-    return coupleGallery;
-  })();
-
-  // Parse custom timeline or fallback to default
-  const parsedTimeline = (() => {
-    if (settings.timelineJson) {
-      try {
-        const parsed = JSON.parse(settings.timelineJson);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      } catch {}
-    }
-    return timelineEvents;
-  })();
-
-  const heroImageSrc = settings.heroImageUrl || parsedGallery[0]?.src || "/images/couple-portrait-1.jpg";
-  const blessingImageSrc = settings.blessingImageUrl || parsedGallery[1]?.src || "/images/couple-portrait-2.jpg";
-  const welcomeImageSrc = settings.welcomeImageUrl || "/images/couple-welcome.jpg";
-  const placeCardImageSrc = settings.placeCardImageUrl || "/images/couple-sweet.jpg";
-  const placeCardNote = settings.placeCardNote || "Thank you for sharing our joy and celebrating with us!";
-
-  const [activeReaction, setActiveReaction] = useState<string | null>(null);
-
-  const triggerReaction = (type: "love" | "cheers" | "bless") => {
-    setActiveReaction(type);
-    if (type === "love") {
-      setLoveCount((prev) => prev + 1);
-      confetti({
-        particleCount: 45,
-        spread: 60,
-        origin: { y: 0.6 },
-        colors: ["#ff4d6d", "#c5a059", "#dfba73", "#ffffff"],
-      });
-    } else if (type === "cheers") {
-      setLoveCount((prev) => prev + 1);
-      confetti({
-        particleCount: 50,
-        spread: 70,
-        origin: { y: 0.6 },
-        colors: ["#ffd700", "#c5a059", "#ffffff", "#800020"],
-      });
-    } else {
-      setLoveCount((prev) => prev + 1);
-      confetti({
-        particleCount: 40,
-        spread: 55,
-        origin: { y: 0.6 },
-        colors: ["#dfba73", "#ffc0cb", "#fff8ea", "#c5a059"],
-      });
-    }
-  };
-
-  // Lightbox keyboard navigation
-  useEffect(() => {
-    if (!isLightboxOpen) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setIsLightboxOpen(false);
-      if (e.key === "ArrowLeft") handlePrevPhoto();
-      if (e.key === "ArrowRight") handleNextPhoto();
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isLightboxOpen, parsedGallery.length]);
-
-  const handleSendLove = () => {
-    if (!hasLiked) {
-      setLoveCount((prev) => prev + 1);
-      setHasLiked(true);
-      confetti({
-        particleCount: 40,
-        spread: 50,
-        origin: { y: 0.6 },
-        colors: ["#ff4d6d", "#c5a059", "#dfba73", "#ffffff"],
-      });
-    }
-  };
-
-  const handlePrevPhoto = () => {
+  const handlePrevPhoto = (e: React.MouseEvent) => {
+    e.stopPropagation();
     setCurrentPhotoIndex((prev) => (prev === 0 ? parsedGallery.length - 1 : prev - 1));
   };
 
-  const handleNextPhoto = () => {
+  const handleNextPhoto = (e: React.MouseEvent) => {
+    e.stopPropagation();
     setCurrentPhotoIndex((prev) => (prev === parsedGallery.length - 1 ? 0 : prev + 1));
   };
 
@@ -389,41 +335,82 @@ export default function InvitationView({
     setIsLightboxOpen(true);
   };
 
-  // Map URLs
-  const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${settings.venueLat},${settings.venueLng}`;
-  const appleMapsUrl = `https://maps.apple.com/?daddr=${settings.venueLat},${settings.venueLng}&q=${encodeURIComponent(
-    settings.venueName
-  )}`;
+  // Keyboard navigation for Lightbox
+  useEffect(() => {
+    if (!isLightboxOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setIsLightboxOpen(false);
+      if (e.key === "ArrowLeft") setCurrentPhotoIndex((prev) => (prev === 0 ? parsedGallery.length - 1 : prev - 1));
+      if (e.key === "ArrowRight") setCurrentPhotoIndex((prev) => (prev === parsedGallery.length - 1 ? 0 : prev + 1));
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isLightboxOpen, parsedGallery.length]);
+
+  const handleSendLove = () => {
+    if (hasLiked) return;
+    setHasLiked(true);
+    setLoveCount((prev) => prev + 1);
+
+    confetti({
+      particleCount: 45,
+      spread: 60,
+      origin: { y: 0.8 },
+      colors: ["#800020", "#c5a059", "#dfba73", "#ffccd5"],
+    });
+  };
+
+  const triggerReaction = (type: "love" | "cheers" | "bless") => {
+    const colors =
+      type === "love"
+        ? ["#e63956", "#ff758f", "#ffd700"]
+        : type === "cheers"
+        ? ["#dfba73", "#ffd700", "#ffffff"]
+        : ["#9e1b32", "#ffd700", "#e63956"];
+
+    confetti({
+      particleCount: 50,
+      spread: 70,
+      origin: { y: 0.65 },
+      colors,
+    });
+  };
+
+  // Maps and navigation URLs
+  const encodedVenue = encodeURIComponent(`${settings.venueName}, ${settings.venueAddress}`);
+  const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${settings.venueLat},${settings.venueLng}`;
+  const appleMapsUrl = `https://maps.apple.com/?q=${encodedVenue}&ll=${settings.venueLat},${settings.venueLng}`;
   const wazeUrl = `https://waze.com/ul?ll=${settings.venueLat},${settings.venueLng}&navigate=yes`;
   const uberUrl = `https://m.uber.com/ul/?action=setPickup&pickup=my_location&dropoff[latitude]=${settings.venueLat}&dropoff[longitude]=${settings.venueLng}&dropoff[nickname]=${encodeURIComponent(
     settings.venueName
   )}`;
 
   // Google Calendar direct web URL
+  const eventDateObj = new Date(settings.eventDate);
   const gCalStart = eventDateObj.toISOString().replace(/-|:|\.\d\d\d/g, "");
   const gCalEnd = new Date(eventDateObj.getTime() + 5 * 60 * 60 * 1000)
     .toISOString()
     .replace(/-|:|\.\d\d\d/g, "");
   const googleCalendarWebUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(
-    `${settings.coupleNames} — Wedding & Homecoming`
+    `${settings.coupleNames} — ${t.homecomingCelebration}`
   )}&dates=${gCalStart}/${gCalEnd}&details=${encodeURIComponent(
-    `Homecoming celebration for ${settings.coupleNames}`
+    `${t.homecomingCelebration} for ${settings.coupleNames}`
   )}&location=${encodeURIComponent(
     `${settings.venueName}, ${settings.venueAddress}`
   )}`;
 
   const yahooCalendarWebUrl = `https://calendar.yahoo.com/?v=60&title=${encodeURIComponent(
-    `${settings.coupleNames} — Wedding & Homecoming`
+    `${settings.coupleNames} — ${t.homecomingCelebration}`
   )}&st=${gCalStart}&et=${gCalEnd}&desc=${encodeURIComponent(
-    `Homecoming celebration for ${settings.coupleNames}`
+    `${t.homecomingCelebration} for ${settings.coupleNames}`
   )}&in_loc=${encodeURIComponent(`${settings.venueName}, ${settings.venueAddress}`)}`;
 
   const outlookCalendarWebUrl = `https://outlook.live.com/calendar/0/deeplink/compose?path=/calendar/action/compose&rru=addevent&subject=${encodeURIComponent(
-    `${settings.coupleNames} — Wedding & Homecoming`
+    `${settings.coupleNames} — ${t.homecomingCelebration}`
   )}&startdt=${eventDateObj.toISOString()}&enddt=${new Date(
     eventDateObj.getTime() + 5 * 60 * 60 * 1000
   ).toISOString()}&body=${encodeURIComponent(
-    `Homecoming celebration for ${settings.coupleNames}`
+    `${t.homecomingCelebration} for ${settings.coupleNames}`
   )}&location=${encodeURIComponent(`${settings.venueName}, ${settings.venueAddress}`)}`;
 
   // Generate dynamic QR Code for guest VIP pass
@@ -447,7 +434,8 @@ export default function InvitationView({
     );
   }, [guest.token]);
 
-  const handleOpenEnvelope = () => {
+  const handleOpenEnvelope = (selectedLocale: Locale) => {
+    setLocale(selectedLocale);
     setEnvelopeOpened(true);
     // Broadcast event to start music player
     if (typeof window !== "undefined") {
@@ -472,7 +460,7 @@ export default function InvitationView({
   };
 
   const handleShareWhatsApp = () => {
-    const text = `✨ You are warmly invited to celebrate the Homecoming ceremony of *${settings.coupleNames}*! 🥂🍾\n\nView the personalized invitation here:\n${
+    const text = `✨ ${t.cordiallyInvited}\n\n*${settings.coupleNames}* — ${t.homecomingCelebration}! 🥂🍾\n\n${t.tapToOpen}:\n${
       typeof window !== "undefined" ? window.location.href : ""
     }`;
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
@@ -480,8 +468,8 @@ export default function InvitationView({
 
   const handleDownloadICS = () => {
     generateICS({
-      title: `${settings.coupleNames} — Homecoming Celebration`,
-      description: `Homecoming celebration for ${settings.coupleNames}. We look forward to celebrating with you!`,
+      title: `${settings.coupleNames} — ${t.homecomingCelebration}`,
+      description: `${t.homecomingCelebration} for ${settings.coupleNames}. ${t.cantWaitToWelcome}`,
       location: `${settings.venueName}, ${settings.venueAddress}`,
       startDate: settings.eventDate,
       durationHours: 5,
@@ -524,7 +512,6 @@ export default function InvitationView({
     }
   };
 
-
   return (
     <div className="relative min-h-screen bg-[#121013] text-[#fdfbf7] selection:bg-[#c5a059]/30 selection:text-[#f7e4be] overflow-x-hidden">
       {/* 3D Wax Seal Envelope Entrance Overlay */}
@@ -532,11 +519,31 @@ export default function InvitationView({
         guestName={guest.displayName}
         salutation={guest.salutation}
         coupleNames={settings.coupleNames}
+        initialLocale={locale}
         onOpen={handleOpenEnvelope}
       />
 
       {/* Floating Animated Rose Petals & Gold Sparkles */}
       <FallingDecor />
+
+      {/* Floating Luxury Language Switcher */}
+      <div className="fixed top-4 right-4 z-40 flex items-center gap-1 p-1 rounded-full bg-[#181114]/90 border border-[#dfba73]/60 shadow-[0_4px_20px_rgba(0,0,0,0.6)] backdrop-blur-md">
+        {(["en", "si", "ta"] as Locale[]).map((loc) => (
+          <button
+            key={loc}
+            type="button"
+            onClick={() => handleLanguageChange(loc)}
+            className={`px-3 py-1 rounded-full text-xs font-cinzel font-bold transition-all cursor-pointer flex items-center gap-1 ${
+              locale === loc
+                ? "bg-gradient-to-r from-[#800020] to-[#6b0f24] text-[#ffd700] border border-[#ffd700] shadow-md scale-105"
+                : "text-[#edd892]/70 hover:text-[#ffd700]"
+            }`}
+          >
+            <span>{translations[loc].langFlag}</span>
+            <span className="hidden sm:inline">{translations[loc].langName}</span>
+          </button>
+        ))}
+      </div>
 
       {/* Luxury Vinyl Disc Background Music Player */}
       <MusicPlayer src={settings.musicUrl || "/audio/background.mp3"} />
@@ -563,10 +570,10 @@ export default function InvitationView({
               </span>
             </div>
             <p className="text-[11px] sm:text-xs uppercase tracking-[0.35em] text-[#8c6a2b] font-cinzel font-semibold">
-              The Royal Homecoming Celebration
+              {t.royalHomecoming}
             </p>
             <h1 className="font-serif italic text-4xl sm:text-5xl text-[#6b0f24] font-bold mt-1 tracking-tight">
-              Invitation
+              {t.invitationTitle}
             </h1>
           </div>
 
@@ -578,7 +585,7 @@ export default function InvitationView({
           </div>
 
           <p className="text-center text-sm sm:text-base text-[#3d3238] font-sans leading-relaxed mb-4">
-            Together with our families, we cordially invite you to celebrate the joyous union & homecoming of
+            {t.familyIntro}
           </p>
 
           {/* Interactive Pre-Shoot Film / Couple Photo Switcher Pills */}
@@ -594,7 +601,7 @@ export default function InvitationView({
                 }`}
               >
                 <Film className="w-3.5 h-3.5 text-[#ffd700]" />
-                <span>Pre-Shoot Film</span>
+                <span>{t.preshootFilm}</span>
               </button>
               <button
                 type="button"
@@ -606,7 +613,7 @@ export default function InvitationView({
                 }`}
               >
                 <Camera className="w-3.5 h-3.5 text-[#dfba73]" />
-                <span>Couple Portrait</span>
+                <span>{t.couplePortrait}</span>
               </button>
             </div>
           )}
@@ -617,12 +624,11 @@ export default function InvitationView({
               {settings.heroVideoUrl && mediaMode === "video" ? (
                 /* PRE-SHOOT CINEMATIC VIDEO MODE */
                 <div className="relative w-full overflow-hidden bg-black">
-
                   {youtubeEmbedUrl ? (
                     <div className="relative aspect-video w-full">
                       <iframe
                         src={youtubeEmbedUrl}
-                        title="Couple Pre-Shoot Cinematic Trailer"
+                        title={t.preshootTrailerTitle}
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                         allowFullScreen
                         className="w-full h-full border-0"
@@ -632,7 +638,7 @@ export default function InvitationView({
                     <div className="relative aspect-video w-full">
                       <iframe
                         src={vimeoEmbedUrl}
-                        title="Couple Pre-Shoot Cinematic Film"
+                        title={t.preshootTrailerTitle}
                         allow="autoplay; fullscreen; picture-in-picture"
                         allowFullScreen
                         className="w-full h-full border-0"
@@ -659,7 +665,7 @@ export default function InvitationView({
                       <div className="absolute top-3 inset-x-3 flex items-center justify-between z-20 pointer-events-auto">
                         <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/60 backdrop-blur-md border border-[#dfba73]/50 text-[#edd892] text-[10px] sm:text-xs font-cinzel font-semibold shadow-lg">
                           <Film className="w-3.5 h-3.5 text-[#ffd700]" />
-                          <span>Pre-Shoot Film</span>
+                          <span>{t.preshootFilm}</span>
                         </div>
 
                         <div className="flex items-center gap-1.5">
@@ -672,17 +678,17 @@ export default function InvitationView({
                                 ? "bg-black/60 text-[#dfba73] border-[#c5a059]/40 hover:bg-[#800020]"
                                 : "bg-[#800020] text-[#fffdfa] border-[#ffd700] shadow-[0_0_15px_rgba(223,186,115,0.6)]"
                             }`}
-                            title={isVideoMuted ? "Unmute Sound" : "Mute Sound"}
+                            title={isVideoMuted ? t.unmute : t.soundOn}
                           >
                             {isVideoMuted ? (
                               <>
                                 <VolumeX className="w-3.5 h-3.5" />
-                                <span className="text-[10px] hidden sm:inline">Unmute</span>
+                                <span className="text-[10px] hidden sm:inline">{t.unmute}</span>
                               </>
                             ) : (
                               <>
                                 <Volume2 className="w-3.5 h-3.5 text-[#ffd700] animate-pulse" />
-                                <span className="text-[10px] hidden sm:inline">Sound On</span>
+                                <span className="text-[10px] hidden sm:inline">{t.soundOn}</span>
                               </>
                             )}
                           </button>
@@ -692,7 +698,7 @@ export default function InvitationView({
                             type="button"
                             onClick={openCinemaTheater}
                             className="p-2 rounded-full bg-black/60 hover:bg-[#800020] text-[#edd892] backdrop-blur-md border border-[#c5a059]/40 transition shadow-lg cursor-pointer"
-                            title="Open Cinema Theater"
+                            title={t.cinemaTheater}
                           >
                             <Maximize2 className="w-4 h-4" />
                           </button>
@@ -704,7 +710,7 @@ export default function InvitationView({
                         type="button"
                         onClick={openCinemaTheater}
                         className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 p-4 sm:p-5 rounded-full bg-[#800020]/85 hover:bg-[#6b0f24] text-[#fffdfa] border-2 border-[#ffd700] shadow-[0_0_35px_rgba(223,186,115,0.7)] backdrop-blur-md flex items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95 cursor-pointer z-10 group/btn"
-                        title="Watch Full Cinematic Video"
+                        title={t.watchLoveStory}
                       >
                         <Play className="w-6 h-6 sm:w-7 sm:h-7 fill-[#ffd700] text-[#ffd700] ml-1 transition-transform group-hover/btn:scale-110" />
                         <span className="absolute -inset-2 rounded-full border border-[#ffd700]/50 animate-ping opacity-30 pointer-events-none" />
@@ -713,7 +719,7 @@ export default function InvitationView({
                       {/* Couple Names Calligraphy Overlaid at base of video */}
                       <div className="absolute bottom-0 inset-x-0 p-4 sm:p-6 text-center text-[#fdfbf7] pointer-events-none z-10">
                         <p className="text-[10px] sm:text-xs uppercase tracking-[0.3em] text-[#edd892] font-cinzel font-semibold mb-1 drop-shadow">
-                          Pre-Shoot Cinematic Trailer
+                          {t.preshootTrailerTitle}
                         </p>
                         <div className="flex items-center justify-center gap-2 sm:gap-3 flex-wrap">
                           <h2 className="font-serif italic text-3xl sm:text-4xl text-[#fff8ea] font-bold tracking-tight drop-shadow-lg">
@@ -751,7 +757,7 @@ export default function InvitationView({
                     type="button"
                     onClick={() => openLightbox(0)}
                     className="absolute top-3 right-3 z-10 p-2 rounded-full bg-black/40 hover:bg-[#800020] text-[#edd892] backdrop-blur-md border border-[#c5a059]/40 transition shadow-lg cursor-pointer"
-                    title="View Fullscreen"
+                    title={t.couplePortrait}
                   >
                     <Maximize2 className="w-4 h-4" />
                   </button>
@@ -759,7 +765,7 @@ export default function InvitationView({
                   {/* Couple Names Calligraphy Overlaid at base of photo */}
                   <div className="absolute bottom-0 inset-x-0 p-4 sm:p-6 text-center text-[#fdfbf7]">
                     <p className="text-[10px] sm:text-xs uppercase tracking-[0.3em] text-[#edd892] font-cinzel font-semibold mb-1">
-                      The Happy Couple
+                      {t.happyCouple}
                     </p>
                     <div className="flex items-center justify-center gap-2 sm:gap-3 flex-wrap">
                       <h2 className="font-serif italic text-3xl sm:text-4xl text-[#fff8ea] font-bold tracking-tight drop-shadow-md">
@@ -776,8 +782,6 @@ export default function InvitationView({
             </div>
           </div>
 
-
-
           {/* Host Intro */}
           <p className="text-center text-sm sm:text-base text-[#3d3238] font-sans leading-relaxed my-6 px-2">
             {settings.hostIntro}
@@ -786,7 +790,7 @@ export default function InvitationView({
           {/* Personalized Guest Salutation Card */}
           <div className="relative my-6 rounded-2xl bg-gradient-to-r from-[#800020] via-[#6b0f24] to-[#420614] p-5 text-center text-[#fdfbf7] shadow-xl border border-[#dfba73]/40">
             <div className="text-[10px] uppercase tracking-[0.25em] text-[#edd892] font-cinzel font-semibold mb-1">
-              Honoured Guest
+              {t.honouredGuest}
             </div>
             <div className="font-serif italic text-2xl sm:text-3xl font-bold tracking-wide">
               {formatInviteLine(guest)}
@@ -806,7 +810,7 @@ export default function InvitationView({
               <div className="relative w-32 h-32 sm:w-40 sm:h-40 rounded-full overflow-hidden border-4 border-[#dfba73] shadow-[0_0_25px_rgba(223,186,115,0.4)] flex-shrink-0 group">
                 <Image
                   src={welcomeImageSrc}
-                  alt="Warm Welcome from Couple"
+                  alt={t.cantWaitToWelcome}
                   fill
                   sizes="160px"
                   className="object-cover transition duration-700 group-hover:scale-110"
@@ -817,13 +821,13 @@ export default function InvitationView({
               {/* Sweet Welcome Narrative */}
               <div className="text-center sm:text-left flex-1">
                 <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#800020]/80 text-[#edd892] text-[10px] sm:text-xs font-cinzel font-semibold mb-2 border border-[#dfba73]/40">
-                  <Heart className="w-3.5 h-3.5 fill-[#ffd700] text-[#ffd700]" /> With All Our Love
+                  <Heart className="w-3.5 h-3.5 fill-[#ffd700] text-[#ffd700]" /> {t.withAllOurLove}
                 </div>
                 <h3 className="font-serif italic text-2xl sm:text-3xl text-[#fff8ea] font-bold">
-                  We Can&apos;t Wait to Welcome You!
+                  {t.cantWaitToWelcome}
                 </h3>
                 <p className="font-sans text-xs sm:text-sm text-[#edd892]/90 leading-relaxed mt-2">
-                  Dearest <span className="font-semibold text-white">{formatInviteLine(guest)}</span>, having your gracious presence and blessings on our most auspicious day fills our hearts with immense happiness and gratitude.
+                  {t.sweetWelcomeSub}
                 </p>
 
                 {/* Sweet Interactive Reaction Buttons */}
@@ -833,7 +837,7 @@ export default function InvitationView({
                     onClick={() => triggerReaction("love")}
                     className="px-3 py-1.5 rounded-full bg-white/10 hover:bg-[#800020] border border-[#c5a059]/40 text-[#edd892] text-xs font-sans font-semibold flex items-center gap-1.5 transition cursor-pointer active:scale-95"
                   >
-                    💖 Sweet Couple
+                    💖 {t.happyCouple}
                   </button>
                   <button
                     type="button"
@@ -904,7 +908,7 @@ export default function InvitationView({
                 {settings.coupleNames}
               </p>
               <span className="text-[9px] uppercase tracking-wider text-[#8c6a2b] font-cinzel">
-                Banquet Seating Reservation
+                {t.vipSeatingTitle}
               </span>
             </div>
 
@@ -912,19 +916,19 @@ export default function InvitationView({
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4 py-4">
               <div className="text-center sm:text-left">
                 <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#800020]/10 text-[#800020] text-xs font-cinzel font-semibold mb-1">
-                  <QrCode className="w-3.5 h-3.5" /> VIP Place Setting
+                  <QrCode className="w-3.5 h-3.5" /> {t.vipCheckinPass}
                 </div>
                 <h3 className="font-serif italic text-2xl sm:text-3xl font-bold text-[#6b0f24]">
                   {formatInviteLine(guest)}
                 </h3>
                 <div className="flex items-center justify-center sm:justify-start gap-2 mt-1 text-xs text-[#5a483e]">
                   <Users className="w-3.5 h-3.5 text-[#800020]" />
-                  <span>Category: <strong>{guest.inviteType === "COUPLE" ? "2 Persons (Couple)" : guest.inviteType === "FAMILY" ? "Family Group" : "1 Person"}</strong></span>
+                  <span>{t.guestPlural}: <strong>{guest.inviteType === "COUPLE" ? "2 Persons (Couple)" : guest.inviteType === "FAMILY" ? "Family Group" : "1 Person"}</strong></span>
                 </div>
                 <div className="mt-3 flex items-center justify-center sm:justify-start gap-2">
-                  <span className="text-xs text-[#5a483e] font-sans font-medium">Reserved:</span>
+                  <span className="text-xs text-[#5a483e] font-sans font-medium">{t.tablePrefix}:</span>
                   <div className="px-4 py-1.5 rounded-xl bg-[#800020] text-[#fdfbf7] font-cinzel font-bold text-base shadow-md">
-                    Table #{String(guest.tableNumber).padStart(2, "0")}
+                    {t.tableNumber(guest.tableNumber)}
                   </div>
                 </div>
               </div>
@@ -939,8 +943,8 @@ export default function InvitationView({
                     height={110}
                     className="w-24 h-24 sm:w-28 sm:h-28"
                   />
-                  <span className="text-[9px] uppercase tracking-wider text-[#800020] font-cinzel font-bold mt-1">
-                    Scan At Reception
+                  <span className="text-[9px] uppercase tracking-wider text-[#800020] font-cinzel font-bold mt-1 text-center max-w-[120px]">
+                    {t.scanAtEntrance}
                   </span>
                 </div>
               )}
@@ -954,20 +958,19 @@ export default function InvitationView({
             </div>
           </div>
 
-
           {/* Live Countdown Section */}
           <div className="my-8">
-            <CountdownTimer targetDate={settings.eventDate} />
+            <CountdownTimer targetDate={settings.eventDate} locale={locale} />
           </div>
 
           {/* Programme / Event Itinerary Timeline */}
           <div className="my-10">
             <div className="text-center mb-6">
               <span className="text-[11px] uppercase tracking-[0.25em] text-[#8c6a2b] font-cinzel font-semibold">
-                Order of Events
+                {t.programmeSubtitle}
               </span>
               <h3 className="font-serif italic text-2xl sm:text-3xl text-[#6b0f24] font-bold">
-                Programme of the Day
+                {t.programmeTitle}
               </h3>
             </div>
 
@@ -977,7 +980,7 @@ export default function InvitationView({
                   key={idx}
                   className="flex items-start gap-3.5 p-3.5 rounded-2xl bg-[#fbf7ee] border border-[#c5a059]/30 hover:border-[#c5a059] shadow-sm transition duration-200"
                 >
-                  <div className="min-w-[80px] px-2.5 py-1.5 rounded-xl bg-[#800020]/10 text-[#800020] font-cinzel text-xs font-bold text-center border border-[#800020]/20 shadow-xs">
+                  <div className="min-w-[85px] px-2.5 py-1.5 rounded-xl bg-[#800020]/10 text-[#800020] font-cinzel text-xs font-bold text-center border border-[#800020]/20 shadow-xs">
                     {evt.time}
                   </div>
                   <div>
@@ -996,33 +999,25 @@ export default function InvitationView({
           {/* DRESS CODE & STYLE PALETTE SECTION */}
           <div className="my-10 p-6 rounded-3xl bg-gradient-to-b from-[#fffdfa] to-[#fbf6eb] border-2 border-[#c5a059]/40 shadow-xl text-center">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#800020]/10 text-[#800020] text-xs font-cinzel font-semibold mb-2">
-              <Sparkles className="w-3.5 h-3.5 text-[#c5a059]" /> Dress Code & Style Guide
+              <Sparkles className="w-3.5 h-3.5 text-[#c5a059]" /> {t.dressCodeGuideTitle}
             </div>
             <h3 className="font-serif italic text-2xl sm:text-3xl text-[#6b0f24] font-bold">
-              {settings.dressCodeTitle || "Royal Splendor & Black Tie"}
+              {settings.dressCodeTitle || t.dressCodeDefaultTitle}
             </h3>
             <p className="text-xs sm:text-sm text-[#5a483e] max-w-md mx-auto mt-2 leading-relaxed">
-              {settings.dressCodeDescription ||
-                "Traditional Sri Lankan elegance or formal evening attire in warm tones of gold, burgundy, and ivory."}
+              {settings.dressCodeDescription || t.dressCodeDefaultDesc}
             </p>
 
             {/* Color Palette Swatches */}
             <div className="mt-5 pt-4 border-t border-[#c5a059]/30">
               <span className="text-[10px] uppercase tracking-widest text-[#8c6a2b] font-cinzel font-semibold block mb-3">
-                Suggested Color Palette
+                {t.colorPaletteTitle}
               </span>
-              <div className="flex items-center justify-center gap-3 sm:gap-4">
-                {[
-                  { name: "Royal Velvet", hex: "#6b0f24", text: "#fff" },
-                  { name: "Champagne Gold", hex: "#dfba73", text: "#1a1517" },
-                  { name: "Pearl Ivory", hex: "#faf5eb", text: "#1a1517", border: true },
-                  { name: "Deep Emerald", hex: "#1b4332", text: "#fff" },
-                ].map((c, i) => (
+              <div className="flex items-center justify-center gap-3 sm:gap-4 flex-wrap">
+                {t.paletteColors.map((c, i) => (
                   <div key={i} className="flex flex-col items-center gap-1.5">
                     <div
-                      className={`w-9 h-9 sm:w-11 sm:h-11 rounded-full shadow-md transition-transform hover:scale-110 flex items-center justify-center ${
-                        c.border ? "border border-[#c5a059]" : "border-2 border-white/80"
-                      }`}
+                      className="w-9 h-9 sm:w-11 sm:h-11 rounded-full shadow-md transition-transform hover:scale-110 flex items-center justify-center border-2 border-white/80"
                       style={{ backgroundColor: c.hex }}
                     />
                     <span className="text-[9px] font-cinzel text-[#5a483e] font-medium">
@@ -1038,13 +1033,13 @@ export default function InvitationView({
           <div className="my-10 p-5 sm:p-6 rounded-3xl bg-gradient-to-b from-[#fffdfa] to-[#fbf6eb] border-2 border-[#c5a059]/50 shadow-xl">
             <div className="text-center mb-6">
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#800020]/10 text-[#800020] text-xs font-cinzel font-semibold mb-2">
-                <Camera className="w-3.5 h-3.5 text-[#c5a059]" /> Romantic Photo Gallery
+                <Camera className="w-3.5 h-3.5 text-[#c5a059]" /> {t.momentsOfLoveTitle}
               </div>
               <h3 className="font-serif italic text-2xl sm:text-3xl text-[#6b0f24] font-bold">
-                Moments of Love
+                {t.momentsOfLoveTitle}
               </h3>
               <p className="font-serif italic text-xs sm:text-sm text-[#8c6a2b] mt-1">
-                &ldquo;Every love story is beautiful, but ours is our favorite.&rdquo;
+                &ldquo;{t.momentsOfLoveSubtitle}&rdquo;
               </p>
             </div>
 
@@ -1063,7 +1058,7 @@ export default function InvitationView({
 
                 {/* Tag Badge */}
                 <div className="absolute top-3 left-3 z-10 px-3 py-1 rounded-full bg-black/50 backdrop-blur-md border border-[#c5a059]/40 text-[#edd892] text-[10px] font-cinzel font-semibold">
-                  {parsedGallery[currentPhotoIndex]?.tag || "Wedding Shoot"}
+                  {t.photoCount(currentPhotoIndex + 1, parsedGallery.length)}
                 </div>
 
                 {/* Lightbox Expand Button */}
@@ -1133,7 +1128,7 @@ export default function InvitationView({
             {/* Interactive Love Reaction Bar */}
             <div className="mt-5 pt-4 border-t border-[#c5a059]/30 flex items-center justify-between">
               <span className="text-xs text-[#5a483e] font-sans">
-                Shower the couple with your love:
+                {t.loveReactions}:
               </span>
               <button
                 type="button"
@@ -1149,7 +1144,7 @@ export default function InvitationView({
                     hasLiked ? "fill-current text-[#edd892] animate-bounce" : "text-[#800020]"
                   }`}
                 />
-                <span>{hasLiked ? "Sent with Love!" : "Send Love"}</span>
+                <span>{hasLiked ? t.loved : t.sendLove}</span>
                 <span className="px-1.5 py-0.5 rounded-full bg-black/10 text-[10px]">
                   {loveCount}
                 </span>
@@ -1161,7 +1156,7 @@ export default function InvitationView({
           <div className="my-10">
             <div className="text-center mb-4">
               <span className="text-[11px] uppercase tracking-[0.25em] text-[#8c6a2b] font-cinzel font-semibold">
-                Celebration Location
+                {t.venueSubtitle}
               </span>
               <h3 className="font-serif italic text-2xl sm:text-3xl text-[#6b0f24] font-bold">
                 {settings.venueName}
@@ -1186,7 +1181,7 @@ export default function InvitationView({
                 rel="noopener noreferrer"
                 className="btn-gold-shimmer py-2.5 px-3 rounded-xl text-center text-xs font-cinzel font-semibold flex items-center justify-center gap-1.5 shadow-md hover:scale-[1.02] transition"
               >
-                <Compass className="w-3.5 h-3.5" /> Google Maps
+                <Compass className="w-3.5 h-3.5" /> {t.googleMaps}
               </a>
               <a
                 href={appleMapsUrl}
@@ -1194,7 +1189,7 @@ export default function InvitationView({
                 rel="noopener noreferrer"
                 className="bg-[#1a1517] text-[#fdfbf7] hover:bg-black py-2.5 px-3 rounded-xl text-center text-xs font-cinzel font-semibold flex items-center justify-center gap-1.5 shadow-md hover:scale-[1.02] transition"
               >
-                <Navigation className="w-3.5 h-3.5 text-[#dfba73]" /> Apple Maps
+                <Navigation className="w-3.5 h-3.5 text-[#dfba73]" /> {t.appleMaps}
               </a>
               <a
                 href={wazeUrl}
@@ -1202,7 +1197,7 @@ export default function InvitationView({
                 rel="noopener noreferrer"
                 className="bg-[#2a1a20] text-[#edd892] hover:bg-[#800020] py-2.5 px-3 rounded-xl text-center text-xs font-cinzel font-semibold flex items-center justify-center gap-1.5 shadow-md hover:scale-[1.02] transition"
               >
-                <MapPin className="w-3.5 h-3.5" /> Waze Nav
+                <MapPin className="w-3.5 h-3.5" /> {t.waze}
               </a>
               <a
                 href={uberUrl}
@@ -1210,7 +1205,7 @@ export default function InvitationView({
                 rel="noopener noreferrer"
                 className="bg-black text-white hover:bg-neutral-900 py-2.5 px-3 rounded-xl text-center text-xs font-cinzel font-semibold flex items-center justify-center gap-1.5 shadow-md hover:scale-[1.02] transition border border-[#c5a059]/40"
               >
-                <Navigation className="w-3.5 h-3.5 text-emerald-400" /> Book Ride (Uber)
+                <Navigation className="w-3.5 h-3.5 text-emerald-400" /> {t.uberRide}
               </a>
             </div>
 
@@ -1221,11 +1216,11 @@ export default function InvitationView({
             >
               {copiedAddress ? (
                 <>
-                  <Check className="w-4 h-4 text-emerald-600" /> Address Copied to Clipboard!
+                  <Check className="w-4 h-4 text-emerald-600" /> {t.addressCopied}
                 </>
               ) : (
                 <>
-                  <Copy className="w-3.5 h-3.5" /> Copy Venue Address
+                  <Copy className="w-3.5 h-3.5" /> {t.copyAddress}
                 </>
               )}
             </button>
@@ -1236,11 +1231,11 @@ export default function InvitationView({
             <div className="flex items-center justify-center gap-2 mb-2 text-[#800020]">
               <Calendar className="w-4 h-4" />
               <span className="font-cinzel text-xs uppercase tracking-widest font-semibold">
-                Mark Your Calendar
+                {t.addToCalendarTitle}
               </span>
             </div>
             <p className="text-xs text-[#5a483e] mb-4">
-              Sync this auspicious celebration with your digital calendar.
+              {t.addToCalendarSub}
             </p>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               <a
@@ -1249,13 +1244,13 @@ export default function InvitationView({
                 rel="noopener noreferrer"
                 className="py-2 px-2.5 rounded-xl bg-[#800020] text-[#fdfbf7] hover:bg-[#5c0017] text-[11px] font-cinzel font-semibold flex items-center justify-center gap-1.5 shadow transition"
               >
-                <Calendar className="w-3.5 h-3.5 text-[#edd892]" /> Google
+                <Calendar className="w-3.5 h-3.5 text-[#edd892]" /> {t.googleCalendar}
               </a>
               <button
                 onClick={handleDownloadICS}
                 className="py-2 px-2.5 rounded-xl bg-[#1a1517] text-[#fdfbf7] hover:bg-black text-[11px] font-cinzel font-semibold flex items-center justify-center gap-1.5 shadow transition cursor-pointer"
               >
-                <Calendar className="w-3.5 h-3.5 text-[#dfba73]" /> Apple (.ics)
+                <Calendar className="w-3.5 h-3.5 text-[#dfba73]" /> {t.appleCalendar}
               </button>
               <a
                 href={outlookCalendarWebUrl}
@@ -1263,7 +1258,7 @@ export default function InvitationView({
                 rel="noopener noreferrer"
                 className="py-2 px-2.5 rounded-xl bg-[#0078d4] text-white hover:bg-[#005a9e] text-[11px] font-cinzel font-semibold flex items-center justify-center gap-1.5 shadow transition"
               >
-                <Calendar className="w-3.5 h-3.5" /> Outlook
+                <Calendar className="w-3.5 h-3.5" /> {t.outlookCalendar}
               </a>
               <a
                 href={yahooCalendarWebUrl}
@@ -1271,7 +1266,7 @@ export default function InvitationView({
                 rel="noopener noreferrer"
                 className="py-2 px-2.5 rounded-xl bg-[#5f01d1] text-white hover:bg-[#4900a3] text-[11px] font-cinzel font-semibold flex items-center justify-center gap-1.5 shadow transition"
               >
-                <Calendar className="w-3.5 h-3.5" /> Yahoo
+                <Calendar className="w-3.5 h-3.5" /> {t.yahooCalendar}
               </a>
             </div>
           </div>
@@ -1280,13 +1275,13 @@ export default function InvitationView({
           <div className="my-10 p-6 sm:p-7 rounded-3xl bg-gradient-to-b from-[#fffdfa] to-[#f7f2e7] border-2 border-[#c5a059]/60 shadow-2xl">
             <div className="text-center mb-5">
               <div className="inline-flex items-center gap-1.5 text-[#800020] text-xs font-cinzel font-semibold mb-1">
-                <MessageSquareHeart className="w-4 h-4 text-[#c5a059]" /> RSVP & Heartfelt Wishes
+                <MessageSquareHeart className="w-4 h-4 text-[#c5a059]" /> {t.rsvpTitle}
               </div>
               <h3 className="font-serif italic text-2xl sm:text-3xl text-[#6b0f24] font-bold">
-                Will You Be Joining Us?
+                {t.rsvpTitle}
               </h3>
               <p className="text-xs text-[#5a483e] mt-1">
-                Kindly confirm your attendance and select any dietary preferences.
+                {t.rsvpSubtitle}
               </p>
             </div>
 
@@ -1294,19 +1289,19 @@ export default function InvitationView({
               <div className="text-center py-6 px-4 bg-[#800020]/10 rounded-2xl border border-[#c5a059]/40 space-y-3">
                 <Heart className="w-10 h-10 text-[#800020] mx-auto fill-[#800020] animate-pulse" />
                 <h4 className="font-cinzel text-lg font-bold text-[#800020]">
-                  RSVP Recorded: {rsvpStatus === "attending" ? "Joyfully Attending" : "Regretfully Declined"}
+                  {t.rsvpSuccessTitle}
                 </h4>
                 <p className="text-xs text-[#3d3238]">
                   {rsvpStatus === "attending"
-                    ? `We are delighted to celebrate with you (${rsvpCount} ${rsvpCount === 1 ? "Guest" : "Guests"}).`
-                    : "Thank you for letting us know. You will be warmly celebrated in our hearts."}
+                    ? `${t.rsvpSuccessAttending} (${rsvpCount} ${rsvpCount === 1 ? t.guestSingle : t.guestPlural}).`
+                    : t.rsvpSuccessDeclined}
                 </p>
                 <button
                   type="button"
                   onClick={() => setRsvpSubmitted(false)}
                   className="text-xs text-[#800020] hover:underline font-cinzel font-semibold cursor-pointer pt-2"
                 >
-                  Need to update your response? Click here
+                  {t.modifyRsvp}
                 </button>
               </div>
             ) : (
@@ -1322,8 +1317,7 @@ export default function InvitationView({
                         : "bg-white text-[#1a1517] border-[#c5a059]/40 hover:bg-[#800020]/5"
                     }`}
                   >
-                    <span>🍾 Joyfully Accept</span>
-                    <span className="text-[10px] font-sans font-normal opacity-80">I will be there</span>
+                    <span>🍾 {t.joyfullyAccept}</span>
                   </button>
 
                   <button
@@ -1335,8 +1329,7 @@ export default function InvitationView({
                         : "bg-white text-[#1a1517] border-[#c5a059]/40 hover:bg-[#800020]/5"
                     }`}
                   >
-                    <span>🕊 Regretfully Decline</span>
-                    <span className="text-[10px] font-sans font-normal opacity-80">Celebrating in spirit</span>
+                    <span>🕊 {t.regretfullyDecline}</span>
                   </button>
                 </div>
 
@@ -1345,7 +1338,7 @@ export default function InvitationView({
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
                     <div>
                       <label className="block text-xs font-cinzel font-semibold text-[#1a1517] mb-1">
-                        Number of Attending Guests
+                        {t.numberOfGuests}
                       </label>
                       <select
                         value={rsvpCount}
@@ -1354,7 +1347,7 @@ export default function InvitationView({
                       >
                         {Array.from({ length: maxAttendees }, (_, i) => i + 1).map((num) => (
                           <option key={num} value={num}>
-                            {num} {num === 1 ? "Guest (Myself)" : `${num} Guests`}
+                            {num} {num === 1 ? t.guestSingle : t.guestPlural}
                           </option>
                         ))}
                       </select>
@@ -1362,19 +1355,18 @@ export default function InvitationView({
 
                     <div>
                       <label className="block text-xs font-cinzel font-semibold text-[#1a1517] mb-1">
-                        Dietary Preference
+                        {t.dietaryTitle}
                       </label>
                       <select
                         value={dietary}
                         onChange={(e) => setDietary(e.target.value)}
                         className="w-full px-3 py-2.5 rounded-xl bg-white border border-[#c5a059]/60 text-xs text-[#1a1517] focus:outline-none focus:ring-2 focus:ring-[#800020]"
                       >
-                        <option value="NONE">Standard Gourmet Banquet</option>
-                        <option value="VEGETARIAN">Vegetarian</option>
-                        <option value="VEGAN">Vegan</option>
-                        <option value="HALAL">Halal</option>
-                        <option value="GLUTEN_FREE">Gluten-Free</option>
-                        <option value="OTHER">Other / Special Request</option>
+                        {t.dietaryOptions.map((opt) => (
+                          <option key={opt.key} value={opt.key}>
+                            {opt.label}
+                          </option>
+                        ))}
                       </select>
                     </div>
                   </div>
@@ -1383,11 +1375,11 @@ export default function InvitationView({
                 {/* Blessing Message directly linked to Digital Guestbook */}
                 <div>
                   <label className="block text-xs font-cinzel font-semibold text-[#1a1517] mb-1">
-                    Your Blessing / Congratulatory Note
+                    {t.leaveBlessingPrompt}
                   </label>
                   <textarea
                     rows={3}
-                    placeholder="Write a sweet message to the couple (will appear in the live guestbook)..."
+                    placeholder={t.blessingPlaceholder}
                     value={rsvpWish}
                     onChange={(e) => setRsvpWish(e.target.value)}
                     className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#c5a059]/60 text-xs text-[#1a1517] focus:outline-none focus:ring-2 focus:ring-[#800020] resize-none"
@@ -1400,7 +1392,7 @@ export default function InvitationView({
                   className="w-full py-3.5 rounded-xl btn-gold-shimmer text-xs font-cinzel font-bold uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg disabled:opacity-50 cursor-pointer"
                 >
                   <Send className="w-3.5 h-3.5" />
-                  {submittingRsvp ? "Submitting RSVP..." : "Submit RSVP & Wishes"}
+                  {submittingRsvp ? t.submittingRsvp : t.submitRsvp}
                 </button>
               </form>
             )}
@@ -1410,13 +1402,13 @@ export default function InvitationView({
           <div className="my-10 p-6 rounded-3xl bg-gradient-to-b from-[#fffdfa] to-[#fbf6eb] border-2 border-[#c5a059]/50 shadow-xl">
             <div className="text-center mb-6">
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#800020]/10 text-[#800020] text-xs font-cinzel font-semibold mb-2">
-                <Heart className="w-3.5 h-3.5 text-[#c5a059] fill-[#c5a059]" /> Live Digital Guestbook
+                <Heart className="w-3.5 h-3.5 text-[#c5a059] fill-[#c5a059]" /> {t.guestbookTitle}
               </div>
               <h3 className="font-serif italic text-2xl sm:text-3xl text-[#6b0f24] font-bold">
-                Heartfelt Blessings & Wishes
+                {t.guestbookTitle}
               </h3>
               <p className="text-xs text-[#5a483e] mt-1">
-                Warm words from our beloved family, friends, and esteemed guests.
+                {t.guestbookSubtitle}
               </p>
             </div>
 
@@ -1426,7 +1418,7 @@ export default function InvitationView({
               </div>
             ) : wishes.length === 0 ? (
               <div className="text-center py-6 px-4 rounded-2xl bg-white/60 border border-[#c5a059]/30 text-xs text-[#5a483e] font-sans italic">
-                Be the first to leave a blessing for {settings.coupleNames} using the RSVP form above! 💖
+                {t.noWishesYet} 💖
               </div>
             ) : (
               <div className="space-y-3 max-h-80 overflow-y-auto pr-1">
@@ -1465,7 +1457,6 @@ export default function InvitationView({
             )}
           </div>
 
-
           {/* Blessing Illustration & Couple Moment */}
           <div className="my-8 text-center">
             <div className="relative max-w-xs mx-auto rounded-2xl overflow-hidden border border-[#c5a059]/40 shadow-lg mb-4 group cursor-pointer" onClick={() => openLightbox(1)}>
@@ -1480,14 +1471,14 @@ export default function InvitationView({
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
                 <div className="absolute bottom-2 inset-x-0 text-center">
                   <span className="text-[10px] font-cinzel text-[#edd892] uppercase tracking-widest font-semibold flex items-center justify-center gap-1">
-                    <Sparkles className="w-3 h-3 text-[#dfba73]" /> With Love & Gratitude
+                    <Sparkles className="w-3 h-3 text-[#dfba73]" /> {t.withAllOurLove}
                   </span>
                 </div>
               </div>
             </div>
 
             <p className="font-serif italic text-base sm:text-lg text-[#6b0f24] font-medium mt-3">
-              &ldquo;Your presence and blessings are sincerely appreciated.&rdquo;
+              &ldquo;{t.footerBlessing}&rdquo;
             </p>
           </div>
 
@@ -1524,7 +1515,7 @@ export default function InvitationView({
           <div className="w-full max-w-5xl flex items-center justify-between text-[#edd892] z-10">
             <div className="flex items-center gap-2">
               <span className="font-cinzel text-xs sm:text-sm font-semibold tracking-wider">
-                PHOTO {currentPhotoIndex + 1} OF {parsedGallery.length}
+                {t.photoCount(currentPhotoIndex + 1, parsedGallery.length)}
               </span>
               <span className="text-white/40">•</span>
               <span className="text-xs text-[#dfba73] hidden sm:inline font-sans">
@@ -1593,7 +1584,7 @@ export default function InvitationView({
             <div className="flex items-center gap-2">
               <Film className="w-4 h-4 text-[#ffd700]" />
               <span className="font-cinzel text-xs sm:text-sm font-semibold tracking-wider text-[#fffdfa]">
-                PRE-SHOOT CINEMA THEATER
+                {t.cinemaTheater}
               </span>
               <span className="text-white/40">•</span>
               <span className="text-xs text-[#dfba73] font-cinzel">
@@ -1615,7 +1606,7 @@ export default function InvitationView({
             {youtubeEmbedUrl ? (
               <iframe
                 src={`${youtubeEmbedUrl}&autoplay=1`}
-                title="Couple Pre-Shoot Film"
+                title={t.preshootTrailerTitle}
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
                 className="w-full h-full border-0"
@@ -1623,7 +1614,7 @@ export default function InvitationView({
             ) : vimeoEmbedUrl ? (
               <iframe
                 src={`${vimeoEmbedUrl}?autoplay=1`}
-                title="Couple Pre-Shoot Film"
+                title={t.preshootTrailerTitle}
                 allow="autoplay; fullscreen; picture-in-picture"
                 allowFullScreen
                 className="w-full h-full border-0"
@@ -1647,7 +1638,7 @@ export default function InvitationView({
               {settings.coupleNames}
             </h4>
             <p className="text-xs sm:text-sm text-[#edd892] font-cinzel font-semibold mt-1">
-              ✧ Forever Begins With This Beautiful Journey ✧
+              {t.foreverBegins}
             </p>
           </div>
         </div>
@@ -1656,5 +1647,3 @@ export default function InvitationView({
     </div>
   );
 }
-
-
