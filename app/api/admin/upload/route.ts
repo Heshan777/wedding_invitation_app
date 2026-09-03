@@ -18,10 +18,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
     }
 
-    // Validate mime type
-    const mimeType = file.type;
-    if (!mimeType.startsWith("image/")) {
-      return NextResponse.json({ error: "Only image files (JPEG, PNG, WebP, etc.) are allowed" }, { status: 400 });
+    // Validate mime type: images and videos
+    const mimeType = file.type || "";
+    const isImage = mimeType.startsWith("image/");
+    const isVideo = mimeType.startsWith("video/") || file.name.match(/\.(mp4|mov|webm|m4v|mkv|avi)$/i);
+
+    if (!isImage && !isVideo) {
+      return NextResponse.json(
+        { error: "Only image files (JPEG, PNG, WebP) or video files (MP4, MOV, WebM) are allowed" },
+        { status: 400 }
+      );
     }
 
     const bytes = await file.arrayBuffer();
@@ -30,16 +36,21 @@ export async function POST(req: NextRequest) {
     // Determine extension
     let ext = path.extname(file.name).toLowerCase();
     if (!ext || ext === ".") {
-      if (mimeType.includes("jpeg") || mimeType.includes("jpg")) ext = ".jpg";
+      if (mimeType.includes("mp4")) ext = ".mp4";
+      else if (mimeType.includes("webm")) ext = ".webm";
+      else if (mimeType.includes("quicktime")) ext = ".mov";
+      else if (mimeType.includes("jpeg") || mimeType.includes("jpg")) ext = ".jpg";
       else if (mimeType.includes("png")) ext = ".png";
       else if (mimeType.includes("webp")) ext = ".webp";
       else if (mimeType.includes("avif")) ext = ".avif";
-      else ext = ".jpg";
+      else ext = isVideo ? ".mp4" : ".jpg";
     }
 
     // Clean original name prefix (letters/numbers only)
-    const baseClean = path.basename(file.name, ext).replace(/[^a-zA-Z0-9-_]/g, "").slice(0, 20) || "photo";
-    const uniqueFilename = `preshoot-${baseClean}-${Date.now()}-${Math.floor(Math.random() * 1000)}${ext}`;
+    const mediaPrefix = isVideo ? "preshoot-video" : "preshoot-photo";
+    const baseClean = path.basename(file.name, ext).replace(/[^a-zA-Z0-9-_]/g, "").slice(0, 20) || "media";
+    const uniqueFilename = `${mediaPrefix}-${baseClean}-${Date.now()}-${Math.floor(Math.random() * 1000)}${ext}`;
+
 
     const uploadsDir = path.join(process.cwd(), "public", "uploads");
     await mkdir(uploadsDir, { recursive: true });

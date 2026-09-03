@@ -40,6 +40,9 @@ import {
   FolderUp,
   Loader2,
   Heart,
+  Film,
+  Video,
+  Play,
 } from "lucide-react";
 
 
@@ -85,6 +88,8 @@ type EventSettings = {
   venueLat: number;
   venueLng: number;
   heroImageUrl?: string | null;
+  heroVideoUrl?: string | null;
+  videoThumbnailUrl?: string | null;
   galleryJson?: string | null;
   blessingImageUrl?: string | null;
   welcomeImageUrl?: string | null;
@@ -511,13 +516,15 @@ export default function AdminDashboard() {
 
       const data = await res.json();
       onSuccess(data.url);
-      showToast("Pre-shoot photo uploaded successfully!");
+      const isVid = file.type.startsWith("video/") || file.name.match(/\.(mp4|mov|webm)$/i);
+      showToast(isVid ? "Pre-shoot video uploaded successfully!" : "Pre-shoot photo uploaded successfully!");
     } catch (err: any) {
-      alert(err.message || "Failed to upload photo");
+      alert(err.message || "Failed to upload media file");
     } finally {
       setUploadingField(null);
       e.target.value = "";
     }
+
   }
 
 
@@ -1203,12 +1210,118 @@ export default function AdminDashboard() {
 
               {/* CARD 2: COUPLE PHOTOS & MEDIA MANAGER */}
               <div className="p-5 sm:p-6 rounded-2xl bg-[#20161c] border border-[#c5a059]/30 space-y-6 shadow-md">
-                <div className="flex items-center gap-2 text-[#dfba73] pb-2 border-b border-[#c5a059]/20 font-cinzel text-sm font-bold uppercase tracking-wider">
-                  <Camera className="w-4 h-4 text-[#dfba73]" /> 2. Couple Photos & Media Suite
+                <div className="flex items-center justify-between pb-2 border-b border-[#c5a059]/20">
+                  <div className="flex items-center gap-2 text-[#dfba73] font-cinzel text-sm font-bold uppercase tracking-wider">
+                    <Film className="w-4 h-4 text-[#dfba73]" /> 2. Couple Pre-Shoot Video & Media Suite
+                  </div>
+                  {settings.heroVideoUrl && (
+                    <span className="px-2.5 py-0.5 rounded-full bg-[#800020] text-[#edd892] text-[10px] font-cinzel font-semibold border border-[#dfba73]/40">
+                      🎬 Video Mode Active
+                    </span>
+                  )}
+                </div>
+
+                {/* CINEMATIC PRE-SHOOT VIDEO SECTION */}
+                <div className="p-4 rounded-2xl bg-gradient-to-r from-[#2c131d] via-[#1f0d14] to-[#14060b] border-2 border-[#dfba73]/60 shadow-lg space-y-3">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                    <div>
+                      <div className="inline-flex items-center gap-1.5 text-xs uppercase tracking-wider text-[#ffd700] font-cinzel font-bold">
+                        <Video className="w-4 h-4" /> Couple Pre-Shoot Cinematic Film / Trailer
+                      </div>
+                      <p className="text-[11px] text-[#fdfbf7]/70 font-sans mt-0.5">
+                        Upload a pre-shoot video file (.mp4, .mov, .webm) or link a YouTube / Vimeo trailer.
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <label className="btn-gold-shimmer px-4 py-2 rounded-xl text-xs font-cinzel font-bold flex items-center gap-2 cursor-pointer shadow-md hover:scale-[1.02] transition">
+                        {uploadingField === "video" ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            <span>Uploading Video...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="w-4 h-4" />
+                            <span>Upload Pre-Shoot Video</span>
+                          </>
+                        )}
+                        <input
+                          type="file"
+                          accept="video/*,.mp4,.mov,.webm,.m4v"
+                          disabled={uploadingField !== null}
+                          className="hidden"
+                          onChange={(e) =>
+                            handleImageUpload(e, "video", (url) =>
+                              setSettings((prev) => ({ ...prev, heroVideoUrl: url }))
+                            )
+                          }
+                        />
+                      </label>
+
+                      {settings.heroVideoUrl && (
+                        <button
+                          type="button"
+                          onClick={() => setSettings({ ...settings, heroVideoUrl: "" })}
+                          className="px-3 py-2 rounded-xl bg-black/50 hover:bg-rose-950/80 text-rose-300 border border-rose-500/30 text-xs font-cinzel font-medium cursor-pointer transition"
+                          title="Remove video and switch back to Hero Photo"
+                        >
+                          Remove Video
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start pt-2">
+                    <div className="md:col-span-2 space-y-2">
+                      <label className="block text-[11px] uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold">
+                        Video File URL or YouTube / Vimeo Link
+                      </label>
+                      <input
+                        value={settings.heroVideoUrl || ""}
+                        onChange={(e) => setSettings({ ...settings, heroVideoUrl: e.target.value })}
+                        placeholder="e.g. /uploads/preshoot-video.mp4 or https://www.youtube.com/watch?v=..."
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-[#1c1117] border border-[#c5a059]/50 text-xs text-[#fdfbf7] focus:outline-none focus:border-[#dfba73] font-mono"
+                      />
+                      <p className="text-[10px] text-[#edd892]/60 italic font-sans">
+                        💡 Tip: If you leave this blank, the invitation automatically displays the high-resolution Couple Portrait Photo below.
+                      </p>
+                    </div>
+
+                    {/* Video Live Preview */}
+                    <div className="flex flex-col items-center">
+                      <span className="text-[10px] uppercase text-[#dfba73] font-cinzel mb-1">
+                        Video Preview
+                      </span>
+                      <div className="relative w-full max-w-[200px] aspect-video rounded-xl overflow-hidden border-2 border-[#c5a059] shadow-md bg-black flex items-center justify-center">
+                        {settings.heroVideoUrl ? (
+                          settings.heroVideoUrl.includes("youtube.com") || settings.heroVideoUrl.includes("youtu.be") ? (
+                            <div className="p-2 text-center text-[10px] text-[#dfba73] font-cinzel">
+                              <Film className="w-5 h-5 mx-auto mb-1 text-[#ffd700]" />
+                              YouTube Embed Ready
+                            </div>
+                          ) : (
+                            <video
+                              src={settings.heroVideoUrl}
+                              autoPlay
+                              loop
+                              muted
+                              playsInline
+                              className="w-full h-full object-cover"
+                            />
+                          )
+                        ) : (
+                          <div className="p-2 text-center text-[10px] text-white/40 font-cinzel">
+                            No Video Set (Photo Mode)
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Hero Couple Portrait Image */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start pt-2">
                   <div className="md:col-span-2 space-y-3">
                     <div>
                       <label className="block text-xs uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold mb-1">
@@ -1244,6 +1357,7 @@ export default function AdminDashboard() {
                         </span>
                       </div>
                     </div>
+
 
                     <input
                       value={settings.heroImageUrl || ""}

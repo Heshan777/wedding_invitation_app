@@ -45,6 +45,9 @@ model EventSettings {
     venueLat             Float
     venueLng             Float
     heroImageUrl         String?  @default("/images/couple-portrait-1.jpg")
+    heroVideoUrl         String?
+    videoThumbnailUrl    String?
+
     galleryJson          String?
     blessingImageUrl     String?  @default("/images/couple-portrait-2.jpg")
     welcomeImageUrl      String?  @default("/images/couple-welcome.jpg")
@@ -56,6 +59,7 @@ model EventSettings {
     timelineJson         String?
     contactPhone         String?  @default("+94 77 123 4567")
 }
+
 
 
 

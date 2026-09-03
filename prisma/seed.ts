@@ -1,4 +1,4 @@
-﻿import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 async function main() {
@@ -11,8 +11,12 @@ async function main() {
     venueAddress: "93/4, 1st Kilometer Post, Ragama Road, Kadawatha",
     venueLat: 7.003650918373462,
     venueLng: 79.94263789236709,
+    heroImageUrl: "/images/couple-portrait-1.jpg",
+    heroVideoUrl: "/uploads/preshoot-video-0903-1788414222110-639.mp4",
+    videoThumbnailUrl: "/images/couple-portrait-1.jpg",
     musicUrl: "/audio/background.mp3",
   };
+
 
   await prisma.eventSettings.upsert({
     where: { id: "singleton" },

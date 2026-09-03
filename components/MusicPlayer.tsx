@@ -20,16 +20,37 @@ export default function MusicPlayer({ src }: { src: string }) {
       }
     }
 
-    // Listen for custom trigger from envelope opening or user interaction
+    function handleVideoPlay() {
+      if (audioRef.current && playing) {
+        audioRef.current.pause();
+        setPlaying(false);
+      }
+    }
+
+    function handleVideoPause() {
+      if (audioRef.current && !playing) {
+        audioRef.current
+          .play()
+          .then(() => setPlaying(true))
+          .catch(() => {});
+      }
+    }
+
+    // Listen for custom trigger from envelope opening, user interaction, or video playback
     window.addEventListener("start_wedding_music", handleStartAudio);
+    window.addEventListener("wedding_video_play", handleVideoPlay);
+    window.addEventListener("wedding_video_pause", handleVideoPause);
     const events: (keyof WindowEventMap)[] = ["click", "touchstart", "scroll"];
     events.forEach((evt) => window.addEventListener(evt, handleStartAudio, { once: true }));
 
     return () => {
       window.removeEventListener("start_wedding_music", handleStartAudio);
+      window.removeEventListener("wedding_video_play", handleVideoPlay);
+      window.removeEventListener("wedding_video_pause", handleVideoPause);
       events.forEach((evt) => window.removeEventListener(evt, handleStartAudio));
     };
   }, [playing]);
+
 
   function togglePlay() {
     if (!audioRef.current) return;

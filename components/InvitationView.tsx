@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
+
 import Image from "next/image";
 import QRCode from "qrcode";
 import confetti from "canvas-confetti";
@@ -26,6 +27,11 @@ import {
   X,
   Camera,
   ZoomIn,
+  Play,
+  Pause,
+  Volume2,
+  VolumeX,
+  Film,
 } from "lucide-react";
 import CountdownTimer from "./CountdownTimer";
 import VenueMap from "./VenueMap";
@@ -51,7 +57,6 @@ type Guest = {
   rsvpSubmittedAt?: Date | string | null;
 };
 
-
 type Settings = {
   coupleNames: string;
   hostIntro: string;
@@ -62,6 +67,8 @@ type Settings = {
   venueLat: number;
   venueLng: number;
   heroImageUrl?: string | null;
+  heroVideoUrl?: string | null;
+  videoThumbnailUrl?: string | null;
   galleryJson?: string | null;
   blessingImageUrl?: string | null;
   welcomeImageUrl?: string | null;
@@ -73,6 +80,25 @@ type Settings = {
   timelineJson?: string | null;
   contactPhone?: string | null;
 };
+
+function getYouTubeEmbedUrl(url: string) {
+  if (!url) return null;
+  const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/))([\w-]{11})/);
+  if (match && match[1]) {
+    return `https://www.youtube.com/embed/${match[1]}?autoplay=1&rel=0&modestbranding=1`;
+  }
+  return null;
+}
+
+function getVimeoEmbedUrl(url: string) {
+  if (!url) return null;
+  const match = url.match(/vimeo\.com\/(?:video\/)?([0-9]+)/);
+  if (match && match[1]) {
+    return `https://player.vimeo.com/video/${match[1]}?autoplay=1&title=0&byline=0&portrait=0`;
+  }
+  return null;
+}
+
 
 type GuestbookWish = {
   id: string;
@@ -147,7 +173,57 @@ export default function InvitationView({
   const [loveCount, setLoveCount] = useState(142);
   const [hasLiked, setHasLiked] = useState(false);
 
+  // Pre-Shoot Video state
+  const [mediaMode, setMediaMode] = useState<"video" | "photo">(settings.heroVideoUrl ? "video" : "photo");
+  const [isVideoPlaying, setIsVideoPlaying] = useState(true);
+  const [isVideoMuted, setIsVideoMuted] = useState(true);
+  const [showCinemaModal, setShowCinemaModal] = useState(false);
+  const heroVideoRef = useRef<HTMLVideoElement>(null);
+  const modalVideoRef = useRef<HTMLVideoElement>(null);
+
+
+  const youtubeEmbedUrl = settings.heroVideoUrl ? getYouTubeEmbedUrl(settings.heroVideoUrl) : null;
+  const vimeoEmbedUrl = settings.heroVideoUrl ? getVimeoEmbedUrl(settings.heroVideoUrl) : null;
+
+  function handleToggleVideoAudio(e?: React.MouseEvent) {
+    e?.stopPropagation();
+    if (heroVideoRef.current) {
+      const newMuted = !isVideoMuted;
+      heroVideoRef.current.muted = newMuted;
+      setIsVideoMuted(newMuted);
+      if (!newMuted) {
+        window.dispatchEvent(new CustomEvent("wedding_video_play"));
+      } else {
+        window.dispatchEvent(new CustomEvent("wedding_video_pause"));
+      }
+    }
+  }
+
+  function handleToggleVideoPlay(e?: React.MouseEvent) {
+    e?.stopPropagation();
+    if (heroVideoRef.current) {
+      if (heroVideoRef.current.paused) {
+        heroVideoRef.current.play();
+        setIsVideoPlaying(true);
+      } else {
+        heroVideoRef.current.pause();
+        setIsVideoPlaying(false);
+      }
+    }
+  }
+
+  function openCinemaTheater() {
+    setShowCinemaModal(true);
+    window.dispatchEvent(new CustomEvent("wedding_video_play"));
+  }
+
+  function closeCinemaTheater() {
+    setShowCinemaModal(false);
+    window.dispatchEvent(new CustomEvent("wedding_video_pause"));
+  }
+
   // RSVP Form state
+
   const [rsvpStatus, setRsvpStatus] = useState<"attending" | "declined" | "">(
     guest.rsvpStatus === "ATTENDING" ? "attending" : guest.rsvpStatus === "DECLINED" ? "declined" : ""
   );
@@ -501,58 +577,205 @@ export default function InvitationView({
             <div className="h-px w-12 bg-gradient-to-l from-transparent to-[#c5a059]" />
           </div>
 
-          <p className="text-center text-sm sm:text-base text-[#3d3238] font-sans leading-relaxed mb-6">
+          <p className="text-center text-sm sm:text-base text-[#3d3238] font-sans leading-relaxed mb-4">
             Together with our families, we cordially invite you to celebrate the joyous union & homecoming of
           </p>
 
-          {/* Luxury Couple Hero Photo Portrait Card */}
+          {/* Interactive Pre-Shoot Film / Couple Photo Switcher Pills */}
+          {settings.heroVideoUrl && (
+            <div className="flex items-center justify-center gap-2 mb-4">
+              <button
+                type="button"
+                onClick={() => setMediaMode("video")}
+                className={`px-4 py-1.5 rounded-full text-xs font-cinzel font-bold flex items-center gap-1.5 transition cursor-pointer shadow-md ${
+                  mediaMode === "video"
+                    ? "bg-[#800020] text-[#ffd700] border-2 border-[#ffd700] shadow-[0_0_15px_rgba(223,186,115,0.4)]"
+                    : "bg-[#1f1519] text-[#dfba73]/70 border border-[#c5a059]/30 hover:text-[#edd892]"
+                }`}
+              >
+                <Film className="w-3.5 h-3.5 text-[#ffd700]" />
+                <span>Pre-Shoot Film</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setMediaMode("photo")}
+                className={`px-4 py-1.5 rounded-full text-xs font-cinzel font-bold flex items-center gap-1.5 transition cursor-pointer shadow-md ${
+                  mediaMode === "photo"
+                    ? "bg-[#800020] text-[#ffd700] border-2 border-[#ffd700] shadow-[0_0_15px_rgba(223,186,115,0.4)]"
+                    : "bg-[#1f1519] text-[#dfba73]/70 border border-[#c5a059]/30 hover:text-[#edd892]"
+                }`}
+              >
+                <Camera className="w-3.5 h-3.5 text-[#dfba73]" />
+                <span>Couple Portrait</span>
+              </button>
+            </div>
+          )}
+
+          {/* Luxury Couple Hero Pre-Shoot Video / Photo Cinema Card */}
           <div className="relative w-full my-6">
             <div className="relative rounded-3xl overflow-hidden border-2 border-[#c5a059]/60 shadow-2xl bg-[#1a1215] group">
-              {/* Main Couple Photo with subtle zoom on hover */}
-              <div className="relative h-72 sm:h-96 w-full overflow-hidden">
-                <Image
-                  src={heroImageSrc}
-                  alt={settings.coupleNames}
-                  fill
-                  sizes="(max-width: 640px) 100vw, 550px"
-                  className="object-cover object-top transition duration-700 group-hover:scale-105"
-                  priority
-                />
+              {settings.heroVideoUrl && mediaMode === "video" ? (
+                /* PRE-SHOOT CINEMATIC VIDEO MODE */
+                <div className="relative w-full overflow-hidden bg-black">
 
-                <div className="absolute inset-0 bg-gradient-to-t from-[#12080c] via-[#12080c]/30 to-transparent" />
+                  {youtubeEmbedUrl ? (
+                    <div className="relative aspect-video w-full">
+                      <iframe
+                        src={youtubeEmbedUrl}
+                        title="Couple Pre-Shoot Cinematic Trailer"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                        className="w-full h-full border-0"
+                      />
+                    </div>
+                  ) : vimeoEmbedUrl ? (
+                    <div className="relative aspect-video w-full">
+                      <iframe
+                        src={vimeoEmbedUrl}
+                        title="Couple Pre-Shoot Cinematic Film"
+                        allow="autoplay; fullscreen; picture-in-picture"
+                        allowFullScreen
+                        className="w-full h-full border-0"
+                      />
+                    </div>
+                  ) : (
+                    /* DIRECT MP4/WEBM VIDEO PLAYER */
+                    <div className="relative h-80 sm:h-96 w-full overflow-hidden flex items-center justify-center">
+                      <video
+                        ref={heroVideoRef}
+                        src={settings.heroVideoUrl}
+                        poster={settings.videoThumbnailUrl || heroImageSrc}
+                        autoPlay
+                        loop
+                        muted={isVideoMuted}
+                        playsInline
+                        className="w-full h-full object-cover object-center transition duration-700 group-hover:scale-105"
+                      />
 
-                {/* Luxury Gold Frame Filigree Accents inside photo */}
-                <div className="absolute top-3 left-3 text-[#edd892] text-sm select-none opacity-80">⚜</div>
-                <div className="absolute top-3 right-3 text-[#edd892] text-sm select-none opacity-80">⚜</div>
+                      {/* Ambient Scrim Gradients */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-[#12080c] via-transparent to-[#12080c]/40 pointer-events-none" />
 
-                {/* Lightbox Trigger Button */}
-                <button
-                  type="button"
-                  onClick={() => openLightbox(0)}
-                  className="absolute top-3 right-3 z-10 p-2 rounded-full bg-black/40 hover:bg-[#800020] text-[#edd892] backdrop-blur-md border border-[#c5a059]/40 transition shadow-lg cursor-pointer"
-                  title="View Fullscreen"
-                >
-                  <Maximize2 className="w-4 h-4" />
-                </button>
+                      {/* Top Bar Badge & Controls */}
+                      <div className="absolute top-3 inset-x-3 flex items-center justify-between z-20 pointer-events-auto">
+                        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/60 backdrop-blur-md border border-[#dfba73]/50 text-[#edd892] text-[10px] sm:text-xs font-cinzel font-semibold shadow-lg">
+                          <Film className="w-3.5 h-3.5 text-[#ffd700]" />
+                          <span>Pre-Shoot Film</span>
+                        </div>
 
-                {/* Couple Names Calligraphy Overlaid at base of photo */}
-                <div className="absolute bottom-0 inset-x-0 p-4 sm:p-6 text-center text-[#fdfbf7]">
-                  <p className="text-[10px] sm:text-xs uppercase tracking-[0.3em] text-[#edd892] font-cinzel font-semibold mb-1">
-                    The Happy Couple
-                  </p>
-                  <div className="flex items-center justify-center gap-2 sm:gap-3 flex-wrap">
-                    <h2 className="font-serif italic text-3xl sm:text-4xl text-[#fff8ea] font-bold tracking-tight drop-shadow-md">
-                      {settings.coupleNames.split("&")[0]?.trim() || "Sandharu"}
-                    </h2>
-                    <span className="font-alex text-3xl sm:text-4xl text-[#edd892] drop-shadow">&</span>
-                    <h2 className="font-serif italic text-3xl sm:text-4xl text-[#fff8ea] font-bold tracking-tight drop-shadow-md">
-                      {settings.coupleNames.split("&")[1]?.trim() || "Sanduni"}
-                    </h2>
+                        <div className="flex items-center gap-1.5">
+                          {/* Audio Mute/Unmute */}
+                          <button
+                            type="button"
+                            onClick={handleToggleVideoAudio}
+                            className={`px-3 py-1.5 rounded-full backdrop-blur-md border text-xs font-cinzel font-semibold flex items-center gap-1.5 shadow-lg transition cursor-pointer ${
+                              isVideoMuted
+                                ? "bg-black/60 text-[#dfba73] border-[#c5a059]/40 hover:bg-[#800020]"
+                                : "bg-[#800020] text-[#fffdfa] border-[#ffd700] shadow-[0_0_15px_rgba(223,186,115,0.6)]"
+                            }`}
+                            title={isVideoMuted ? "Unmute Sound" : "Mute Sound"}
+                          >
+                            {isVideoMuted ? (
+                              <>
+                                <VolumeX className="w-3.5 h-3.5" />
+                                <span className="text-[10px] hidden sm:inline">Unmute</span>
+                              </>
+                            ) : (
+                              <>
+                                <Volume2 className="w-3.5 h-3.5 text-[#ffd700] animate-pulse" />
+                                <span className="text-[10px] hidden sm:inline">Sound On</span>
+                              </>
+                            )}
+                          </button>
+
+                          {/* Fullscreen Cinema Theater */}
+                          <button
+                            type="button"
+                            onClick={openCinemaTheater}
+                            className="p-2 rounded-full bg-black/60 hover:bg-[#800020] text-[#edd892] backdrop-blur-md border border-[#c5a059]/40 transition shadow-lg cursor-pointer"
+                            title="Open Cinema Theater"
+                          >
+                            <Maximize2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Center Play Button (for quick play/pause or theater opening) */}
+                      <button
+                        type="button"
+                        onClick={openCinemaTheater}
+                        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 p-4 sm:p-5 rounded-full bg-[#800020]/85 hover:bg-[#6b0f24] text-[#fffdfa] border-2 border-[#ffd700] shadow-[0_0_35px_rgba(223,186,115,0.7)] backdrop-blur-md flex items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95 cursor-pointer z-10 group/btn"
+                        title="Watch Full Cinematic Video"
+                      >
+                        <Play className="w-6 h-6 sm:w-7 sm:h-7 fill-[#ffd700] text-[#ffd700] ml-1 transition-transform group-hover/btn:scale-110" />
+                        <span className="absolute -inset-2 rounded-full border border-[#ffd700]/50 animate-ping opacity-30 pointer-events-none" />
+                      </button>
+
+                      {/* Couple Names Calligraphy Overlaid at base of video */}
+                      <div className="absolute bottom-0 inset-x-0 p-4 sm:p-6 text-center text-[#fdfbf7] pointer-events-none z-10">
+                        <p className="text-[10px] sm:text-xs uppercase tracking-[0.3em] text-[#edd892] font-cinzel font-semibold mb-1 drop-shadow">
+                          Pre-Shoot Cinematic Trailer
+                        </p>
+                        <div className="flex items-center justify-center gap-2 sm:gap-3 flex-wrap">
+                          <h2 className="font-serif italic text-3xl sm:text-4xl text-[#fff8ea] font-bold tracking-tight drop-shadow-lg">
+                            {settings.coupleNames.split("&")[0]?.trim() || "Sandharu"}
+                          </h2>
+                          <span className="font-alex text-3xl sm:text-4xl text-[#edd892] drop-shadow-lg">&</span>
+                          <h2 className="font-serif italic text-3xl sm:text-4xl text-[#fff8ea] font-bold tracking-tight drop-shadow-lg">
+                            {settings.coupleNames.split("&")[1]?.trim() || "Sanduni"}
+                          </h2>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                /* HIGH-RES COUPLE PHOTO MODE (Fallback) */
+                <div className="relative h-72 sm:h-96 w-full overflow-hidden">
+                  <Image
+                    src={heroImageSrc}
+                    alt={settings.coupleNames}
+                    fill
+                    sizes="(max-width: 640px) 100vw, 550px"
+                    className="object-cover object-top transition duration-700 group-hover:scale-105"
+                    priority
+                  />
+
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#12080c] via-[#12080c]/30 to-transparent" />
+
+                  {/* Luxury Gold Frame Filigree Accents inside photo */}
+                  <div className="absolute top-3 left-3 text-[#edd892] text-sm select-none opacity-80">⚜</div>
+                  <div className="absolute top-3 right-3 text-[#edd892] text-sm select-none opacity-80">⚜</div>
+
+                  {/* Lightbox Trigger Button */}
+                  <button
+                    type="button"
+                    onClick={() => openLightbox(0)}
+                    className="absolute top-3 right-3 z-10 p-2 rounded-full bg-black/40 hover:bg-[#800020] text-[#edd892] backdrop-blur-md border border-[#c5a059]/40 transition shadow-lg cursor-pointer"
+                    title="View Fullscreen"
+                  >
+                    <Maximize2 className="w-4 h-4" />
+                  </button>
+
+                  {/* Couple Names Calligraphy Overlaid at base of photo */}
+                  <div className="absolute bottom-0 inset-x-0 p-4 sm:p-6 text-center text-[#fdfbf7]">
+                    <p className="text-[10px] sm:text-xs uppercase tracking-[0.3em] text-[#edd892] font-cinzel font-semibold mb-1">
+                      The Happy Couple
+                    </p>
+                    <div className="flex items-center justify-center gap-2 sm:gap-3 flex-wrap">
+                      <h2 className="font-serif italic text-3xl sm:text-4xl text-[#fff8ea] font-bold tracking-tight drop-shadow-md">
+                        {settings.coupleNames.split("&")[0]?.trim() || "Sandharu"}
+                      </h2>
+                      <span className="font-alex text-3xl sm:text-4xl text-[#edd892] drop-shadow">&</span>
+                      <h2 className="font-serif italic text-3xl sm:text-4xl text-[#fff8ea] font-bold tracking-tight drop-shadow-md">
+                        {settings.coupleNames.split("&")[1]?.trim() || "Sanduni"}
+                      </h2>
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
             </div>
           </div>
+
 
 
           {/* Host Intro */}
@@ -1362,7 +1585,76 @@ export default function InvitationView({
         </div>
       )}
 
+      {/* 4K Cinema Theater Modal */}
+      {showCinemaModal && settings.heroVideoUrl && (
+        <div className="fixed inset-0 z-[1000] bg-black/95 backdrop-blur-xl flex flex-col items-center justify-between p-4 sm:p-8 animate-in fade-in duration-300">
+          {/* Top Bar: Title & Close */}
+          <div className="w-full max-w-5xl flex items-center justify-between text-[#edd892] z-10">
+            <div className="flex items-center gap-2">
+              <Film className="w-4 h-4 text-[#ffd700]" />
+              <span className="font-cinzel text-xs sm:text-sm font-semibold tracking-wider text-[#fffdfa]">
+                PRE-SHOOT CINEMA THEATER
+              </span>
+              <span className="text-white/40">•</span>
+              <span className="text-xs text-[#dfba73] font-cinzel">
+                {settings.coupleNames}
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={closeCinemaTheater}
+              className="p-2.5 rounded-full bg-white/10 hover:bg-[#800020] text-white border border-[#c5a059]/40 transition cursor-pointer shadow-lg"
+              title="Close Theater (Esc)"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          {/* Main Video Theater Center Container */}
+          <div className="relative w-full max-w-5xl aspect-video rounded-3xl overflow-hidden border-2 border-[#dfba73] shadow-[0_0_50px_rgba(223,186,115,0.35)] my-auto bg-black flex items-center justify-center">
+            {youtubeEmbedUrl ? (
+              <iframe
+                src={`${youtubeEmbedUrl}&autoplay=1`}
+                title="Couple Pre-Shoot Film"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                className="w-full h-full border-0"
+              />
+            ) : vimeoEmbedUrl ? (
+              <iframe
+                src={`${vimeoEmbedUrl}?autoplay=1`}
+                title="Couple Pre-Shoot Film"
+                allow="autoplay; fullscreen; picture-in-picture"
+                allowFullScreen
+                className="w-full h-full border-0"
+              />
+            ) : (
+              <video
+                ref={modalVideoRef}
+                src={settings.heroVideoUrl}
+                poster={settings.videoThumbnailUrl || heroImageSrc}
+                autoPlay
+                controls
+                playsInline
+                className="w-full h-full object-contain"
+              />
+            )}
+          </div>
+
+          {/* Bottom Bar */}
+          <div className="w-full max-w-xl text-center z-10">
+            <h4 className="font-serif italic text-2xl sm:text-3xl text-[#fff8ea] font-bold">
+              {settings.coupleNames}
+            </h4>
+            <p className="text-xs sm:text-sm text-[#edd892] font-cinzel font-semibold mt-1">
+              ✧ Forever Begins With This Beautiful Journey ✧
+            </p>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
+
 

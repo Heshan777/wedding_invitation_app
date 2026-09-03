@@ -25,6 +25,8 @@ export async function PATCH(req: NextRequest) {
     venueLat,
     venueLng,
     heroImageUrl,
+    heroVideoUrl,
+    videoThumbnailUrl,
     galleryJson,
     blessingImageUrl,
     welcomeImageUrl,
@@ -49,6 +51,8 @@ export async function PATCH(req: NextRequest) {
       venueLat: venueLat !== undefined ? Number(venueLat) : undefined,
       venueLng: venueLng !== undefined ? Number(venueLng) : undefined,
       heroImageUrl,
+      heroVideoUrl,
+      videoThumbnailUrl,
       galleryJson,
       blessingImageUrl,
       welcomeImageUrl,
@@ -71,6 +75,8 @@ export async function PATCH(req: NextRequest) {
       venueLat: Number(venueLat) || 7.00365,
       venueLng: Number(venueLng) || 79.9426,
       heroImageUrl: heroImageUrl || "/images/couple-portrait-1.jpg",
+      heroVideoUrl: heroVideoUrl || null,
+      videoThumbnailUrl: videoThumbnailUrl || null,
       galleryJson: galleryJson || null,
       blessingImageUrl: blessingImageUrl || "/images/couple-portrait-2.jpg",
       welcomeImageUrl: welcomeImageUrl || "/images/couple-welcome.jpg",
@@ -83,6 +89,7 @@ export async function PATCH(req: NextRequest) {
       contactPhone: contactPhone || "+94 77 123 4567",
     },
   });
+
 
   return NextResponse.json(updated);
 }
