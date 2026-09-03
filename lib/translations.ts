@@ -69,6 +69,9 @@ export interface Translations {
   loveReactions: string;
   sendLove: string;
   loved: string;
+  slideshow: string;
+  pauseSlideshow: string;
+  playSlideshow: string;
 
   // Venue & Navigation
   venueTitle: string;
@@ -202,6 +205,9 @@ export const translations: Record<Locale, Translations> = {
     loveReactions: "Hearts Given",
     sendLove: "Send Love",
     loved: "Loved!",
+    slideshow: "Slideshow",
+    pauseSlideshow: "Pause",
+    playSlideshow: "Autoplay",
 
     venueTitle: "Venue & Location",
     venueSubtitle: "Join us at the elegant banquet hall for our celebration",
@@ -331,6 +337,10 @@ export const translations: Record<Locale, Translations> = {
     loveReactions: "ලැබුණු ආදරය",
     sendLove: "ආදරය එක් කරන්න",
     loved: "ස්තුතියි!",
+    slideshow: "ස්වයංක්‍රීය දසුන",
+    pauseSlideshow: "නවත්වන්න",
+    playSlideshow: "ස්වයංක්‍රීයව ධාවනය",
+
 
     venueTitle: "උත්සව ශාලාව සහ ස්ථානය",
     venueSubtitle: "අපගේ ප්‍රීතිමත් දිනය සැමරීමට උත්සව ශාලාව වෙත පැමිණෙන්න",
@@ -460,6 +470,10 @@ export const translations: Record<Locale, Translations> = {
     loveReactions: "வாழ்த்துகள்",
     sendLove: "அன்பை பகிரவும்",
     loved: "நன்றி!",
+    slideshow: "தானியங்கி காட்சி",
+    pauseSlideshow: "நிறுத்து",
+    playSlideshow: "தானியங்கி இயக்கம்",
+
 
     venueTitle: "மண்டபம் மற்றும் இருப்பிடம்",
     venueSubtitle: "எங்கள் மகிழ்ச்சியான நாளில் பங்கேற்க மண்டபத்திற்கு வருகை தாருங்கள்",

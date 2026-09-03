@@ -158,8 +158,14 @@ export default function InvitationView({
   // Photo Gallery & Lightbox state
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+  const [isSlideshowPlaying, setIsSlideshowPlaying] = useState(true);
+  const [galleryTilt, setGalleryTilt] = useState({ x: 0, y: 0 });
+  const [touchStartX, setTouchStartX] = useState<number | null>(null);
+  const [floatingHearts, setFloatingHearts] = useState<{ id: number; left: number; size: number }[]>([]);
+  const galleryCardRef = useRef<HTMLDivElement>(null);
   const [loveCount, setLoveCount] = useState(142);
   const [hasLiked, setHasLiked] = useState(false);
+
 
   // Pre-Shoot Video state
   const [mediaMode, setMediaMode] = useState<"video" | "photo">(settings.heroVideoUrl ? "video" : "photo");
@@ -320,14 +326,55 @@ export default function InvitationView({
     return (settings.coupleNames || "").slice(0, 2).toUpperCase() || "S & S";
   })();
 
-  const handlePrevPhoto = (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handlePrevPhoto = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
     setCurrentPhotoIndex((prev) => (prev === 0 ? parsedGallery.length - 1 : prev - 1));
   };
 
-  const handleNextPhoto = (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleNextPhoto = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
     setCurrentPhotoIndex((prev) => (prev === parsedGallery.length - 1 ? 0 : prev + 1));
+  };
+
+  // Automatic romantic slideshow interval
+  useEffect(() => {
+    if (!isSlideshowPlaying || isLightboxOpen) return;
+    const interval = setInterval(() => {
+      setCurrentPhotoIndex((prev) => (prev === parsedGallery.length - 1 ? 0 : prev + 1));
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [isSlideshowPlaying, isLightboxOpen, parsedGallery.length]);
+
+  // 3D Parallax Tilt for Photo Card
+  const handleGalleryMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = galleryCardRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const x = (e.clientX - rect.left) / rect.width - 0.5;
+    const y = (e.clientY - rect.top) / rect.height - 0.5;
+    setGalleryTilt({ x: -(y * 8), y: x * 8 });
+  };
+
+  const handleGalleryMouseLeave = () => {
+    setGalleryTilt({ x: 0, y: 0 });
+  };
+
+  // Mobile Touch Swipe Handlers
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStartX(e.touches[0].clientX);
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX === null) return;
+    const touchEndX = e.changedTouches[0].clientX;
+    const diff = touchStartX - touchEndX;
+    if (diff > 45) {
+      // swipe left -> next
+      handleNextPhoto();
+    } else if (diff < -45) {
+      // swipe right -> prev
+      handlePrevPhoto();
+    }
+    setTouchStartX(null);
   };
 
   const openLightbox = (index: number) => {
@@ -352,13 +399,23 @@ export default function InvitationView({
     setHasLiked(true);
     setLoveCount((prev) => prev + 1);
 
+    // Spawn 6 floating hearts
+    const newHearts = Array.from({ length: 6 }, (_, i) => ({
+      id: Date.now() + i,
+      left: 15 + Math.random() * 70,
+      size: 18 + Math.random() * 16,
+    }));
+    setFloatingHearts(newHearts);
+    setTimeout(() => setFloatingHearts([]), 1800);
+
     confetti({
-      particleCount: 45,
-      spread: 60,
+      particleCount: 55,
+      spread: 70,
       origin: { y: 0.8 },
-      colors: ["#800020", "#c5a059", "#dfba73", "#ffccd5"],
+      colors: ["#800020", "#c5a059", "#dfba73", "#ffccd5", "#ffd700"],
     });
   };
+
 
   const triggerReaction = (type: "love" | "cheers" | "bless") => {
     const colors =
@@ -1043,39 +1100,121 @@ export default function InvitationView({
               </p>
             </div>
 
-            {/* Interactive Featured Photo Carousel Card */}
-            <div className="relative rounded-2xl overflow-hidden border border-[#c5a059]/60 shadow-lg bg-[#140e11] group">
-              <div className="relative h-64 sm:h-80 w-full overflow-hidden">
-                <Image
-                  src={parsedGallery[currentPhotoIndex]?.src || heroImageSrc}
-                  alt={parsedGallery[currentPhotoIndex]?.title || settings.coupleNames}
-                  fill
-                  sizes="(max-width: 640px) 100vw, 550px"
-                  className="object-cover transition-all duration-700 group-hover:scale-105"
-                  priority
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30" />
+            {/* Floating Heart Fountain Emitters */}
+            {floatingHearts.map((h) => (
+              <div
+                key={h.id}
+                className="absolute bottom-20 z-30 pointer-events-none animate-heart-float select-none text-center"
+                style={{
+                  left: `${h.left}%`,
+                  fontSize: `${h.size}px`,
+                }}
+              >
+                💖
+              </div>
+            ))}
 
-                {/* Tag Badge */}
-                <div className="absolute top-3 left-3 z-10 px-3 py-1 rounded-full bg-black/50 backdrop-blur-md border border-[#c5a059]/40 text-[#edd892] text-[10px] font-cinzel font-semibold">
-                  {t.photoCount(currentPhotoIndex + 1, parsedGallery.length)}
+            {/* 3D Interactive Featured Photo Carousel Card */}
+            <div
+              ref={galleryCardRef}
+
+              onMouseMove={handleGalleryMouseMove}
+              onMouseLeave={handleGalleryMouseLeave}
+              onTouchStart={handleTouchStart}
+              onTouchEnd={handleTouchEnd}
+              style={{
+                perspective: "1000px",
+                transform: `rotateX(${galleryTilt.x}deg) rotateY(${galleryTilt.y}deg)`,
+              }}
+              className="relative rounded-2xl overflow-hidden border-2 border-[#c5a059]/70 shadow-2xl bg-[#140e11] group transition-transform duration-200 ease-out"
+            >
+              {/* Autoplay Golden Progress Bar Line */}
+              {isSlideshowPlaying && (
+                <div className="absolute top-0 inset-x-0 h-1 bg-white/20 z-30 overflow-hidden">
+                  <div
+                    key={`progress-${currentPhotoIndex}`}
+                    className="h-full bg-gradient-to-r from-[#ffd700] via-[#dfba73] to-[#fff2cf]"
+                    style={{
+                      animation: "gold-progress 5s linear forwards",
+                    }}
+                  />
+                </div>
+              )}
+
+              {/* Ambient Bokeh & Twinkling Particles Overlay */}
+              <div className="absolute inset-0 pointer-events-none z-20 overflow-hidden">
+                <div className="absolute top-6 left-12 w-6 h-6 rounded-full bg-[#ffd700]/30 blur-sm animate-bokeh" />
+                <div className="absolute bottom-14 right-10 w-9 h-9 rounded-full bg-[#dfba73]/25 blur-md animate-bokeh [animation-delay:2s]" />
+                <div className="absolute top-1/2 left-1/3 w-4 h-4 rounded-full bg-[#fff2cf]/40 blur-xs animate-bokeh [animation-delay:4s]" />
+              </div>
+
+              <div className="relative h-64 sm:h-84 w-full overflow-hidden flex items-center justify-center">
+                {/* Ken Burns Romantic Zooming Image Container */}
+                <div
+                  key={`photo-${currentPhotoIndex}`}
+                  className="relative w-full h-full animate-ken-burns"
+                >
+                  <Image
+                    src={parsedGallery[currentPhotoIndex]?.src || heroImageSrc}
+                    alt={parsedGallery[currentPhotoIndex]?.title || settings.coupleNames}
+                    fill
+                    sizes="(max-width: 640px) 100vw, 550px"
+                    className="object-cover object-center transition duration-500"
+                    priority
+                  />
                 </div>
 
-                {/* Lightbox Expand Button */}
-                <button
-                  type="button"
-                  onClick={() => openLightbox(currentPhotoIndex)}
-                  className="absolute top-3 right-3 z-10 p-2 rounded-full bg-black/50 hover:bg-[#800020] text-[#edd892] backdrop-blur-md border border-[#c5a059]/40 transition shadow-md cursor-pointer"
-                  title="Expand to Fullscreen"
-                >
-                  <Maximize2 className="w-4 h-4" />
-                </button>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-black/35 pointer-events-none z-10" />
+
+                {/* Top Bar Badge & Controls */}
+                <div className="absolute top-3 inset-x-3 flex items-center justify-between z-20">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/60 backdrop-blur-md border border-[#c5a059]/40 text-[#edd892] text-[10px] font-cinzel font-semibold shadow-lg">
+                    <Sparkles className="w-3 h-3 text-[#ffd700] animate-spin-slow" />
+                    <span>{t.photoCount(currentPhotoIndex + 1, parsedGallery.length)}</span>
+                  </div>
+
+                  <div className="flex items-center gap-1.5">
+                    {/* Autoplay / Pause Toggle */}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setIsSlideshowPlaying((prev) => !prev);
+                      }}
+                      className={`p-2 rounded-full backdrop-blur-md border text-xs font-cinzel font-semibold transition cursor-pointer shadow-md flex items-center gap-1 ${
+                        isSlideshowPlaying
+                          ? "bg-[#800020] text-[#ffd700] border-[#ffd700]"
+                          : "bg-black/60 text-[#dfba73] border-[#c5a059]/40 hover:bg-[#800020]"
+                      }`}
+                      title={isSlideshowPlaying ? t.pauseSlideshow : t.playSlideshow}
+                    >
+                      {isSlideshowPlaying ? (
+                        <Pause className="w-3.5 h-3.5" />
+                      ) : (
+                        <Play className="w-3.5 h-3.5 fill-current" />
+                      )}
+                      <span className="text-[10px] hidden sm:inline">
+                        {isSlideshowPlaying ? t.pauseSlideshow : t.playSlideshow}
+                      </span>
+                    </button>
+
+                    {/* Lightbox Expand Button */}
+                    <button
+                      type="button"
+                      onClick={() => openLightbox(currentPhotoIndex)}
+                      className="p-2 rounded-full bg-black/60 hover:bg-[#800020] text-[#edd892] backdrop-blur-md border border-[#c5a059]/40 transition shadow-md cursor-pointer"
+                      title="Expand to Fullscreen"
+                    >
+                      <Maximize2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
 
                 {/* Carousel Left & Right Navigation Arrows */}
                 <button
                   type="button"
                   onClick={handlePrevPhoto}
-                  className="absolute left-2 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full bg-black/40 hover:bg-[#800020] text-white backdrop-blur-md border border-[#c5a059]/30 transition opacity-80 hover:opacity-100 cursor-pointer"
+                  className="absolute left-2.5 top-1/2 -translate-y-1/2 z-20 p-2.5 rounded-full bg-black/50 hover:bg-[#800020] text-white backdrop-blur-md border border-[#c5a059]/40 transition opacity-80 hover:opacity-100 hover:scale-110 active:scale-95 cursor-pointer shadow-lg"
                   title="Previous Photo"
                 >
                   <ChevronLeft className="w-4 h-4" />
@@ -1083,35 +1222,41 @@ export default function InvitationView({
                 <button
                   type="button"
                   onClick={handleNextPhoto}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full bg-black/40 hover:bg-[#800020] text-white backdrop-blur-md border border-[#c5a059]/30 transition opacity-80 hover:opacity-100 cursor-pointer"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 z-20 p-2.5 rounded-full bg-black/50 hover:bg-[#800020] text-white backdrop-blur-md border border-[#c5a059]/40 transition opacity-80 hover:opacity-100 hover:scale-110 active:scale-95 cursor-pointer shadow-lg"
                   title="Next Photo"
                 >
                   <ChevronRight className="w-4 h-4" />
                 </button>
 
                 {/* Photo Caption Overlay */}
-                <div className="absolute bottom-0 inset-x-0 p-4 text-white z-10">
-                  <h4 className="font-cinzel text-base sm:text-lg font-bold text-[#fff8ea]">
+                <div className="absolute bottom-0 inset-x-0 p-4 sm:p-5 text-white z-20">
+                  <div className="inline-block px-2.5 py-0.5 rounded-full bg-[#800020]/80 text-[#edd892] text-[9px] font-cinzel uppercase tracking-wider mb-1">
+                    {parsedGallery[currentPhotoIndex]?.tag || "Pre-Wedding"}
+                  </div>
+                  <h4 className="font-cinzel text-base sm:text-lg font-bold text-[#fff8ea] drop-shadow-md">
                     {parsedGallery[currentPhotoIndex]?.title}
                   </h4>
-                  <p className="text-xs text-[#dfba73] font-sans mt-0.5">
+                  <p className="text-xs text-[#dfba73] font-sans mt-0.5 drop-shadow">
                     {parsedGallery[currentPhotoIndex]?.subtitle}
                   </p>
                 </div>
               </div>
             </div>
 
-            {/* Thumbnail Strip Selector */}
-            <div className="grid grid-cols-4 gap-2 mt-3">
+            {/* Animated Thumbnail Strip Selector */}
+            <div className="grid grid-cols-4 gap-2.5 mt-3.5">
               {parsedGallery.map((item: any, idx: number) => (
                 <button
                   key={idx}
                   type="button"
-                  onClick={() => setCurrentPhotoIndex(idx)}
-                  className={`relative h-14 sm:h-16 rounded-xl overflow-hidden border-2 transition cursor-pointer ${
+                  onClick={() => {
+                    setCurrentPhotoIndex(idx);
+                    setIsSlideshowPlaying(false);
+                  }}
+                  className={`relative h-14 sm:h-16 rounded-xl overflow-hidden border-2 transition-all duration-300 cursor-pointer ${
                     currentPhotoIndex === idx
-                      ? "border-[#800020] ring-2 ring-[#dfba73] scale-[1.02] shadow-md"
-                      : "border-[#c5a059]/40 opacity-70 hover:opacity-100"
+                      ? "border-[#ffd700] ring-2 ring-[#ffd700] scale-105 shadow-[0_0_15px_rgba(223,186,115,0.6)] animate-glow-gold z-10"
+                      : "border-[#c5a059]/40 opacity-70 hover:opacity-100 hover:scale-102"
                   }`}
                 >
                   <Image
@@ -1121,21 +1266,24 @@ export default function InvitationView({
                     sizes="100px"
                     className="object-cover"
                   />
+                  {currentPhotoIndex === idx && (
+                    <div className="absolute inset-0 bg-[#800020]/15 border-t border-[#ffd700]/60 pointer-events-none" />
+                  )}
                 </button>
               ))}
             </div>
 
             {/* Interactive Love Reaction Bar */}
-            <div className="mt-5 pt-4 border-t border-[#c5a059]/30 flex items-center justify-between">
+            <div className="mt-5 pt-4 border-t border-[#c5a059]/30 flex items-center justify-between flex-wrap gap-2">
               <span className="text-xs text-[#5a483e] font-sans">
                 {t.loveReactions}:
               </span>
               <button
                 type="button"
                 onClick={handleSendLove}
-                className={`px-4 py-2 rounded-full text-xs font-cinzel font-bold flex items-center gap-2 transition cursor-pointer shadow-md ${
+                className={`px-4 py-2 rounded-full text-xs font-cinzel font-bold flex items-center gap-2 transition cursor-pointer shadow-md active:scale-95 ${
                   hasLiked
-                    ? "bg-[#800020] text-[#fdfbf7] scale-105 border border-[#c5a059]"
+                    ? "bg-[#800020] text-[#fdfbf7] scale-105 border border-[#c5a059] shadow-[0_0_15px_rgba(128,0,32,0.5)]"
                     : "bg-white text-[#800020] hover:bg-[#800020]/10 border border-[#c5a059]/50"
                 }`}
               >
