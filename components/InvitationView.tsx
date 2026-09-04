@@ -1,18 +1,61 @@
 "use client";
 
+import { useEffect, useState, useRef } from "react";
 import Image from "next/image";
+import QRCode from "qrcode";
+import confetti from "canvas-confetti";
+import {
+  Calendar,
+  MapPin,
+  Clock,
+  Send,
+  Share2,
+  Copy,
+  Check,
+  Navigation,
+  Sparkles,
+  Heart,
+  QrCode,
+  Users,
+  Compass,
+  MessageSquareHeart,
+  Music,
+  ChevronLeft,
+  ChevronRight,
+  Maximize2,
+  X,
+  Camera,
+  ZoomIn,
+  Play,
+  Pause,
+  Volume2,
+  VolumeX,
+  Film,
+  Globe,
+} from "lucide-react";
 import CountdownTimer from "./CountdownTimer";
 import VenueMap from "./VenueMap";
 import FallingDecor from "./FallingDecor";
 import MusicPlayer from "./MusicPlayer";
+import EnvelopeOpening from "./EnvelopeOpening";
 import { formatEventDate } from "@/lib/date";
 import { generateICS } from "@/lib/calendar";
+import { translations, Locale } from "@/lib/translations";
 
 type Guest = {
+  id?: string;
+  token: string;
   displayName: string;
   salutation: string;
-  inviteType: "SINGLE" | "COUPLE" | "FAMILY";
+  inviteType: string;
   tableNumber: number;
+  notes?: string | null;
+  phone?: string | null;
+  rsvpStatus?: string | null;
+  attendeeCount?: number | null;
+  dietary?: string | null;
+  rsvpMessage?: string | null;
+  rsvpSubmittedAt?: Date | string | null;
 };
 
 type Settings = {
@@ -24,9 +67,73 @@ type Settings = {
   venueAddress: string;
   venueLat: number;
   venueLng: number;
-  heroImageUrl: string | null;
-  musicUrl: string | null;
+  heroImageUrl?: string | null;
+  heroVideoUrl?: string | null;
+  videoThumbnailUrl?: string | null;
+  galleryJson?: string | null;
+  blessingImageUrl?: string | null;
+  welcomeImageUrl?: string | null;
+  placeCardImageUrl?: string | null;
+  placeCardNote?: string | null;
+  musicUrl?: string | null;
+  dressCodeTitle?: string | null;
+  dressCodeDescription?: string | null;
+  timelineJson?: string | null;
+  contactPhone?: string | null;
 };
+
+function getYouTubeEmbedUrl(url: string) {
+  if (!url) return null;
+  const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/))([\w-]{11})/);
+  if (match && match[1]) {
+    return `https://www.youtube.com/embed/${match[1]}?autoplay=1&rel=0&modestbranding=1`;
+  }
+  return null;
+}
+
+function getVimeoEmbedUrl(url: string) {
+  if (!url) return null;
+  const match = url.match(/vimeo\.com\/(?:video\/)?([0-9]+)/);
+  if (match && match[1]) {
+    return `https://player.vimeo.com/video/${match[1]}?autoplay=1&title=0&byline=0&portrait=0`;
+  }
+  return null;
+}
+
+type GuestbookWish = {
+  id: string;
+  authorName: string;
+  message: string;
+  likes: number;
+  createdAt: string;
+};
+
+const coupleGallery = [
+  {
+    src: "/images/couple-portrait-1.jpg",
+    title: "A Timeless Bond",
+    subtitle: "Two souls, one sacred journey under the stars",
+    tag: "Pre-Wedding Shoot",
+  },
+  {
+    src: "/images/couple-portrait-2.jpg",
+    title: "Golden Hour Romance",
+    subtitle: "Embracing a lifetime of love and shared dreams",
+    tag: "Tender Moments",
+  },
+  {
+    src: "/images/couple-portrait-3.jpg",
+    title: "Walking into Forever",
+    subtitle: "Hand in hand towards a bright new chapter",
+    tag: "Celebration",
+  },
+  {
+    src: "/images/couple-portrait-4.jpg",
+    title: "The Sacred Promise",
+    subtitle: "Tokens of love and eternal devotion",
+    tag: "Wedding Rings",
+  },
+];
 
 function formatInviteLine(guest: Guest) {
   if (guest.inviteType === "FAMILY") {
@@ -35,148 +142,1656 @@ function formatInviteLine(guest: Guest) {
   return `${guest.salutation} ${guest.displayName}`;
 }
 
-export default function InvitationView({ guest, settings }: { guest: Guest; settings: Settings }) {
-  const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${settings.venueLat},${settings.venueLng}`;
-  const date = formatEventDate(settings.eventDate);
+export default function InvitationView({
+  guest,
+  settings,
+}: {
+  guest: Guest;
+  settings: Settings;
+}) {
+  const [locale, setLocale] = useState<Locale>("en");
+  const [copiedAddress, setCopiedAddress] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
+  const [qrDataUrl, setQrDataUrl] = useState<string>("");
+  const [envelopeOpened, setEnvelopeOpened] = useState(false);
 
-  function handleAddToCalendar() {
-    generateICS({
-      title: `${settings.coupleNames} — Homecoming`,
-      description: `Homecoming ceremony for ${settings.coupleNames}`,
-      location: `${settings.venueName}, ${settings.venueAddress}`,
-      startDate: settings.eventDate,
-    });
+  // Photo Gallery & Lightbox state
+  const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+  const [isSlideshowPlaying, setIsSlideshowPlaying] = useState(true);
+  const [galleryTilt, setGalleryTilt] = useState({ x: 0, y: 0 });
+  const [touchStartX, setTouchStartX] = useState<number | null>(null);
+  const [floatingHearts, setFloatingHearts] = useState<{ id: number; left: number; size: number }[]>([]);
+  const galleryCardRef = useRef<HTMLDivElement>(null);
+  const [loveCount, setLoveCount] = useState(142);
+  const [hasLiked, setHasLiked] = useState(false);
+
+
+  // Pre-Shoot Video state
+  const [mediaMode, setMediaMode] = useState<"video" | "photo">(settings.heroVideoUrl ? "video" : "photo");
+  const [isVideoPlaying, setIsVideoPlaying] = useState(true);
+  const [isVideoMuted, setIsVideoMuted] = useState(true);
+  const [showCinemaModal, setShowCinemaModal] = useState(false);
+  const heroVideoRef = useRef<HTMLVideoElement>(null);
+  const modalVideoRef = useRef<HTMLVideoElement>(null);
+
+  // Read saved locale on mount
+  useEffect(() => {
+    const savedLocale = sessionStorage.getItem("invite_locale") as Locale | null;
+    if (savedLocale && ["en", "si", "ta"].includes(savedLocale)) {
+      setLocale(savedLocale);
+    }
+  }, []);
+
+  const handleLanguageChange = (newLocale: Locale) => {
+    setLocale(newLocale);
+    sessionStorage.setItem("invite_locale", newLocale);
+  };
+
+  const t = translations[locale] || translations.en;
+
+  const youtubeEmbedUrl = settings.heroVideoUrl ? getYouTubeEmbedUrl(settings.heroVideoUrl) : null;
+  const vimeoEmbedUrl = settings.heroVideoUrl ? getVimeoEmbedUrl(settings.heroVideoUrl) : null;
+
+  function handleToggleVideoAudio(e?: React.MouseEvent) {
+    e?.stopPropagation();
+    if (heroVideoRef.current) {
+      const newMuted = !isVideoMuted;
+      heroVideoRef.current.muted = newMuted;
+      setIsVideoMuted(newMuted);
+      if (!newMuted) {
+        window.dispatchEvent(new CustomEvent("wedding_video_play"));
+      } else {
+        window.dispatchEvent(new CustomEvent("wedding_video_pause"));
+      }
+    }
   }
 
+  function handleToggleVideoPlay(e?: React.MouseEvent) {
+    e?.stopPropagation();
+    if (heroVideoRef.current) {
+      if (heroVideoRef.current.paused) {
+        heroVideoRef.current.play();
+        setIsVideoPlaying(true);
+      } else {
+        heroVideoRef.current.pause();
+        setIsVideoPlaying(false);
+      }
+    }
+  }
+
+  function openCinemaTheater() {
+    setShowCinemaModal(true);
+    window.dispatchEvent(new CustomEvent("wedding_video_play"));
+  }
+
+  function closeCinemaTheater() {
+    setShowCinemaModal(false);
+    window.dispatchEvent(new CustomEvent("wedding_video_pause"));
+  }
+
+  // RSVP Form state
+  const [rsvpStatus, setRsvpStatus] = useState<"attending" | "declined" | "">(
+    guest.rsvpStatus === "ATTENDING" ? "attending" : guest.rsvpStatus === "DECLINED" ? "declined" : ""
+  );
+  const maxAttendees = guest.inviteType === "SINGLE" ? 1 : guest.inviteType === "COUPLE" ? 2 : 5;
+  const [rsvpCount, setRsvpCount] = useState<number>(
+    guest.attendeeCount ? Math.min(guest.attendeeCount, maxAttendees) : guest.inviteType === "COUPLE" ? 2 : 1
+  );
+  const [dietary, setDietary] = useState<string>(guest.dietary || "NONE");
+  const [rsvpWish, setRsvpWish] = useState(guest.rsvpMessage || "");
+  const [rsvpSubmitted, setRsvpSubmitted] = useState(Boolean(guest.rsvpSubmittedAt || guest.rsvpStatus));
+  const [submittingRsvp, setSubmittingRsvp] = useState(false);
+
+  // Digital Guestbook wishes state
+  const [wishes, setWishes] = useState<GuestbookWish[]>([]);
+  const [loadingWishes, setLoadingWishes] = useState(false);
+  const [likedWishIds, setLikedWishIds] = useState<string[]>([]);
+
+  async function loadWishes() {
+    try {
+      setLoadingWishes(true);
+      const res = await fetch("/api/wishes");
+      if (res.ok) {
+        const data = await res.json();
+        setWishes(Array.isArray(data) ? data : []);
+      }
+    } catch {
+      // ignore
+    } finally {
+      setLoadingWishes(false);
+    }
+  }
+
+  useEffect(() => {
+    loadWishes();
+  }, []);
+
+  async function handleLikeWish(wishId: string) {
+    if (likedWishIds.includes(wishId)) return;
+    setLikedWishIds((prev) => [...prev, wishId]);
+    setWishes((prev) =>
+      prev.map((w) => (w.id === wishId ? { ...w, likes: w.likes + 1 } : w))
+    );
+
+    try {
+      await fetch(`/api/wishes`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: wishId }),
+      });
+    } catch {
+      // rollback if failed
+    }
+  }
+
+  // Parse Gallery items if customized in settings
+  const parsedGallery = (() => {
+    if (settings.galleryJson) {
+      try {
+        const parsed = JSON.parse(settings.galleryJson);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch {}
+    }
+    return coupleGallery;
+  })();
+
+  // Parse Timeline items if customized in settings
+  const parsedTimeline = (() => {
+    if (settings.timelineJson) {
+      try {
+        const parsed = JSON.parse(settings.timelineJson);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch {}
+    }
+    return t.defaultTimeline;
+  })();
+
+  const date = formatEventDate(settings.eventDate);
+  const heroImageSrc = settings.heroImageUrl || "/images/couple-portrait-1.jpg";
+  const welcomeImageSrc = settings.welcomeImageUrl || "/images/couple-welcome.jpg";
+  const placeCardImageSrc = settings.placeCardImageUrl || "/images/couple-sweet.jpg";
+  const blessingImageSrc = settings.blessingImageUrl || "/images/couple-portrait-2.jpg";
+  const placeCardNote = settings.placeCardNote || t.cantWaitToWelcome;
+
+  const monogram = (() => {
+    const parts = (settings.coupleNames || "").split(/&|and|\+/i).map((s) => s.trim()).filter(Boolean);
+    if (parts.length >= 2) {
+      return `${parts[0][0]?.toUpperCase() || "S"} & ${parts[1][0]?.toUpperCase() || "S"}`;
+    }
+    const words = (settings.coupleNames || "").trim().split(/\s+/);
+    if (words.length >= 2) {
+      return `${words[0][0]?.toUpperCase() || "S"} & ${words[words.length - 1][0]?.toUpperCase() || "S"}`;
+    }
+    return (settings.coupleNames || "").slice(0, 2).toUpperCase() || "S & S";
+  })();
+
+  const handlePrevPhoto = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    setCurrentPhotoIndex((prev) => (prev === 0 ? parsedGallery.length - 1 : prev - 1));
+  };
+
+  const handleNextPhoto = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    setCurrentPhotoIndex((prev) => (prev === parsedGallery.length - 1 ? 0 : prev + 1));
+  };
+
+  // Automatic romantic slideshow interval
+  useEffect(() => {
+    if (!isSlideshowPlaying || isLightboxOpen) return;
+    const interval = setInterval(() => {
+      setCurrentPhotoIndex((prev) => (prev === parsedGallery.length - 1 ? 0 : prev + 1));
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [isSlideshowPlaying, isLightboxOpen, parsedGallery.length]);
+
+  // 3D Parallax Tilt for Photo Card
+  const handleGalleryMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = galleryCardRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const x = (e.clientX - rect.left) / rect.width - 0.5;
+    const y = (e.clientY - rect.top) / rect.height - 0.5;
+    setGalleryTilt({ x: -(y * 8), y: x * 8 });
+  };
+
+  const handleGalleryMouseLeave = () => {
+    setGalleryTilt({ x: 0, y: 0 });
+  };
+
+  // Mobile Touch Swipe Handlers
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStartX(e.touches[0].clientX);
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX === null) return;
+    const touchEndX = e.changedTouches[0].clientX;
+    const diff = touchStartX - touchEndX;
+    if (diff > 45) {
+      // swipe left -> next
+      handleNextPhoto();
+    } else if (diff < -45) {
+      // swipe right -> prev
+      handlePrevPhoto();
+    }
+    setTouchStartX(null);
+  };
+
+  const openLightbox = (index: number) => {
+    setCurrentPhotoIndex(index);
+    setIsLightboxOpen(true);
+  };
+
+  // Keyboard navigation for Lightbox
+  useEffect(() => {
+    if (!isLightboxOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setIsLightboxOpen(false);
+      if (e.key === "ArrowLeft") setCurrentPhotoIndex((prev) => (prev === 0 ? parsedGallery.length - 1 : prev - 1));
+      if (e.key === "ArrowRight") setCurrentPhotoIndex((prev) => (prev === parsedGallery.length - 1 ? 0 : prev + 1));
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isLightboxOpen, parsedGallery.length]);
+
+  const handleSendLove = () => {
+    if (hasLiked) return;
+    setHasLiked(true);
+    setLoveCount((prev) => prev + 1);
+
+    // Spawn 6 floating hearts
+    const newHearts = Array.from({ length: 6 }, (_, i) => ({
+      id: Date.now() + i,
+      left: 15 + Math.random() * 70,
+      size: 18 + Math.random() * 16,
+    }));
+    setFloatingHearts(newHearts);
+    setTimeout(() => setFloatingHearts([]), 1800);
+
+    confetti({
+      particleCount: 55,
+      spread: 70,
+      origin: { y: 0.8 },
+      colors: ["#800020", "#c5a059", "#dfba73", "#ffccd5", "#ffd700"],
+    });
+  };
+
+
+  const triggerReaction = (type: "love" | "cheers" | "bless") => {
+    const colors =
+      type === "love"
+        ? ["#e63956", "#ff758f", "#ffd700"]
+        : type === "cheers"
+        ? ["#dfba73", "#ffd700", "#ffffff"]
+        : ["#9e1b32", "#ffd700", "#e63956"];
+
+    confetti({
+      particleCount: 50,
+      spread: 70,
+      origin: { y: 0.65 },
+      colors,
+    });
+  };
+
+  // Maps and navigation URLs
+  const encodedVenue = encodeURIComponent(`${settings.venueName}, ${settings.venueAddress}`);
+  const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${settings.venueLat},${settings.venueLng}`;
+  const appleMapsUrl = `https://maps.apple.com/?q=${encodedVenue}&ll=${settings.venueLat},${settings.venueLng}`;
+  const wazeUrl = `https://waze.com/ul?ll=${settings.venueLat},${settings.venueLng}&navigate=yes`;
+  const uberUrl = `https://m.uber.com/ul/?action=setPickup&pickup=my_location&dropoff[latitude]=${settings.venueLat}&dropoff[longitude]=${settings.venueLng}&dropoff[nickname]=${encodeURIComponent(
+    settings.venueName
+  )}`;
+
+  // Google Calendar direct web URL
+  const eventDateObj = new Date(settings.eventDate);
+  const gCalStart = eventDateObj.toISOString().replace(/-|:|\.\d\d\d/g, "");
+  const gCalEnd = new Date(eventDateObj.getTime() + 5 * 60 * 60 * 1000)
+    .toISOString()
+    .replace(/-|:|\.\d\d\d/g, "");
+  const googleCalendarWebUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(
+    `${settings.coupleNames} — ${t.homecomingCelebration}`
+  )}&dates=${gCalStart}/${gCalEnd}&details=${encodeURIComponent(
+    `${t.homecomingCelebration} for ${settings.coupleNames}`
+  )}&location=${encodeURIComponent(
+    `${settings.venueName}, ${settings.venueAddress}`
+  )}`;
+
+  const yahooCalendarWebUrl = `https://calendar.yahoo.com/?v=60&title=${encodeURIComponent(
+    `${settings.coupleNames} — ${t.homecomingCelebration}`
+  )}&st=${gCalStart}&et=${gCalEnd}&desc=${encodeURIComponent(
+    `${t.homecomingCelebration} for ${settings.coupleNames}`
+  )}&in_loc=${encodeURIComponent(`${settings.venueName}, ${settings.venueAddress}`)}`;
+
+  const outlookCalendarWebUrl = `https://outlook.live.com/calendar/0/deeplink/compose?path=/calendar/action/compose&rru=addevent&subject=${encodeURIComponent(
+    `${settings.coupleNames} — ${t.homecomingCelebration}`
+  )}&startdt=${eventDateObj.toISOString()}&enddt=${new Date(
+    eventDateObj.getTime() + 5 * 60 * 60 * 1000
+  ).toISOString()}&body=${encodeURIComponent(
+    `${t.homecomingCelebration} for ${settings.coupleNames}`
+  )}&location=${encodeURIComponent(`${settings.venueName}, ${settings.venueAddress}`)}`;
+
+  // Generate dynamic QR Code for guest VIP pass
+  useEffect(() => {
+    const inviteUrl = typeof window !== "undefined" ? window.location.href : "";
+    QRCode.toDataURL(
+      inviteUrl,
+      {
+        width: 180,
+        margin: 1,
+        color: {
+          dark: "#6b0f24",
+          light: "#ffffff",
+        },
+      },
+      (err, url) => {
+        if (!err && url) {
+          setQrDataUrl(url);
+        }
+      }
+    );
+  }, [guest.token]);
+
+  const handleOpenEnvelope = (selectedLocale: Locale) => {
+    setLocale(selectedLocale);
+    setEnvelopeOpened(true);
+    // Broadcast event to start music player
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new Event("start_wedding_music"));
+    }
+  };
+
+  const handleCopyAddress = async () => {
+    await navigator.clipboard.writeText(
+      `${settings.venueName}, ${settings.venueAddress}`
+    );
+    setCopiedAddress(true);
+    setTimeout(() => setCopiedAddress(false), 2000);
+  };
+
+  const handleCopyLink = async () => {
+    if (typeof window !== "undefined") {
+      await navigator.clipboard.writeText(window.location.href);
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 2000);
+    }
+  };
+
+  const handleShareWhatsApp = () => {
+    const text = `✨ ${t.cordiallyInvited}\n\n*${settings.coupleNames}* — ${t.homecomingCelebration}! 🥂🍾\n\n${t.tapToOpen}:\n${
+      typeof window !== "undefined" ? window.location.href : ""
+    }`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
+  };
+
+  const handleDownloadICS = () => {
+    generateICS({
+      title: `${settings.coupleNames} — ${t.homecomingCelebration}`,
+      description: `${t.homecomingCelebration} for ${settings.coupleNames}. ${t.cantWaitToWelcome}`,
+      location: `${settings.venueName}, ${settings.venueAddress}`,
+      startDate: settings.eventDate,
+      durationHours: 5,
+    });
+  };
+
+  const handleRsvpSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!rsvpStatus) return;
+    setSubmittingRsvp(true);
+
+    try {
+      await fetch("/api/invite/rsvp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          token: guest.token,
+          status: rsvpStatus,
+          attendeeCount: rsvpStatus === "attending" ? rsvpCount : 0,
+          dietary: rsvpStatus === "attending" ? dietary : "NONE",
+          message: rsvpWish,
+        }),
+      });
+
+      setRsvpSubmitted(true);
+      loadWishes();
+      // Confetti for RSVP
+      if (rsvpStatus === "attending") {
+        confetti({
+          particleCount: 70,
+          spread: 70,
+          origin: { y: 0.7 },
+          colors: ["#c5a059", "#dfba73", "#800020", "#ffffff"],
+        });
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setSubmittingRsvp(false);
+    }
+  };
+
   return (
-    <div className="relative min-h-screen bg-[#FFF8F0] text-[#1A181C] overflow-hidden">
+    <div className="relative min-h-screen bg-[#121013] text-[#fdfbf7] selection:bg-[#c5a059]/30 selection:text-[#f7e4be] overflow-x-hidden">
+      {/* 3D Wax Seal Envelope Entrance Overlay */}
+      <EnvelopeOpening
+        guestName={guest.displayName}
+        salutation={guest.salutation}
+        coupleNames={settings.coupleNames}
+        initialLocale={locale}
+        onOpen={handleOpenEnvelope}
+      />
+
+      {/* Floating Animated Rose Petals & Gold Sparkles */}
       <FallingDecor />
+
+      {/* Floating Luxury Language Switcher */}
+      <div className="fixed top-4 right-4 z-40 flex items-center gap-1 p-1 rounded-full bg-[#181114]/90 border border-[#dfba73]/60 shadow-[0_4px_20px_rgba(0,0,0,0.6)] backdrop-blur-md">
+        {(["en", "si", "ta"] as Locale[]).map((loc) => (
+          <button
+            key={loc}
+            type="button"
+            onClick={() => handleLanguageChange(loc)}
+            className={`px-3 py-1 rounded-full text-xs font-cinzel font-bold transition-all cursor-pointer flex items-center gap-1 ${
+              locale === loc
+                ? "bg-gradient-to-r from-[#800020] to-[#6b0f24] text-[#ffd700] border border-[#ffd700] shadow-md scale-105"
+                : "text-[#edd892]/70 hover:text-[#ffd700]"
+            }`}
+          >
+            <span>{translations[loc].langFlag}</span>
+            <span className="hidden sm:inline">{translations[loc].langName}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* Luxury Vinyl Disc Background Music Player */}
       <MusicPlayer src={settings.musicUrl || "/audio/background.mp3"} />
 
-      <div className="relative z-10 max-w-md mx-auto px-6 py-12">
-        {/* Header */}
-        <h1 className="font-serif italic text-5xl text-center text-[#1A181C] mb-6">Invitation</h1>
-        <p className="text-center text-base leading-relaxed mb-8">
-          Join us as we celebrate the wonderful union of
-        </p>
+      {/* Main Luxury Invitation Container */}
+      <div className="relative z-10 max-w-xl mx-auto px-4 sm:px-6 py-10 sm:py-16">
+        {/* Parchment Invitation Card Frame */}
+        <div className="parchment-card rounded-3xl p-6 sm:p-10 text-[#1a1517] relative overflow-hidden">
+          {/* Ornate Gold Border Lining */}
+          <div className="absolute inset-2 sm:inset-3 rounded-2xl border-2 border-[#c5a059]/40 pointer-events-none" />
+          <div className="absolute inset-3 sm:inset-4 rounded-2xl border border-[#c5a059]/20 pointer-events-none" />
 
-        {/* Couple names with hero illustration */}
-        <div className="relative left-1/2 -translate-x-1/2 w-screen max-w-2xl mb-8">
-          <div className="relative h-[420px] sm:h-[520px]">
-            <Image
-            src="/images/couple-hero.png"
-            alt=""
-            width={500}
-            height={600}
-            className="absolute inset-0 w-full h-full object-contain opacity-25 -z-10"
-          />
-          <Image
-            src="/images/groom-small.png"
-            alt=""
-            width={90}
-            height={140}
-            className="absolute -left-2 top-6"
-          />
-          <Image
-            src="/images/bride-small.png"
-            alt=""
-            width={90}
-            height={140}
-            className="absolute -right-2 top-24"
-          />
+          {/* Corner Vintage Filigree Accents */}
+          <div className="absolute top-4 left-4 text-[#c5a059] text-base select-none">⚜</div>
+          <div className="absolute top-4 right-4 text-[#c5a059] text-base select-none">⚜</div>
+          <div className="absolute bottom-4 left-4 text-[#c5a059] text-base select-none">⚜</div>
+          <div className="absolute bottom-4 right-4 text-[#c5a059] text-base select-none">⚜</div>
 
-          <div className="text-center py-8">
-            <div className="w-32 h-px bg-[#1A181C]/40 mx-auto mb-4" />
-            <h2 className="font-serif italic text-5xl text-[#800020] leading-tight">
-              {settings.coupleNames.split("&")[0]}
-              <br />
-              <span className="text-3xl">&</span>
-              <br />
-              {settings.coupleNames.split("&")[1]}
-            </h2>
-            <div className="w-32 h-px bg-[#1A181C]/40 mx-auto mt-4" />
+          {/* Header Crown / Monogram */}
+          <div className="text-center pt-2 mb-4">
+            <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-[#800020]/10 border border-[#c5a059]/50 shadow-inner mb-3">
+              <span className="font-cinzel text-xl font-bold text-[#800020]">
+                {monogram}
+              </span>
+            </div>
+            <p className="text-[11px] sm:text-xs uppercase tracking-[0.35em] text-[#8c6a2b] font-cinzel font-semibold">
+              {t.royalHomecoming}
+            </p>
+            <h1 className="font-serif italic text-4xl sm:text-5xl text-[#6b0f24] font-bold mt-1 tracking-tight">
+              {t.invitationTitle}
+            </h1>
           </div>
+
+          {/* Intro Ribbon */}
+          <div className="flex items-center justify-center gap-3 my-4">
+            <div className="h-px w-12 bg-gradient-to-r from-transparent to-[#c5a059]" />
+            <Sparkles className="w-4 h-4 text-[#c5a059]" />
+            <div className="h-px w-12 bg-gradient-to-l from-transparent to-[#c5a059]" />
+          </div>
+
+          <p className="text-center text-sm sm:text-base text-[#3d3238] font-sans leading-relaxed mb-4">
+            {t.familyIntro}
+          </p>
+
+          {/* Interactive Pre-Shoot Film / Couple Photo Switcher Pills */}
+          {settings.heroVideoUrl && (
+            <div className="flex items-center justify-center gap-2 mb-4">
+              <button
+                type="button"
+                onClick={() => setMediaMode("video")}
+                className={`px-4 py-1.5 rounded-full text-xs font-cinzel font-bold flex items-center gap-1.5 transition cursor-pointer shadow-md ${
+                  mediaMode === "video"
+                    ? "bg-[#800020] text-[#ffd700] border-2 border-[#ffd700] shadow-[0_0_15px_rgba(223,186,115,0.4)]"
+                    : "bg-[#1f1519] text-[#dfba73]/70 border border-[#c5a059]/30 hover:text-[#edd892]"
+                }`}
+              >
+                <Film className="w-3.5 h-3.5 text-[#ffd700]" />
+                <span>{t.preshootFilm}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setMediaMode("photo")}
+                className={`px-4 py-1.5 rounded-full text-xs font-cinzel font-bold flex items-center gap-1.5 transition cursor-pointer shadow-md ${
+                  mediaMode === "photo"
+                    ? "bg-[#800020] text-[#ffd700] border-2 border-[#ffd700] shadow-[0_0_15px_rgba(223,186,115,0.4)]"
+                    : "bg-[#1f1519] text-[#dfba73]/70 border border-[#c5a059]/30 hover:text-[#edd892]"
+                }`}
+              >
+                <Camera className="w-3.5 h-3.5 text-[#dfba73]" />
+                <span>{t.couplePortrait}</span>
+              </button>
+            </div>
+          )}
+
+          {/* Luxury Couple Hero Pre-Shoot Video / Photo Cinema Card */}
+          <div className="relative w-full my-6">
+            <div className="relative rounded-3xl overflow-hidden border-2 border-[#c5a059]/60 shadow-2xl bg-[#1a1215] group">
+              {settings.heroVideoUrl && mediaMode === "video" ? (
+                /* PRE-SHOOT CINEMATIC VIDEO MODE */
+                <div className="relative w-full overflow-hidden bg-black">
+                  {youtubeEmbedUrl ? (
+                    <div className="relative aspect-video w-full">
+                      <iframe
+                        src={youtubeEmbedUrl}
+                        title={t.preshootTrailerTitle}
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                        className="w-full h-full border-0"
+                      />
+                    </div>
+                  ) : vimeoEmbedUrl ? (
+                    <div className="relative aspect-video w-full">
+                      <iframe
+                        src={vimeoEmbedUrl}
+                        title={t.preshootTrailerTitle}
+                        allow="autoplay; fullscreen; picture-in-picture"
+                        allowFullScreen
+                        className="w-full h-full border-0"
+                      />
+                    </div>
+                  ) : (
+                    /* DIRECT MP4/WEBM VIDEO PLAYER */
+                    <div className="relative h-80 sm:h-96 w-full overflow-hidden flex items-center justify-center">
+                      <video
+                        ref={heroVideoRef}
+                        src={settings.heroVideoUrl}
+                        poster={settings.videoThumbnailUrl || heroImageSrc}
+                        autoPlay
+                        loop
+                        muted={isVideoMuted}
+                        playsInline
+                        className="w-full h-full object-cover object-center transition duration-700 group-hover:scale-105"
+                      />
+
+                      {/* Ambient Scrim Gradients */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-[#12080c] via-transparent to-[#12080c]/40 pointer-events-none" />
+
+                      {/* Top Bar Badge & Controls */}
+                      <div className="absolute top-3 inset-x-3 flex items-center justify-between z-20 pointer-events-auto">
+                        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/60 backdrop-blur-md border border-[#dfba73]/50 text-[#edd892] text-[10px] sm:text-xs font-cinzel font-semibold shadow-lg">
+                          <Film className="w-3.5 h-3.5 text-[#ffd700]" />
+                          <span>{t.preshootFilm}</span>
+                        </div>
+
+                        <div className="flex items-center gap-1.5">
+                          {/* Audio Mute/Unmute */}
+                          <button
+                            type="button"
+                            onClick={handleToggleVideoAudio}
+                            className={`px-3 py-1.5 rounded-full backdrop-blur-md border text-xs font-cinzel font-semibold flex items-center gap-1.5 shadow-lg transition cursor-pointer ${
+                              isVideoMuted
+                                ? "bg-black/60 text-[#dfba73] border-[#c5a059]/40 hover:bg-[#800020]"
+                                : "bg-[#800020] text-[#fffdfa] border-[#ffd700] shadow-[0_0_15px_rgba(223,186,115,0.6)]"
+                            }`}
+                            title={isVideoMuted ? t.unmute : t.soundOn}
+                          >
+                            {isVideoMuted ? (
+                              <>
+                                <VolumeX className="w-3.5 h-3.5" />
+                                <span className="text-[10px] hidden sm:inline">{t.unmute}</span>
+                              </>
+                            ) : (
+                              <>
+                                <Volume2 className="w-3.5 h-3.5 text-[#ffd700] animate-pulse" />
+                                <span className="text-[10px] hidden sm:inline">{t.soundOn}</span>
+                              </>
+                            )}
+                          </button>
+
+                          {/* Fullscreen Cinema Theater */}
+                          <button
+                            type="button"
+                            onClick={openCinemaTheater}
+                            className="p-2 rounded-full bg-black/60 hover:bg-[#800020] text-[#edd892] backdrop-blur-md border border-[#c5a059]/40 transition shadow-lg cursor-pointer"
+                            title={t.cinemaTheater}
+                          >
+                            <Maximize2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Center Play Button (for quick play/pause or theater opening) */}
+                      <button
+                        type="button"
+                        onClick={openCinemaTheater}
+                        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 p-4 sm:p-5 rounded-full bg-[#800020]/85 hover:bg-[#6b0f24] text-[#fffdfa] border-2 border-[#ffd700] shadow-[0_0_35px_rgba(223,186,115,0.7)] backdrop-blur-md flex items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95 cursor-pointer z-10 group/btn"
+                        title={t.watchLoveStory}
+                      >
+                        <Play className="w-6 h-6 sm:w-7 sm:h-7 fill-[#ffd700] text-[#ffd700] ml-1 transition-transform group-hover/btn:scale-110" />
+                        <span className="absolute -inset-2 rounded-full border border-[#ffd700]/50 animate-ping opacity-30 pointer-events-none" />
+                      </button>
+
+                      {/* Couple Names Calligraphy Overlaid at base of video */}
+                      <div className="absolute bottom-0 inset-x-0 p-4 sm:p-6 text-center text-[#fdfbf7] pointer-events-none z-10">
+                        <p className="text-[10px] sm:text-xs uppercase tracking-[0.3em] text-[#edd892] font-cinzel font-semibold mb-1 drop-shadow">
+                          {t.preshootTrailerTitle}
+                        </p>
+                        <div className="flex items-center justify-center gap-2 sm:gap-3 flex-wrap">
+                          <h2 className="font-serif italic text-3xl sm:text-4xl text-[#fff8ea] font-bold tracking-tight drop-shadow-lg">
+                            {settings.coupleNames.split("&")[0]?.trim() || "Sandharu"}
+                          </h2>
+                          <span className="font-alex text-3xl sm:text-4xl text-[#edd892] drop-shadow-lg">&</span>
+                          <h2 className="font-serif italic text-3xl sm:text-4xl text-[#fff8ea] font-bold tracking-tight drop-shadow-lg">
+                            {settings.coupleNames.split("&")[1]?.trim() || "Sanduni"}
+                          </h2>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                /* HIGH-RES COUPLE PHOTO MODE (Fallback) */
+                <div className="relative h-72 sm:h-96 w-full overflow-hidden">
+                  <Image
+                    src={heroImageSrc}
+                    alt={settings.coupleNames}
+                    fill
+                    sizes="(max-width: 640px) 100vw, 550px"
+                    className="object-cover object-top transition duration-700 group-hover:scale-105"
+                    priority
+                  />
+
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#12080c] via-[#12080c]/30 to-transparent" />
+
+                  {/* Luxury Gold Frame Filigree Accents inside photo */}
+                  <div className="absolute top-3 left-3 text-[#edd892] text-sm select-none opacity-80">⚜</div>
+                  <div className="absolute top-3 right-3 text-[#edd892] text-sm select-none opacity-80">⚜</div>
+
+                  {/* Lightbox Trigger Button */}
+                  <button
+                    type="button"
+                    onClick={() => openLightbox(0)}
+                    className="absolute top-3 right-3 z-10 p-2 rounded-full bg-black/40 hover:bg-[#800020] text-[#edd892] backdrop-blur-md border border-[#c5a059]/40 transition shadow-lg cursor-pointer"
+                    title={t.couplePortrait}
+                  >
+                    <Maximize2 className="w-4 h-4" />
+                  </button>
+
+                  {/* Couple Names Calligraphy Overlaid at base of photo */}
+                  <div className="absolute bottom-0 inset-x-0 p-4 sm:p-6 text-center text-[#fdfbf7]">
+                    <p className="text-[10px] sm:text-xs uppercase tracking-[0.3em] text-[#edd892] font-cinzel font-semibold mb-1">
+                      {t.happyCouple}
+                    </p>
+                    <div className="flex items-center justify-center gap-2 sm:gap-3 flex-wrap">
+                      <h2 className="font-serif italic text-3xl sm:text-4xl text-[#fff8ea] font-bold tracking-tight drop-shadow-md">
+                        {settings.coupleNames.split("&")[0]?.trim() || "Sandharu"}
+                      </h2>
+                      <span className="font-alex text-3xl sm:text-4xl text-[#edd892] drop-shadow">&</span>
+                      <h2 className="font-serif italic text-3xl sm:text-4xl text-[#fff8ea] font-bold tracking-tight drop-shadow-md">
+                        {settings.coupleNames.split("&")[1]?.trim() || "Sanduni"}
+                      </h2>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Host Intro */}
+          <p className="text-center text-sm sm:text-base text-[#3d3238] font-sans leading-relaxed my-6 px-2">
+            {settings.hostIntro}
+          </p>
+
+          {/* Personalized Guest Salutation Card */}
+          <div className="relative my-6 rounded-2xl bg-gradient-to-r from-[#800020] via-[#6b0f24] to-[#420614] p-5 text-center text-[#fdfbf7] shadow-xl border border-[#dfba73]/40">
+            <div className="text-[10px] uppercase tracking-[0.25em] text-[#edd892] font-cinzel font-semibold mb-1">
+              {t.honouredGuest}
+            </div>
+            <div className="font-serif italic text-2xl sm:text-3xl font-bold tracking-wide">
+              {formatInviteLine(guest)}
+            </div>
+          </div>
+
+          {/* SWEET COUPLE WARM WELCOME VIGNETTE */}
+          <div className="relative my-8 rounded-3xl overflow-hidden border-2 border-[#c5a059]/60 bg-gradient-to-b from-[#2a1721] via-[#1c0e16] to-[#12080e] text-[#fdfbf7] p-6 sm:p-8 shadow-2xl">
+            {/* Ornate Corner Stars */}
+            <div className="absolute top-3 left-3 text-[#edd892]/60 text-xs select-none">✦</div>
+            <div className="absolute top-3 right-3 text-[#edd892]/60 text-xs select-none">✦</div>
+            <div className="absolute bottom-3 left-3 text-[#edd892]/60 text-xs select-none">✦</div>
+            <div className="absolute bottom-3 right-3 text-[#edd892]/60 text-xs select-none">✦</div>
+
+            <div className="flex flex-col sm:flex-row items-center gap-5 sm:gap-6">
+              {/* Sweet Couple Portrait Cameo */}
+              <div className="relative w-32 h-32 sm:w-40 sm:h-40 rounded-full overflow-hidden border-4 border-[#dfba73] shadow-[0_0_25px_rgba(223,186,115,0.4)] flex-shrink-0 group">
+                <Image
+                  src={welcomeImageSrc}
+                  alt={t.cantWaitToWelcome}
+                  fill
+                  sizes="160px"
+                  className="object-cover transition duration-700 group-hover:scale-110"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+              </div>
+
+              {/* Sweet Welcome Narrative */}
+              <div className="text-center sm:text-left flex-1">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#800020]/80 text-[#edd892] text-[10px] sm:text-xs font-cinzel font-semibold mb-2 border border-[#dfba73]/40">
+                  <Heart className="w-3.5 h-3.5 fill-[#ffd700] text-[#ffd700]" /> {t.withAllOurLove}
+                </div>
+                <h3 className="font-serif italic text-2xl sm:text-3xl text-[#fff8ea] font-bold">
+                  {t.cantWaitToWelcome}
+                </h3>
+                <p className="font-sans text-xs sm:text-sm text-[#edd892]/90 leading-relaxed mt-2">
+                  {t.sweetWelcomeSub}
+                </p>
+
+                {/* Sweet Interactive Reaction Buttons */}
+                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mt-4">
+                  <button
+                    type="button"
+                    onClick={() => triggerReaction("love")}
+                    className="px-3 py-1.5 rounded-full bg-white/10 hover:bg-[#800020] border border-[#c5a059]/40 text-[#edd892] text-xs font-sans font-semibold flex items-center gap-1.5 transition cursor-pointer active:scale-95"
+                  >
+                    💖 {t.happyCouple}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => triggerReaction("cheers")}
+                    className="px-3 py-1.5 rounded-full bg-white/10 hover:bg-[#800020] border border-[#c5a059]/40 text-[#edd892] text-xs font-sans font-semibold flex items-center gap-1.5 transition cursor-pointer active:scale-95"
+                  >
+                    🥂 Cheers & Love
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => triggerReaction("bless")}
+                    className="px-3 py-1.5 rounded-full bg-white/10 hover:bg-[#800020] border border-[#c5a059]/40 text-[#edd892] text-xs font-sans font-semibold flex items-center gap-1.5 transition cursor-pointer active:scale-95"
+                  >
+                    ✨ Auspicious Blessings
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <p className="text-center text-sm sm:text-base text-[#3d3238] font-sans leading-relaxed my-6 px-2">
+            {settings.invitationBody}
+          </p>
+
+          {/* Golden Date & Time Badge */}
+          <div className="my-8 text-center bg-gradient-to-b from-[#fdf6e7] to-[#faedd0] rounded-2xl p-6 border border-[#c5a059]/50 shadow-md">
+            <div className="w-16 h-px bg-[#c5a059] mx-auto mb-2" />
+            <p className="font-cinzel text-xl sm:text-2xl text-[#800020] font-bold uppercase tracking-wider">
+              {date.weekday}
+            </p>
+            <p className="font-serif italic text-base text-[#8c6a2b]">{date.month}</p>
+            <p className="font-cinzel text-6xl sm:text-7xl text-[#1a1517] font-black my-1">
+              {String(date.day).padStart(2, "0")}
+              <sup className="text-2xl sm:text-3xl text-[#800020] font-serif italic ml-1">
+                {date.ordinal}
+              </sup>
+            </p>
+            <p className="font-cinzel text-xl text-[#800020] font-semibold tracking-widest">
+              {date.year}
+            </p>
+            <div className="w-16 h-px bg-[#c5a059] mx-auto mt-2" />
+            <p className="text-xs sm:text-sm text-[#4a3b32] font-sans font-medium mt-3">
+              Ceremony & Reception from <span className="font-bold text-[#800020]">{date.time}</span> onwards
+            </p>
+          </div>
+
+          {/* VIRTUAL LUXURY TABLE SEATING PLACE CARD */}
+          <div className="my-8 rounded-3xl border-2 border-[#c5a059] bg-gradient-to-b from-[#fffdfa] via-[#faf5ec] to-[#f5eedf] p-6 sm:p-7 shadow-2xl relative overflow-hidden text-[#1a1517]">
+            {/* Ornate Gold Border Filigrees */}
+            <div className="absolute inset-2 rounded-2xl border border-[#c5a059]/30 pointer-events-none" />
+            <div className="absolute top-3 left-3 text-[#c5a059] text-xs select-none">⚜</div>
+            <div className="absolute top-3 right-3 text-[#c5a059] text-xs select-none">⚜</div>
+            <div className="absolute bottom-3 left-3 text-[#c5a059] text-xs select-none">⚜</div>
+            <div className="absolute bottom-3 right-3 text-[#c5a059] text-xs select-none">⚜</div>
+
+            {/* Header Couple Cameo & Title */}
+            <div className="flex flex-col items-center text-center pb-4 border-b border-[#c5a059]/30">
+              <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden border-2 border-[#c5a059] shadow-md mb-2 bg-[#800020]/10">
+                <Image
+                  src={placeCardImageSrc}
+                  alt={settings.coupleNames}
+                  fill
+                  sizes="80px"
+                  className="object-cover object-top"
+                />
+              </div>
+              <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.25em] text-[#800020] font-cinzel font-bold">
+                {settings.coupleNames}
+              </p>
+              <span className="text-[9px] uppercase tracking-wider text-[#8c6a2b] font-cinzel">
+                {t.vipSeatingTitle}
+              </span>
+            </div>
+
+            {/* Guest & Table Details */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 py-4">
+              <div className="text-center sm:text-left">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#800020]/10 text-[#800020] text-xs font-cinzel font-semibold mb-1">
+                  <QrCode className="w-3.5 h-3.5" /> {t.vipCheckinPass}
+                </div>
+                <h3 className="font-serif italic text-2xl sm:text-3xl font-bold text-[#6b0f24]">
+                  {formatInviteLine(guest)}
+                </h3>
+                <div className="flex items-center justify-center sm:justify-start gap-2 mt-1 text-xs text-[#5a483e]">
+                  <Users className="w-3.5 h-3.5 text-[#800020]" />
+                  <span>{t.guestPlural}: <strong>{guest.inviteType === "COUPLE" ? "2 Persons (Couple)" : guest.inviteType === "FAMILY" ? "Family Group" : "1 Person"}</strong></span>
+                </div>
+                <div className="mt-3 flex items-center justify-center sm:justify-start gap-2">
+                  <span className="text-xs text-[#5a483e] font-sans font-medium">{t.tablePrefix}:</span>
+                  <div className="px-4 py-1.5 rounded-xl bg-[#800020] text-[#fdfbf7] font-cinzel font-bold text-base shadow-md">
+                    {t.tableNumber(guest.tableNumber)}
+                  </div>
+                </div>
+              </div>
+
+              {/* QR Code Scannable Reception Pass */}
+              {qrDataUrl && (
+                <div className="flex flex-col items-center bg-white p-2.5 rounded-2xl border border-[#c5a059]/50 shadow-md">
+                  <Image
+                    src={qrDataUrl}
+                    alt="Guest Reception QR Code"
+                    width={110}
+                    height={110}
+                    className="w-24 h-24 sm:w-28 sm:h-28"
+                  />
+                  <span className="text-[9px] uppercase tracking-wider text-[#800020] font-cinzel font-bold mt-1 text-center max-w-[120px]">
+                    {t.scanAtEntrance}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Sweet Couple Note */}
+            <div className="pt-3 border-t border-[#c5a059]/30 text-center">
+              <p className="font-serif italic text-xs sm:text-sm text-[#6b0f24] font-medium">
+                &ldquo;{placeCardNote}&rdquo;
+              </p>
+            </div>
+          </div>
+
+          {/* Live Countdown Section */}
+          <div className="my-8">
+            <CountdownTimer targetDate={settings.eventDate} locale={locale} />
+          </div>
+
+          {/* Programme / Event Itinerary Timeline */}
+          <div className="my-10">
+            <div className="text-center mb-6">
+              <span className="text-[11px] uppercase tracking-[0.25em] text-[#8c6a2b] font-cinzel font-semibold">
+                {t.programmeSubtitle}
+              </span>
+              <h3 className="font-serif italic text-2xl sm:text-3xl text-[#6b0f24] font-bold">
+                {t.programmeTitle}
+              </h3>
+            </div>
+
+            <div className="space-y-3">
+              {parsedTimeline.map((evt: any, idx: number) => (
+                <div
+                  key={idx}
+                  className="flex items-start gap-3.5 p-3.5 rounded-2xl bg-[#fbf7ee] border border-[#c5a059]/30 hover:border-[#c5a059] shadow-sm transition duration-200"
+                >
+                  <div className="min-w-[85px] px-2.5 py-1.5 rounded-xl bg-[#800020]/10 text-[#800020] font-cinzel text-xs font-bold text-center border border-[#800020]/20 shadow-xs">
+                    {evt.time}
+                  </div>
+                  <div>
+                    <h4 className="font-cinzel text-xs sm:text-sm font-bold text-[#1a1517]">
+                      {evt.title}
+                    </h4>
+                    <p className="text-[11px] sm:text-xs text-[#5a483e] font-sans mt-0.5">
+                      {evt.desc}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* DRESS CODE & STYLE PALETTE SECTION */}
+          <div className="my-10 p-6 rounded-3xl bg-gradient-to-b from-[#fffdfa] to-[#fbf6eb] border-2 border-[#c5a059]/40 shadow-xl text-center">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#800020]/10 text-[#800020] text-xs font-cinzel font-semibold mb-2">
+              <Sparkles className="w-3.5 h-3.5 text-[#c5a059]" /> {t.dressCodeGuideTitle}
+            </div>
+            <h3 className="font-serif italic text-2xl sm:text-3xl text-[#6b0f24] font-bold">
+              {settings.dressCodeTitle || t.dressCodeDefaultTitle}
+            </h3>
+            <p className="text-xs sm:text-sm text-[#5a483e] max-w-md mx-auto mt-2 leading-relaxed">
+              {settings.dressCodeDescription || t.dressCodeDefaultDesc}
+            </p>
+
+            {/* Color Palette Swatches */}
+            <div className="mt-5 pt-4 border-t border-[#c5a059]/30">
+              <span className="text-[10px] uppercase tracking-widest text-[#8c6a2b] font-cinzel font-semibold block mb-3">
+                {t.colorPaletteTitle}
+              </span>
+              <div className="flex items-center justify-center gap-3 sm:gap-4 flex-wrap">
+                {t.paletteColors.map((c, i) => (
+                  <div key={i} className="flex flex-col items-center gap-1.5">
+                    <div
+                      className="w-9 h-9 sm:w-11 sm:h-11 rounded-full shadow-md transition-transform hover:scale-110 flex items-center justify-center border-2 border-white/80"
+                      style={{ backgroundColor: c.hex }}
+                    />
+                    <span className="text-[9px] font-cinzel text-[#5a483e] font-medium">
+                      {c.name}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Moments of Love & Pre-Wedding Gallery Section */}
+          <div className="my-10 p-5 sm:p-6 rounded-3xl bg-gradient-to-b from-[#fffdfa] to-[#fbf6eb] border-2 border-[#c5a059]/50 shadow-xl">
+            <div className="text-center mb-6">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#800020]/10 text-[#800020] text-xs font-cinzel font-semibold mb-2">
+                <Camera className="w-3.5 h-3.5 text-[#c5a059]" /> {t.momentsOfLoveTitle}
+              </div>
+              <h3 className="font-serif italic text-2xl sm:text-3xl text-[#6b0f24] font-bold">
+                {t.momentsOfLoveTitle}
+              </h3>
+              <p className="font-serif italic text-xs sm:text-sm text-[#8c6a2b] mt-1">
+                &ldquo;{t.momentsOfLoveSubtitle}&rdquo;
+              </p>
+            </div>
+
+            {/* Floating Heart Fountain Emitters */}
+            {floatingHearts.map((h) => (
+              <div
+                key={h.id}
+                className="absolute bottom-20 z-30 pointer-events-none animate-heart-float select-none text-center"
+                style={{
+                  left: `${h.left}%`,
+                  fontSize: `${h.size}px`,
+                }}
+              >
+                💖
+              </div>
+            ))}
+
+            {/* 3D Interactive Featured Photo Carousel Card */}
+            <div
+              ref={galleryCardRef}
+
+              onMouseMove={handleGalleryMouseMove}
+              onMouseLeave={handleGalleryMouseLeave}
+              onTouchStart={handleTouchStart}
+              onTouchEnd={handleTouchEnd}
+              style={{
+                perspective: "1000px",
+                transform: `rotateX(${galleryTilt.x}deg) rotateY(${galleryTilt.y}deg)`,
+              }}
+              className="relative rounded-2xl overflow-hidden border-2 border-[#c5a059]/70 shadow-2xl bg-[#140e11] group transition-transform duration-200 ease-out"
+            >
+              {/* Autoplay Golden Progress Bar Line */}
+              {isSlideshowPlaying && (
+                <div className="absolute top-0 inset-x-0 h-1 bg-white/20 z-30 overflow-hidden">
+                  <div
+                    key={`progress-${currentPhotoIndex}`}
+                    className="h-full bg-gradient-to-r from-[#ffd700] via-[#dfba73] to-[#fff2cf]"
+                    style={{
+                      animation: "gold-progress 5s linear forwards",
+                    }}
+                  />
+                </div>
+              )}
+
+              {/* Ambient Bokeh & Twinkling Particles Overlay */}
+              <div className="absolute inset-0 pointer-events-none z-20 overflow-hidden">
+                <div className="absolute top-6 left-12 w-6 h-6 rounded-full bg-[#ffd700]/30 blur-sm animate-bokeh" />
+                <div className="absolute bottom-14 right-10 w-9 h-9 rounded-full bg-[#dfba73]/25 blur-md animate-bokeh [animation-delay:2s]" />
+                <div className="absolute top-1/2 left-1/3 w-4 h-4 rounded-full bg-[#fff2cf]/40 blur-xs animate-bokeh [animation-delay:4s]" />
+              </div>
+
+              <div className="relative h-64 sm:h-84 w-full overflow-hidden flex items-center justify-center">
+                {/* Ken Burns Romantic Zooming Image Container */}
+                <div
+                  key={`photo-${currentPhotoIndex}`}
+                  className="relative w-full h-full animate-ken-burns"
+                >
+                  <Image
+                    src={parsedGallery[currentPhotoIndex]?.src || heroImageSrc}
+                    alt={parsedGallery[currentPhotoIndex]?.title || settings.coupleNames}
+                    fill
+                    sizes="(max-width: 640px) 100vw, 550px"
+                    className="object-cover object-center transition duration-500"
+                    priority
+                  />
+                </div>
+
+                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-black/35 pointer-events-none z-10" />
+
+                {/* Top Bar Badge & Controls */}
+                <div className="absolute top-3 inset-x-3 flex items-center justify-between z-20">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/60 backdrop-blur-md border border-[#c5a059]/40 text-[#edd892] text-[10px] font-cinzel font-semibold shadow-lg">
+                    <Sparkles className="w-3 h-3 text-[#ffd700] animate-spin-slow" />
+                    <span>{t.photoCount(currentPhotoIndex + 1, parsedGallery.length)}</span>
+                  </div>
+
+                  <div className="flex items-center gap-1.5">
+                    {/* Autoplay / Pause Toggle */}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setIsSlideshowPlaying((prev) => !prev);
+                      }}
+                      className={`p-2 rounded-full backdrop-blur-md border text-xs font-cinzel font-semibold transition cursor-pointer shadow-md flex items-center gap-1 ${
+                        isSlideshowPlaying
+                          ? "bg-[#800020] text-[#ffd700] border-[#ffd700]"
+                          : "bg-black/60 text-[#dfba73] border-[#c5a059]/40 hover:bg-[#800020]"
+                      }`}
+                      title={isSlideshowPlaying ? t.pauseSlideshow : t.playSlideshow}
+                    >
+                      {isSlideshowPlaying ? (
+                        <Pause className="w-3.5 h-3.5" />
+                      ) : (
+                        <Play className="w-3.5 h-3.5 fill-current" />
+                      )}
+                      <span className="text-[10px] hidden sm:inline">
+                        {isSlideshowPlaying ? t.pauseSlideshow : t.playSlideshow}
+                      </span>
+                    </button>
+
+                    {/* Lightbox Expand Button */}
+                    <button
+                      type="button"
+                      onClick={() => openLightbox(currentPhotoIndex)}
+                      className="p-2 rounded-full bg-black/60 hover:bg-[#800020] text-[#edd892] backdrop-blur-md border border-[#c5a059]/40 transition shadow-md cursor-pointer"
+                      title="Expand to Fullscreen"
+                    >
+                      <Maximize2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Carousel Left & Right Navigation Arrows */}
+                <button
+                  type="button"
+                  onClick={handlePrevPhoto}
+                  className="absolute left-2.5 top-1/2 -translate-y-1/2 z-20 p-2.5 rounded-full bg-black/50 hover:bg-[#800020] text-white backdrop-blur-md border border-[#c5a059]/40 transition opacity-80 hover:opacity-100 hover:scale-110 active:scale-95 cursor-pointer shadow-lg"
+                  title="Previous Photo"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={handleNextPhoto}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 z-20 p-2.5 rounded-full bg-black/50 hover:bg-[#800020] text-white backdrop-blur-md border border-[#c5a059]/40 transition opacity-80 hover:opacity-100 hover:scale-110 active:scale-95 cursor-pointer shadow-lg"
+                  title="Next Photo"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+
+                {/* Photo Caption Overlay */}
+                <div className="absolute bottom-0 inset-x-0 p-4 sm:p-5 text-white z-20">
+                  <div className="inline-block px-2.5 py-0.5 rounded-full bg-[#800020]/80 text-[#edd892] text-[9px] font-cinzel uppercase tracking-wider mb-1">
+                    {parsedGallery[currentPhotoIndex]?.tag || "Pre-Wedding"}
+                  </div>
+                  <h4 className="font-cinzel text-base sm:text-lg font-bold text-[#fff8ea] drop-shadow-md">
+                    {parsedGallery[currentPhotoIndex]?.title}
+                  </h4>
+                  <p className="text-xs text-[#dfba73] font-sans mt-0.5 drop-shadow">
+                    {parsedGallery[currentPhotoIndex]?.subtitle}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Animated Thumbnail Strip Selector */}
+            <div className="grid grid-cols-4 gap-2.5 mt-3.5">
+              {parsedGallery.map((item: any, idx: number) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => {
+                    setCurrentPhotoIndex(idx);
+                    setIsSlideshowPlaying(false);
+                  }}
+                  className={`relative h-14 sm:h-16 rounded-xl overflow-hidden border-2 transition-all duration-300 cursor-pointer ${
+                    currentPhotoIndex === idx
+                      ? "border-[#ffd700] ring-2 ring-[#ffd700] scale-105 shadow-[0_0_15px_rgba(223,186,115,0.6)] animate-glow-gold z-10"
+                      : "border-[#c5a059]/40 opacity-70 hover:opacity-100 hover:scale-102"
+                  }`}
+                >
+                  <Image
+                    src={item.src}
+                    alt={item.title || `Photo ${idx + 1}`}
+                    fill
+                    sizes="100px"
+                    className="object-cover"
+                  />
+                  {currentPhotoIndex === idx && (
+                    <div className="absolute inset-0 bg-[#800020]/15 border-t border-[#ffd700]/60 pointer-events-none" />
+                  )}
+                </button>
+              ))}
+            </div>
+
+            {/* Interactive Love Reaction Bar */}
+            <div className="mt-5 pt-4 border-t border-[#c5a059]/30 flex items-center justify-between flex-wrap gap-2">
+              <span className="text-xs text-[#5a483e] font-sans">
+                {t.loveReactions}:
+              </span>
+              <button
+                type="button"
+                onClick={handleSendLove}
+                className={`px-4 py-2 rounded-full text-xs font-cinzel font-bold flex items-center gap-2 transition cursor-pointer shadow-md active:scale-95 ${
+                  hasLiked
+                    ? "bg-[#800020] text-[#fdfbf7] scale-105 border border-[#c5a059] shadow-[0_0_15px_rgba(128,0,32,0.5)]"
+                    : "bg-white text-[#800020] hover:bg-[#800020]/10 border border-[#c5a059]/50"
+                }`}
+              >
+                <Heart
+                  className={`w-4 h-4 ${
+                    hasLiked ? "fill-current text-[#edd892] animate-bounce" : "text-[#800020]"
+                  }`}
+                />
+                <span>{hasLiked ? t.loved : t.sendLove}</span>
+                <span className="px-1.5 py-0.5 rounded-full bg-black/10 text-[10px]">
+                  {loveCount}
+                </span>
+              </button>
+            </div>
+          </div>
+
+          {/* Venue & Location Suite */}
+          <div className="my-10">
+            <div className="text-center mb-4">
+              <span className="text-[11px] uppercase tracking-[0.25em] text-[#8c6a2b] font-cinzel font-semibold">
+                {t.venueSubtitle}
+              </span>
+              <h3 className="font-serif italic text-2xl sm:text-3xl text-[#6b0f24] font-bold">
+                {settings.venueName}
+              </h3>
+              <p className="text-xs sm:text-sm text-[#5a483e] mt-1 max-w-sm mx-auto">
+                {settings.venueAddress}
+              </p>
+            </div>
+
+            {/* Interactive Leaflet Venue Map */}
+            <VenueMap
+              lat={settings.venueLat}
+              lng={settings.venueLng}
+              venueName={settings.venueName}
+            />
+
+            {/* Quick Navigation Buttons (Including Ride Booking) */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-4">
+              <a
+                href={googleMapsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn-gold-shimmer py-2.5 px-3 rounded-xl text-center text-xs font-cinzel font-semibold flex items-center justify-center gap-1.5 shadow-md hover:scale-[1.02] transition"
+              >
+                <Compass className="w-3.5 h-3.5" /> {t.googleMaps}
+              </a>
+              <a
+                href={appleMapsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-[#1a1517] text-[#fdfbf7] hover:bg-black py-2.5 px-3 rounded-xl text-center text-xs font-cinzel font-semibold flex items-center justify-center gap-1.5 shadow-md hover:scale-[1.02] transition"
+              >
+                <Navigation className="w-3.5 h-3.5 text-[#dfba73]" /> {t.appleMaps}
+              </a>
+              <a
+                href={wazeUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-[#2a1a20] text-[#edd892] hover:bg-[#800020] py-2.5 px-3 rounded-xl text-center text-xs font-cinzel font-semibold flex items-center justify-center gap-1.5 shadow-md hover:scale-[1.02] transition"
+              >
+                <MapPin className="w-3.5 h-3.5" /> {t.waze}
+              </a>
+              <a
+                href={uberUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-black text-white hover:bg-neutral-900 py-2.5 px-3 rounded-xl text-center text-xs font-cinzel font-semibold flex items-center justify-center gap-1.5 shadow-md hover:scale-[1.02] transition border border-[#c5a059]/40"
+              >
+                <Navigation className="w-3.5 h-3.5 text-emerald-400" /> {t.uberRide}
+              </a>
+            </div>
+
+            {/* Copy Address Button */}
+            <button
+              onClick={handleCopyAddress}
+              className="mt-2.5 w-full py-2.5 px-4 rounded-xl bg-[#800020]/10 hover:bg-[#800020]/20 text-[#800020] text-xs font-cinzel font-semibold flex items-center justify-center gap-2 transition cursor-pointer border border-[#c5a059]/30"
+            >
+              {copiedAddress ? (
+                <>
+                  <Check className="w-4 h-4 text-emerald-600" /> {t.addressCopied}
+                </>
+              ) : (
+                <>
+                  <Copy className="w-3.5 h-3.5" /> {t.copyAddress}
+                </>
+              )}
+            </button>
+          </div>
+
+          {/* Calendar Integration Hub (Luxury Dropdown Suite) */}
+          <div className="my-8 p-5 rounded-2xl bg-[#fbf7ee] border border-[#c5a059]/40 text-center">
+            <div className="flex items-center justify-center gap-2 mb-2 text-[#800020]">
+              <Calendar className="w-4 h-4" />
+              <span className="font-cinzel text-xs uppercase tracking-widest font-semibold">
+                {t.addToCalendarTitle}
+              </span>
+            </div>
+            <p className="text-xs text-[#5a483e] mb-4">
+              {t.addToCalendarSub}
+            </p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <a
+                href={googleCalendarWebUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="py-2 px-2.5 rounded-xl bg-[#800020] text-[#fdfbf7] hover:bg-[#5c0017] text-[11px] font-cinzel font-semibold flex items-center justify-center gap-1.5 shadow transition"
+              >
+                <Calendar className="w-3.5 h-3.5 text-[#edd892]" /> {t.googleCalendar}
+              </a>
+              <button
+                onClick={handleDownloadICS}
+                className="py-2 px-2.5 rounded-xl bg-[#1a1517] text-[#fdfbf7] hover:bg-black text-[11px] font-cinzel font-semibold flex items-center justify-center gap-1.5 shadow transition cursor-pointer"
+              >
+                <Calendar className="w-3.5 h-3.5 text-[#dfba73]" /> {t.appleCalendar}
+              </button>
+              <a
+                href={outlookCalendarWebUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="py-2 px-2.5 rounded-xl bg-[#0078d4] text-white hover:bg-[#005a9e] text-[11px] font-cinzel font-semibold flex items-center justify-center gap-1.5 shadow transition"
+              >
+                <Calendar className="w-3.5 h-3.5" /> {t.outlookCalendar}
+              </a>
+              <a
+                href={yahooCalendarWebUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="py-2 px-2.5 rounded-xl bg-[#5f01d1] text-white hover:bg-[#4900a3] text-[11px] font-cinzel font-semibold flex items-center justify-center gap-1.5 shadow transition"
+              >
+                <Calendar className="w-3.5 h-3.5" /> {t.yahooCalendar}
+              </a>
+            </div>
+          </div>
+
+          {/* Interactive Production RSVP Suite with Dietary Tracker */}
+          <div className="my-10 p-6 sm:p-7 rounded-3xl bg-gradient-to-b from-[#fffdfa] to-[#f7f2e7] border-2 border-[#c5a059]/60 shadow-2xl">
+            <div className="text-center mb-5">
+              <div className="inline-flex items-center gap-1.5 text-[#800020] text-xs font-cinzel font-semibold mb-1">
+                <MessageSquareHeart className="w-4 h-4 text-[#c5a059]" /> {t.rsvpTitle}
+              </div>
+              <h3 className="font-serif italic text-2xl sm:text-3xl text-[#6b0f24] font-bold">
+                {t.rsvpTitle}
+              </h3>
+              <p className="text-xs text-[#5a483e] mt-1">
+                {t.rsvpSubtitle}
+              </p>
+            </div>
+
+            {rsvpSubmitted && !submittingRsvp ? (
+              <div className="text-center py-6 px-4 bg-[#800020]/10 rounded-2xl border border-[#c5a059]/40 space-y-3">
+                <Heart className="w-10 h-10 text-[#800020] mx-auto fill-[#800020] animate-pulse" />
+                <h4 className="font-cinzel text-lg font-bold text-[#800020]">
+                  {t.rsvpSuccessTitle}
+                </h4>
+                <p className="text-xs text-[#3d3238]">
+                  {rsvpStatus === "attending"
+                    ? `${t.rsvpSuccessAttending} (${rsvpCount} ${rsvpCount === 1 ? t.guestSingle : t.guestPlural}).`
+                    : t.rsvpSuccessDeclined}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setRsvpSubmitted(false)}
+                  className="text-xs text-[#800020] hover:underline font-cinzel font-semibold cursor-pointer pt-2"
+                >
+                  {t.modifyRsvp}
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={handleRsvpSubmit} className="space-y-4">
+                {/* Attending / Decline Options */}
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setRsvpStatus("attending")}
+                    className={`py-3.5 px-3 rounded-2xl font-cinzel text-xs font-bold border transition cursor-pointer flex flex-col items-center gap-1 ${
+                      rsvpStatus === "attending"
+                        ? "bg-[#800020] text-[#fdfbf7] border-[#dfba73] shadow-md scale-[1.02]"
+                        : "bg-white text-[#1a1517] border-[#c5a059]/40 hover:bg-[#800020]/5"
+                    }`}
+                  >
+                    <span>🍾 {t.joyfullyAccept}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setRsvpStatus("declined")}
+                    className={`py-3.5 px-3 rounded-2xl font-cinzel text-xs font-bold border transition cursor-pointer flex flex-col items-center gap-1 ${
+                      rsvpStatus === "declined"
+                        ? "bg-[#4a3b32] text-[#fdfbf7] border-[#dfba73] shadow-md scale-[1.02]"
+                        : "bg-white text-[#1a1517] border-[#c5a059]/40 hover:bg-[#800020]/5"
+                    }`}
+                  >
+                    <span>🕊 {t.regretfullyDecline}</span>
+                  </button>
+                </div>
+
+                {/* Headcount & Dietary if attending */}
+                {rsvpStatus === "attending" && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                    <div>
+                      <label className="block text-xs font-cinzel font-semibold text-[#1a1517] mb-1">
+                        {t.numberOfGuests}
+                      </label>
+                      <select
+                        value={rsvpCount}
+                        onChange={(e) => setRsvpCount(Number(e.target.value))}
+                        className="w-full px-3 py-2.5 rounded-xl bg-white border border-[#c5a059]/60 text-xs text-[#1a1517] focus:outline-none focus:ring-2 focus:ring-[#800020]"
+                      >
+                        {Array.from({ length: maxAttendees }, (_, i) => i + 1).map((num) => (
+                          <option key={num} value={num}>
+                            {num} {num === 1 ? t.guestSingle : t.guestPlural}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-cinzel font-semibold text-[#1a1517] mb-1">
+                        {t.dietaryTitle}
+                      </label>
+                      <select
+                        value={dietary}
+                        onChange={(e) => setDietary(e.target.value)}
+                        className="w-full px-3 py-2.5 rounded-xl bg-white border border-[#c5a059]/60 text-xs text-[#1a1517] focus:outline-none focus:ring-2 focus:ring-[#800020]"
+                      >
+                        {t.dietaryOptions.map((opt) => (
+                          <option key={opt.key} value={opt.key}>
+                            {opt.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                )}
+
+                {/* Blessing Message directly linked to Digital Guestbook */}
+                <div>
+                  <label className="block text-xs font-cinzel font-semibold text-[#1a1517] mb-1">
+                    {t.leaveBlessingPrompt}
+                  </label>
+                  <textarea
+                    rows={3}
+                    placeholder={t.blessingPlaceholder}
+                    value={rsvpWish}
+                    onChange={(e) => setRsvpWish(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#c5a059]/60 text-xs text-[#1a1517] focus:outline-none focus:ring-2 focus:ring-[#800020] resize-none"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={!rsvpStatus || submittingRsvp}
+                  className="w-full py-3.5 rounded-xl btn-gold-shimmer text-xs font-cinzel font-bold uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg disabled:opacity-50 cursor-pointer"
+                >
+                  <Send className="w-3.5 h-3.5" />
+                  {submittingRsvp ? t.submittingRsvp : t.submitRsvp}
+                </button>
+              </form>
+            )}
+          </div>
+
+          {/* DIGITAL WISHES GUESTBOOK STREAM */}
+          <div className="my-10 p-6 rounded-3xl bg-gradient-to-b from-[#fffdfa] to-[#fbf6eb] border-2 border-[#c5a059]/50 shadow-xl">
+            <div className="text-center mb-6">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#800020]/10 text-[#800020] text-xs font-cinzel font-semibold mb-2">
+                <Heart className="w-3.5 h-3.5 text-[#c5a059] fill-[#c5a059]" /> {t.guestbookTitle}
+              </div>
+              <h3 className="font-serif italic text-2xl sm:text-3xl text-[#6b0f24] font-bold">
+                {t.guestbookTitle}
+              </h3>
+              <p className="text-xs text-[#5a483e] mt-1">
+                {t.guestbookSubtitle}
+              </p>
+            </div>
+
+            {loadingWishes ? (
+              <div className="text-center py-6 text-xs text-[#8c6a2b] font-cinzel">
+                Loading blessings...
+              </div>
+            ) : wishes.length === 0 ? (
+              <div className="text-center py-6 px-4 rounded-2xl bg-white/60 border border-[#c5a059]/30 text-xs text-[#5a483e] font-sans italic">
+                {t.noWishesYet} 💖
+              </div>
+            ) : (
+              <div className="space-y-3 max-h-80 overflow-y-auto pr-1">
+                {wishes.map((w) => (
+                  <div
+                    key={w.id}
+                    className="p-4 rounded-2xl bg-white border border-[#c5a059]/40 shadow-sm flex items-start justify-between gap-3"
+                  >
+                    <div className="flex-1">
+                      <h5 className="font-cinzel text-xs font-bold text-[#800020]">
+                        {w.authorName}
+                      </h5>
+                      <p className="font-serif italic text-xs text-[#2a1d25] mt-1 leading-relaxed">
+                        &ldquo;{w.message}&rdquo;
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleLikeWish(w.id)}
+                      className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-cinzel transition cursor-pointer ${
+                        likedWishIds.includes(w.id)
+                          ? "bg-[#800020] text-white border border-[#c5a059]"
+                          : "bg-[#fbf6eb] text-[#800020] hover:bg-[#800020]/10 border border-[#c5a059]/30"
+                      }`}
+                    >
+                      <Heart
+                        className={`w-3 h-3 ${
+                          likedWishIds.includes(w.id) ? "fill-current text-[#dfba73]" : "text-[#800020]"
+                        }`}
+                      />
+                      <span>{w.likes}</span>
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Blessing Illustration & Couple Moment */}
+          <div className="my-8 text-center">
+            <div className="relative max-w-xs mx-auto rounded-2xl overflow-hidden border border-[#c5a059]/40 shadow-lg mb-4 group cursor-pointer" onClick={() => openLightbox(1)}>
+              <div className="relative h-48 w-full">
+                <Image
+                  src={blessingImageSrc}
+                  alt="Blessings from Couple"
+                  fill
+                  sizes="320px"
+                  className="object-cover transition duration-500 group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                <div className="absolute bottom-2 inset-x-0 text-center">
+                  <span className="text-[10px] font-cinzel text-[#edd892] uppercase tracking-widest font-semibold flex items-center justify-center gap-1">
+                    <Sparkles className="w-3 h-3 text-[#dfba73]" /> {t.withAllOurLove}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <p className="font-serif italic text-base sm:text-lg text-[#6b0f24] font-medium mt-3">
+              &ldquo;{t.footerBlessing}&rdquo;
+            </p>
+          </div>
+
+          {/* Social Share & Link Actions */}
+          <div className="pt-6 border-t border-[#c5a059]/30 flex flex-col sm:flex-row items-center justify-center gap-3">
+            <button
+              onClick={handleShareWhatsApp}
+              className="w-full sm:w-auto px-5 py-2.5 rounded-full bg-[#25D366] text-white hover:bg-[#20ba59] text-xs font-sans font-semibold flex items-center justify-center gap-2 shadow transition cursor-pointer"
+            >
+              <Share2 className="w-3.5 h-3.5" /> Share on WhatsApp
+            </button>
+            <button
+              onClick={handleCopyLink}
+              className="w-full sm:w-auto px-5 py-2.5 rounded-full bg-[#1a1517] text-[#edd892] hover:bg-black text-xs font-sans font-semibold flex items-center justify-center gap-2 shadow transition cursor-pointer border border-[#c5a059]/40"
+            >
+              {copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+              {copiedLink ? "Link Copied!" : "Copy Invitation Link"}
+            </button>
+          </div>
+
+          {/* Footer Branding */}
+          <div className="text-center pt-8">
+            <p className="text-[10px] text-[#1a1517]/50 font-sans tracking-wider uppercase">
+              Developed by Sachintha Heshan • Royal Digital Wedding Suite
+            </p>
           </div>
         </div>
-
-        <p className="text-center text-base leading-relaxed mb-6">{settings.hostIntro}</p>
-
-        {/* Guest name pill */}
-        <div className="bg-[#800020] text-[#FFF8F0] font-semibold rounded-full py-3 px-6 text-center mb-6 text-lg">
-          {formatInviteLine(guest)}
-        </div>
-
-        <p className="text-center text-base leading-relaxed mb-10">{settings.invitationBody}</p>
-
-        {/* Date */}
-        <div className="text-center mb-2">
-          <div className="w-24 h-px bg-[#800020] mx-auto mb-3" />
-          <p className="font-serif text-2xl text-[#800020] leading-tight">
-            {date.weekday}
-            <br />
-            {date.month}
-          </p>
-          <p className="font-serif text-6xl text-[#1A181C] my-1">
-            {String(date.day).padStart(2, "0")}
-            <sup className="text-2xl">{date.ordinal}</sup>
-          </p>
-          <p className="font-serif text-xl text-[#800020]">{date.year}</p>
-          <div className="w-24 h-px bg-[#800020] mx-auto mt-3" />
-        </div>
-
-        <p className="text-center text-sm my-4">from {date.time} onwards</p>
-
-        {/* Table number */}
-        <p className="text-center text-sm mb-8">
-          Your reserved table no:{" "}
-          <span className="inline-block bg-[#800020] text-[#FFF8F0] font-semibold rounded-full px-3 py-1 ml-1">
-            {String(guest.tableNumber).padStart(2, "0")}
-          </span>
-        </p>
-
-        {/* Countdown */}
-        <div className="mb-8">
-          <CountdownTimer targetDate={settings.eventDate} />
-        </div>
-
-        <p className="text-center text-sm mb-2">at</p>
-
-        {/* Venue */}
-        <h3 className="font-serif text-2xl text-[#800020] text-center mb-1">{settings.venueName}</h3>
-        <p className="text-sm text-center text-[#1A181C]/70 mb-4">{settings.venueAddress}</p>
-
-        <VenueMap lat={settings.venueLat} lng={settings.venueLng} venueName={settings.venueName} />
-
-        
-          <a href={mapsUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="mt-4 block text-center bg-[#1A181C] hover:bg-black transition text-[#FFF8F0] py-3 rounded-full font-medium"
-        >
-          Get directions via Google Maps
-        </a>
-
-        <button
-          onClick={handleAddToCalendar}
-          className="mt-3 w-full text-center bg-[#1A181C] hover:bg-black transition text-[#FFF8F0] py-3 rounded-full font-medium"
-        >
-          Add this event to calendar
-        </button>
-
-        <p className="text-center text-base leading-relaxed mt-10 mb-10">
-          Your presence and blessings are sincerely appreciated.
-        </p>
-
-        <Image
-          src="/images/couple-kneeling.png"
-          alt=""
-          width={280}
-          height={320}
-          className="mx-auto mb-16"
-        />
-
-        <p className="text-center text-xs text-[#1A181C]/50">Developed By: Pramuka Navodh</p>
       </div>
+
+      {/* Fullscreen Luxury Darkroom Lightbox Modal */}
+      {isLightboxOpen && (
+        <div className="fixed inset-0 z-[999] bg-black/95 backdrop-blur-md flex flex-col items-center justify-between p-4 sm:p-8 animate-in fade-in duration-300">
+          {/* Top Bar: Counter & Close */}
+          <div className="w-full max-w-5xl flex items-center justify-between text-[#edd892] z-10">
+            <div className="flex items-center gap-2">
+              <span className="font-cinzel text-xs sm:text-sm font-semibold tracking-wider">
+                {t.photoCount(currentPhotoIndex + 1, parsedGallery.length)}
+              </span>
+              <span className="text-white/40">•</span>
+              <span className="text-xs text-[#dfba73] hidden sm:inline font-sans">
+                {parsedGallery[currentPhotoIndex]?.tag || "Wedding"}
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsLightboxOpen(false)}
+              className="p-2.5 rounded-full bg-white/10 hover:bg-[#800020] text-white border border-[#c5a059]/40 transition cursor-pointer shadow-lg"
+              title="Close (Esc)"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          {/* Main Photo Center Container */}
+          <div className="relative w-full max-w-4xl h-[60vh] sm:h-[72vh] flex items-center justify-center my-auto">
+            <Image
+              src={parsedGallery[currentPhotoIndex]?.src || heroImageSrc}
+              alt={parsedGallery[currentPhotoIndex]?.title || settings.coupleNames}
+              fill
+              sizes="(max-width: 1024px) 100vw, 1024px"
+              className="object-contain drop-shadow-2xl"
+              priority
+            />
+
+            {/* Left Nav */}
+            <button
+              type="button"
+              onClick={handlePrevPhoto}
+              className="absolute left-2 sm:-left-6 top-1/2 -translate-y-1/2 p-3 rounded-full bg-black/60 hover:bg-[#800020] text-white border border-[#c5a059]/50 transition cursor-pointer shadow-xl backdrop-blur-md"
+              title="Previous (Left Arrow)"
+            >
+              <ChevronLeft className="w-6 h-6" />
+            </button>
+
+            {/* Right Nav */}
+            <button
+              type="button"
+              onClick={handleNextPhoto}
+              className="absolute right-2 sm:-right-6 top-1/2 -translate-y-1/2 p-3 rounded-full bg-black/60 hover:bg-[#800020] text-white border border-[#c5a059]/50 transition cursor-pointer shadow-xl backdrop-blur-md"
+              title="Next (Right Arrow)"
+            >
+              <ChevronRight className="w-6 h-6" />
+            </button>
+          </div>
+
+          {/* Bottom Bar: Title & Subtitle */}
+          <div className="w-full max-w-xl text-center z-10">
+            <h4 className="font-cinzel text-lg sm:text-xl font-bold text-[#fff8ea]">
+              {parsedGallery[currentPhotoIndex]?.title}
+            </h4>
+            <p className="text-xs sm:text-sm text-[#edd892] font-sans mt-1 italic">
+              {parsedGallery[currentPhotoIndex]?.subtitle}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* 4K Cinema Theater Modal */}
+      {showCinemaModal && settings.heroVideoUrl && (
+        <div className="fixed inset-0 z-[1000] bg-black/95 backdrop-blur-xl flex flex-col items-center justify-between p-4 sm:p-8 animate-in fade-in duration-300">
+          {/* Top Bar: Title & Close */}
+          <div className="w-full max-w-5xl flex items-center justify-between text-[#edd892] z-10">
+            <div className="flex items-center gap-2">
+              <Film className="w-4 h-4 text-[#ffd700]" />
+              <span className="font-cinzel text-xs sm:text-sm font-semibold tracking-wider text-[#fffdfa]">
+                {t.cinemaTheater}
+              </span>
+              <span className="text-white/40">•</span>
+              <span className="text-xs text-[#dfba73] font-cinzel">
+                {settings.coupleNames}
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={closeCinemaTheater}
+              className="p-2.5 rounded-full bg-white/10 hover:bg-[#800020] text-white border border-[#c5a059]/40 transition cursor-pointer shadow-lg"
+              title="Close Theater (Esc)"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          {/* Main Video Theater Center Container */}
+          <div className="relative w-full max-w-5xl aspect-video rounded-3xl overflow-hidden border-2 border-[#dfba73] shadow-[0_0_50px_rgba(223,186,115,0.35)] my-auto bg-black flex items-center justify-center">
+            {youtubeEmbedUrl ? (
+              <iframe
+                src={`${youtubeEmbedUrl}&autoplay=1`}
+                title={t.preshootTrailerTitle}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                className="w-full h-full border-0"
+              />
+            ) : vimeoEmbedUrl ? (
+              <iframe
+                src={`${vimeoEmbedUrl}?autoplay=1`}
+                title={t.preshootTrailerTitle}
+                allow="autoplay; fullscreen; picture-in-picture"
+                allowFullScreen
+                className="w-full h-full border-0"
+              />
+            ) : (
+              <video
+                ref={modalVideoRef}
+                src={settings.heroVideoUrl}
+                poster={settings.videoThumbnailUrl || heroImageSrc}
+                autoPlay
+                controls
+                playsInline
+                className="w-full h-full object-contain"
+              />
+            )}
+          </div>
+
+          {/* Bottom Bar */}
+          <div className="w-full max-w-xl text-center z-10">
+            <h4 className="font-serif italic text-2xl sm:text-3xl text-[#fff8ea] font-bold">
+              {settings.coupleNames}
+            </h4>
+            <p className="text-xs sm:text-sm text-[#edd892] font-cinzel font-semibold mt-1">
+              {t.foreverBegins}
+            </p>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

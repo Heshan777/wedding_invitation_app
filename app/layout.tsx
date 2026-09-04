@@ -1,23 +1,20 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+export const viewport: Viewport = {
+  themeColor: "#580b1e",
+  width: "device-width",
+  initialScale: 1,
+};
 
 export const metadata: Metadata = {
-  title: "You're Invited — Sandharu & Sanduni's Homecoming",
-  description: "Join us as we celebrate the wonderful union of Sandharu & Sanduni.",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"),
+  title: "Royal Wedding & Homecoming Invitation | Sandharu & Sanduni",
+  description: "Join us with joy and love as we celebrate the sacred union and homecoming of Sandharu & Sanduni.",
+  keywords: ["Wedding Invitation", "Homecoming", "Sandharu & Sanduni", "Sri Lanka Wedding", "Royal Invitation"],
   openGraph: {
-    title: "You're Invited — Sandharu & Sanduni's Homecoming",
-    description: "Join us as we celebrate the wonderful union of Sandharu & Sanduni.",
+    title: "Sandharu & Sanduni's Wedding & Homecoming Invitation",
+    description: "You are cordially invited to celebrate the homecoming of Sandharu & Sanduni.",
     images: [
       {
         url: "/images/couple-share.png",
@@ -30,19 +27,28 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "You're Invited — Sandharu & Sanduni's Homecoming",
-    description: "Join us as we celebrate the wonderful union of Sandharu & Sanduni.",
+    title: "Sandharu & Sanduni's Wedding & Homecoming Invitation",
+    description: "You are cordially invited to celebrate the homecoming of Sandharu & Sanduni.",
     images: ["/images/couple-share.png"],
   },
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html
-      lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
-      <body className="min-h-full flex flex-col">{children}</body>
+    <html lang="en" className="h-full antialiased scroll-smooth">
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Alex+Brush&family=Cinzel:wght@400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,800;1,400;1,600;1,700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap"
+          rel="stylesheet"
+        />
+      </head>
+      <body className="min-h-full flex flex-col bg-[#121013] text-[#fdfbf7] selection:bg-[#c5a059]/30 selection:text-[#f7e4be]">
+        {children}
+      </body>
     </html>
   );
 }
+
+

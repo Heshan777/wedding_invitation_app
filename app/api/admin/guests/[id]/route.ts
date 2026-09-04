@@ -12,13 +12,18 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const guest = await prisma.guest.update({
     where: { id },
     data: {
-      displayName: body.displayName,
-      salutation: body.salutation,
-      inviteType: body.inviteType,
-      tableNumber: body.tableNumber ? Number(body.tableNumber) : undefined,
-      notes: body.notes,
+      displayName: body.displayName !== undefined ? body.displayName : undefined,
+      salutation: body.salutation !== undefined ? body.salutation : undefined,
+      inviteType: body.inviteType !== undefined ? body.inviteType : undefined,
+      tableNumber: body.tableNumber !== undefined ? Number(body.tableNumber) : undefined,
+      phone: body.phone !== undefined ? body.phone : undefined,
+      rsvpStatus: body.rsvpStatus !== undefined ? body.rsvpStatus : undefined,
+      attendeeCount: body.attendeeCount !== undefined ? Number(body.attendeeCount) : undefined,
+      dietary: body.dietary !== undefined ? body.dietary : undefined,
+      notes: body.notes !== undefined ? body.notes : undefined,
     },
   });
+
 
   return NextResponse.json(guest);
 }
