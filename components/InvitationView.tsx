@@ -110,30 +110,31 @@ type GuestbookWish = {
 
 const coupleGallery = [
   {
-    src: "/images/couple-portrait-1.jpg",
+    src: "/uploads/preshoot-photo-OIP1-1788547193363-824.webp",
     title: "A Timeless Bond",
     subtitle: "Two souls, one sacred journey under the stars",
     tag: "Pre-Wedding Shoot",
   },
   {
-    src: "/images/couple-portrait-2.jpg",
+    src: "/uploads/preshoot-photo-OIP-1788547202839-374.webp",
     title: "Golden Hour Romance",
     subtitle: "Embracing a lifetime of love and shared dreams",
     tag: "Tender Moments",
   },
   {
-    src: "/images/couple-portrait-3.jpg",
+    src: "/uploads/preshoot-photo-59eb71b052447c093b9c-1788547231474-321.jpg",
     title: "Walking into Forever",
     subtitle: "Hand in hand towards a bright new chapter",
     tag: "Celebration",
   },
   {
-    src: "/images/couple-portrait-4.jpg",
+    src: "/uploads/preshoot-photo-pre-wedding-shoot-gu-1788547212295-734.jpg",
     title: "The Sacred Promise",
     subtitle: "Tokens of love and eternal devotion",
     tag: "Wedding Rings",
   },
 ];
+
 
 function formatInviteLine(guest: Guest) {
   if (guest.inviteType === "FAMILY") {
@@ -308,11 +309,12 @@ export default function InvitationView({
   })();
 
   const date = formatEventDate(settings.eventDate);
-  const heroImageSrc = settings.heroImageUrl || "/images/couple-portrait-1.jpg";
-  const welcomeImageSrc = settings.welcomeImageUrl || "/images/couple-welcome.jpg";
-  const placeCardImageSrc = settings.placeCardImageUrl || "/images/couple-sweet.jpg";
-  const blessingImageSrc = settings.blessingImageUrl || "/images/couple-portrait-2.jpg";
+  const heroImageSrc = settings.heroImageUrl || "/uploads/preshoot-photo-Pragya-Siddharth-Pix-1788547160301-318.jpg";
+  const welcomeImageSrc = settings.welcomeImageUrl || "/uploads/preshoot-photo-423f40cc366ebcbcb01c-1788547168710-655.jpg";
+  const placeCardImageSrc = settings.placeCardImageUrl || "/uploads/preshoot-photo-e5a487a560c507085cda-1788547177206-113.jpg";
+  const blessingImageSrc = settings.blessingImageUrl || "/uploads/preshoot-photo-OIP2-1788547184704-193.webp";
   const placeCardNote = settings.placeCardNote || t.cantWaitToWelcome;
+
 
   const monogram = (() => {
     const parts = (settings.coupleNames || "").split(/&|and|\+/i).map((s) => s.trim()).filter(Boolean);

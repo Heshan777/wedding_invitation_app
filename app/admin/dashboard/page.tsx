@@ -112,25 +112,25 @@ const DEFAULT_TIMELINE: TimelineEvent[] = [
 
 const DEFAULT_GALLERY: GalleryItem[] = [
   {
-    src: "/images/couple-portrait-1.jpg",
+    src: "/uploads/preshoot-photo-OIP1-1788547193363-824.webp",
     title: "A Timeless Bond",
     subtitle: "Two souls, one sacred journey under the stars",
     tag: "Pre-Wedding Shoot",
   },
   {
-    src: "/images/couple-portrait-2.jpg",
+    src: "/uploads/preshoot-photo-OIP-1788547202839-374.webp",
     title: "Golden Hour Romance",
     subtitle: "Embracing a lifetime of love and shared dreams",
     tag: "Tender Moments",
   },
   {
-    src: "/images/couple-portrait-3.jpg",
+    src: "/uploads/preshoot-photo-59eb71b052447c093b9c-1788547231474-321.jpg",
     title: "Walking into Forever",
     subtitle: "Hand in hand towards a bright new chapter",
     tag: "Celebration",
   },
   {
-    src: "/images/couple-portrait-4.jpg",
+    src: "/uploads/preshoot-photo-pre-wedding-shoot-gu-1788547212295-734.jpg",
     title: "The Sacred Promise",
     subtitle: "Tokens of love and eternal devotion",
     tag: "Wedding Rings",
@@ -138,14 +138,16 @@ const DEFAULT_GALLERY: GalleryItem[] = [
 ];
 
 const PHOTO_PRESETS = [
-  { label: "Sweet Wedding Smile", url: "/images/couple-sweet.jpg" },
-  { label: "Warm Welcome & Laughter", url: "/images/couple-welcome.jpg" },
-  { label: "Garden Flower Arch (Portrait 1)", url: "/images/couple-portrait-1.jpg" },
-  { label: "Sunset Embrace (Portrait 2)", url: "/images/couple-portrait-2.jpg" },
-  { label: "Garden Walk (Portrait 3)", url: "/images/couple-portrait-3.jpg" },
-  { label: "Wedding Rings (Portrait 4)", url: "/images/couple-portrait-4.jpg" },
-  { label: "Couple Silhouette", url: "/images/couple-hero.png" },
+  { label: "Hero Portrait", url: "/uploads/preshoot-photo-Pragya-Siddharth-Pix-1788547160301-318.jpg" },
+  { label: "Warm Welcome", url: "/uploads/preshoot-photo-423f40cc366ebcbcb01c-1788547168710-655.jpg" },
+  { label: "Banquet Place Card", url: "/uploads/preshoot-photo-e5a487a560c507085cda-1788547177206-113.jpg" },
+  { label: "Blessing Cameo", url: "/uploads/preshoot-photo-OIP2-1788547184704-193.webp" },
+  { label: "Gallery Photo 1", url: "/uploads/preshoot-photo-OIP1-1788547193363-824.webp" },
+  { label: "Gallery Photo 2", url: "/uploads/preshoot-photo-OIP-1788547202839-374.webp" },
+  { label: "Gallery Photo 3", url: "/uploads/preshoot-photo-59eb71b052447c093b9c-1788547231474-321.jpg" },
+  { label: "Gallery Photo 4", url: "/uploads/preshoot-photo-pre-wedding-shoot-gu-1788547212295-734.jpg" },
 ];
+
 
 
 const inviteTypeLabels: Record<Guest["inviteType"], string> = {
@@ -219,12 +221,14 @@ export default function AdminDashboard() {
     venueAddress: "93/4, 1st Kilometer Post, Ragama Road, Kadawatha",
     venueLat: 7.0036509,
     venueLng: 79.9426378,
-    heroImageUrl: "/images/couple-portrait-1.jpg",
+    heroImageUrl: "/uploads/preshoot-photo-Pragya-Siddharth-Pix-1788547160301-318.jpg",
+
     galleryJson: JSON.stringify(DEFAULT_GALLERY),
-    blessingImageUrl: "/images/couple-portrait-2.jpg",
-    welcomeImageUrl: "/images/couple-welcome.jpg",
-    placeCardImageUrl: "/images/couple-sweet.jpg",
+    blessingImageUrl: "/uploads/preshoot-photo-OIP2-1788547184704-193.webp",
+    welcomeImageUrl: "/uploads/preshoot-photo-423f40cc366ebcbcb01c-1788547168710-655.jpg",
+    placeCardImageUrl: "/uploads/preshoot-photo-e5a487a560c507085cda-1788547177206-113.jpg",
     placeCardNote: "Thank you for sharing our joy and celebrating with us!",
+
     musicUrl: "/audio/background.mp3",
     dressCodeTitle: "Royal Splendor & Black Tie",
     dressCodeDescription: "Traditional Sri Lankan elegance or formal evening attire in warm tones of gold, burgundy, and ivory.",
@@ -1362,14 +1366,14 @@ export default function AdminDashboard() {
                     <input
                       value={settings.heroImageUrl || ""}
                       onChange={(e) => setSettings({ ...settings, heroImageUrl: e.target.value })}
-                      placeholder="/images/couple-portrait-1.jpg or https://..."
+                      placeholder="/uploads/preshoot-photo-Pragya-Siddharth-Pix-1788547160301-318.jpg or https://..."
                       className="w-full px-3.5 py-2 rounded-xl bg-[#2a1d25] border border-[#c5a059]/40 text-xs text-[#fdfbf7] focus:outline-none focus:border-[#dfba73]"
                     />
 
                     {/* Quick Preset Selector */}
                     <div>
                       <span className="text-[10px] text-[#edd892]/70 font-sans block mb-1">
-                        Sample Presets:
+                        Uploaded Photo Presets:
                       </span>
                       <div className="flex flex-wrap gap-1.5">
                         {PHOTO_PRESETS.map((p, i) => (
@@ -1378,7 +1382,7 @@ export default function AdminDashboard() {
                             type="button"
                             onClick={() => setSettings({ ...settings, heroImageUrl: p.url })}
                             className={`px-2.5 py-1 rounded-lg text-[10px] font-cinzel font-medium transition cursor-pointer border ${
-                              (settings.heroImageUrl || "/images/couple-portrait-1.jpg") === p.url
+                              (settings.heroImageUrl || "/uploads/preshoot-photo-Pragya-Siddharth-Pix-1788547160301-318.jpg") === p.url
                                 ? "bg-[#800020] text-[#fdfbf7] border-[#dfba73]"
                                 : "bg-[#181014] text-[#dfba73]/80 border-[#c5a059]/30 hover:bg-[#c5a059]/10"
                             }`}
@@ -1397,7 +1401,7 @@ export default function AdminDashboard() {
                     </span>
                     <div className="relative w-32 h-36 rounded-xl overflow-hidden border-2 border-[#c5a059] shadow-md bg-black">
                       <Image
-                        src={settings.heroImageUrl || "/images/couple-portrait-1.jpg"}
+                        src={settings.heroImageUrl || "/uploads/preshoot-photo-Pragya-Siddharth-Pix-1788547160301-318.jpg"}
                         alt="Hero Couple Preview"
                         fill
                         sizes="130px"
@@ -1405,6 +1409,7 @@ export default function AdminDashboard() {
                       />
                     </div>
                   </div>
+
                 </div>
 
                 {/* Warm Welcome Couple Photo */}
@@ -1448,7 +1453,7 @@ export default function AdminDashboard() {
                     <input
                       value={settings.welcomeImageUrl || ""}
                       onChange={(e) => setSettings({ ...settings, welcomeImageUrl: e.target.value })}
-                      placeholder="/images/couple-welcome.jpg or https://..."
+                      placeholder="/uploads/preshoot-photo-423f40cc366ebcbcb01c-1788547168710-655.jpg or https://..."
                       className="w-full px-3.5 py-2 rounded-xl bg-[#2a1d25] border border-[#c5a059]/40 text-xs text-[#fdfbf7] focus:outline-none focus:border-[#dfba73]"
                     />
                     <div className="flex flex-wrap gap-1.5 mt-1">
@@ -1458,7 +1463,7 @@ export default function AdminDashboard() {
                           type="button"
                           onClick={() => setSettings({ ...settings, welcomeImageUrl: p.url })}
                           className={`px-2.5 py-1 rounded-lg text-[10px] font-cinzel font-medium transition cursor-pointer border ${
-                            (settings.welcomeImageUrl || "/images/couple-welcome.jpg") === p.url
+                            (settings.welcomeImageUrl || "/uploads/preshoot-photo-423f40cc366ebcbcb01c-1788547168710-655.jpg") === p.url
                               ? "bg-[#800020] text-[#fdfbf7] border-[#dfba73]"
                               : "bg-[#181014] text-[#dfba73]/80 border-[#c5a059]/30 hover:bg-[#c5a059]/10"
                           }`}
@@ -1475,7 +1480,7 @@ export default function AdminDashboard() {
                     </span>
                     <div className="relative w-32 h-24 rounded-xl overflow-hidden border-2 border-[#c5a059] shadow-md bg-black">
                       <Image
-                        src={settings.welcomeImageUrl || "/images/couple-welcome.jpg"}
+                        src={settings.welcomeImageUrl || "/uploads/preshoot-photo-423f40cc366ebcbcb01c-1788547168710-655.jpg"}
                         alt="Welcome Preview"
                         fill
                         sizes="130px"
@@ -1526,7 +1531,7 @@ export default function AdminDashboard() {
                     <input
                       value={settings.placeCardImageUrl || ""}
                       onChange={(e) => setSettings({ ...settings, placeCardImageUrl: e.target.value })}
-                      placeholder="/images/couple-sweet.jpg or https://..."
+                      placeholder="/uploads/preshoot-photo-e5a487a560c507085cda-1788547177206-113.jpg or https://..."
                       className="w-full px-3.5 py-2 rounded-xl bg-[#2a1d25] border border-[#c5a059]/40 text-xs text-[#fdfbf7] focus:outline-none focus:border-[#dfba73]"
                     />
 
@@ -1549,7 +1554,7 @@ export default function AdminDashboard() {
                     </span>
                     <div className="relative w-24 h-24 rounded-full overflow-hidden border-2 border-[#c5a059] shadow-md bg-black">
                       <Image
-                        src={settings.placeCardImageUrl || "/images/couple-sweet.jpg"}
+                        src={settings.placeCardImageUrl || "/uploads/preshoot-photo-e5a487a560c507085cda-1788547177206-113.jpg"}
                         alt="Place Card Preview"
                         fill
                         sizes="96px"
@@ -1600,7 +1605,7 @@ export default function AdminDashboard() {
                     <input
                       value={settings.blessingImageUrl || ""}
                       onChange={(e) => setSettings({ ...settings, blessingImageUrl: e.target.value })}
-                      placeholder="/images/couple-portrait-2.jpg or https://..."
+                      placeholder="/uploads/preshoot-photo-OIP2-1788547184704-193.webp or https://..."
                       className="w-full px-3.5 py-2 rounded-xl bg-[#2a1d25] border border-[#c5a059]/40 text-xs text-[#fdfbf7] focus:outline-none focus:border-[#dfba73]"
                     />
                   </div>
@@ -1611,7 +1616,7 @@ export default function AdminDashboard() {
                     </span>
                     <div className="relative w-32 h-24 rounded-xl overflow-hidden border-2 border-[#c5a059] shadow-md bg-black">
                       <Image
-                        src={settings.blessingImageUrl || "/images/couple-portrait-2.jpg"}
+                        src={settings.blessingImageUrl || "/uploads/preshoot-photo-OIP2-1788547184704-193.webp"}
                         alt="Blessing Preview"
                         fill
                         sizes="130px"
@@ -1641,7 +1646,7 @@ export default function AdminDashboard() {
                         <div className="flex items-start gap-3">
                           <div className="relative w-16 h-16 rounded-lg overflow-hidden border border-[#c5a059]/50 flex-shrink-0 bg-black">
                             <Image
-                              src={item.src || "/images/couple-portrait-1.jpg"}
+                              src={item.src || "/uploads/preshoot-photo-OIP1-1788547193363-824.webp"}
                               alt={item.title || `Slot ${idx + 1}`}
                               fill
                               sizes="64px"
@@ -1651,6 +1656,7 @@ export default function AdminDashboard() {
                           <div className="flex-1 space-y-1.5">
                             <div className="flex items-center justify-between">
                               <span className="text-[10px] uppercase text-[#dfba73] font-cinzel font-bold">
+
                                 Photo Slot #{idx + 1}
                               </span>
                               <label className="px-2 py-0.5 rounded bg-[#800020] hover:bg-[#6b0f24] text-[10px] text-[#edd892] font-cinzel font-bold cursor-pointer border border-[#c5a059]/40 flex items-center gap-1">
@@ -2000,7 +2006,7 @@ export default function AdminDashboard() {
                           type="button"
                           onClick={() => setSettings({ ...settings, placeCardImageUrl: p.url })}
                           className={`px-2 py-0.5 rounded text-[10px] font-sans transition cursor-pointer border ${
-                            (settings.placeCardImageUrl || "/images/couple-sweet.jpg") === p.url
+                            (settings.placeCardImageUrl || "/uploads/preshoot-photo-e5a487a560c507085cda-1788547177206-113.jpg") === p.url
                               ? "bg-[#800020] text-white border-[#dfba73]"
                               : "bg-[#181014] text-[#dfba73]/70 border-[#c5a059]/20"
                           }`}
@@ -2048,7 +2054,7 @@ export default function AdminDashboard() {
                     <div className="flex flex-col items-center text-center">
                       <div className="relative w-16 h-16 rounded-full overflow-hidden border-2 border-[#c5a059] shadow-md mb-2 bg-[#800020]/10">
                         <Image
-                          src={settings.placeCardImageUrl || "/images/couple-sweet.jpg"}
+                          src={settings.placeCardImageUrl || "/uploads/preshoot-photo-e5a487a560c507085cda-1788547177206-113.jpg"}
                           alt={settings.coupleNames}
                           fill
                           sizes="64px"
@@ -2066,7 +2072,7 @@ export default function AdminDashboard() {
                     <div className="flex flex-col items-center text-center mb-2">
                       <div className="relative w-full h-16 rounded-lg overflow-hidden border border-[#c5a059]/60 shadow-sm mb-1.5 bg-black">
                         <Image
-                          src={settings.placeCardImageUrl || "/images/couple-sweet.jpg"}
+                          src={settings.placeCardImageUrl || "/uploads/preshoot-photo-e5a487a560c507085cda-1788547177206-113.jpg"}
                           alt={settings.coupleNames}
                           fill
                           sizes="280px"
@@ -2085,7 +2091,7 @@ export default function AdminDashboard() {
                     <div className="flex items-center gap-3 pb-2 border-b border-[#c5a059]/30 mb-2">
                       <div className="relative w-14 h-14 rounded-xl overflow-hidden border border-[#c5a059] flex-shrink-0 bg-black shadow">
                         <Image
-                          src={settings.placeCardImageUrl || "/images/couple-sweet.jpg"}
+                          src={settings.placeCardImageUrl || "/uploads/preshoot-photo-e5a487a560c507085cda-1788547177206-113.jpg"}
                           alt={settings.coupleNames}
                           fill
                           sizes="56px"
@@ -2097,6 +2103,7 @@ export default function AdminDashboard() {
                           {settings.coupleNames}
                         </p>
                         <span className="text-[9px] uppercase tracking-wider text-[#8c6a2b] font-cinzel">
+
                           Royal Banquet Seating
                         </span>
                       </div>
