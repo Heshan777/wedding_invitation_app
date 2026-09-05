@@ -160,9 +160,18 @@ function formatInviteLine(guest: Guest) {
 export default function InvitationView({
   guest,
   settings,
+  photos,
 }: {
   guest: Guest;
   settings: Settings;
+  photos?: Array<{
+    id?: string;
+    url: string;
+    title?: string | null;
+    subtitle?: string | null;
+    tag?: string | null;
+    order?: number;
+  }>;
 }) {
   const [locale, setLocale] = useState<Locale>("en");
   const [copiedAddress, setCopiedAddress] = useState(false);
@@ -343,8 +352,16 @@ export default function InvitationView({
     }
   }
 
-  // Parse Gallery items if customized in settings
+  // Parse Gallery items from dedicated EventPhoto table, or fallback to settings.galleryJson / defaults
   const parsedGallery = (() => {
+    if (photos && Array.isArray(photos) && photos.length > 0) {
+      return photos.map((p) => ({
+        src: p.url,
+        title: p.title || "",
+        subtitle: p.subtitle || "",
+        tag: p.tag || "Pre-Wedding",
+      }));
+    }
     if (settings.galleryJson) {
       try {
         const parsed = JSON.parse(settings.galleryJson);

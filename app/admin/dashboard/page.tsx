@@ -43,9 +43,61 @@ import {
   Film,
   Video,
   Play,
+  Crown,
+  Layers,
+  FolderPlus,
+  Tag,
+  Link2,
 } from "lucide-react";
 
+export type WeddingEventItem = {
+  id: string;
+  slug: string;
+  coupleNames: string;
+  eventDate: string;
+  venueName: string;
+  venueAddress: string;
+  venueLat: number;
+  venueLng: number;
+  contactPhone?: string | null;
+  heroImageUrl?: string | null;
+  heroVideoUrl?: string | null;
+  videoThumbnailUrl?: string | null;
+  welcomeImageUrl?: string | null;
+  placeCardImageUrl?: string | null;
+  blessingImageUrl?: string | null;
+  musicUrl?: string | null;
+  dressCodeTitle?: string | null;
+  dressCodeDescription?: string | null;
+  timelineJson?: string | null;
+  _count?: {
+    guests: number;
+    photos: number;
+    tables: number;
+    wishes: number;
+  };
+};
 
+export type EventPhotoItem = {
+  id: string;
+  eventId: string;
+  url: string;
+  title?: string | null;
+  subtitle?: string | null;
+  tag?: string | null;
+  order: number;
+  createdAt: string;
+};
+
+export type ManagerProfile = {
+  id: string;
+  username: string;
+  name: string;
+  company?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  role: string;
+};
 
 type Guest = {
   id: string;
@@ -187,7 +239,34 @@ const emptyForm: FormState = {
 };
 
 export default function AdminDashboard() {
-  const [activeTab, setActiveTab] = useState<"guests" | "settings" | "tables">("guests");
+  const [activeTab, setActiveTab] = useState<"guests" | "photos" | "settings" | "tables" | "events">("guests");
+  const [manager, setManager] = useState<ManagerProfile | null>(null);
+  const [events, setEvents] = useState<WeddingEventItem[]>([]);
+  const [activeEventId, setActiveEventId] = useState<string>("");
+  const [eventPhotos, setEventPhotos] = useState<EventPhotoItem[]>([]);
+
+  // Create Wedding Modal
+  const [showCreateEventModal, setShowCreateEventModal] = useState(false);
+  const [newEventForm, setNewEventForm] = useState({
+    coupleNames: "",
+    eventDate: new Date(Date.now() + 30 * 24 * 3600 * 1000).toISOString().slice(0, 16),
+    venueName: "",
+    venueAddress: "",
+    slug: "",
+    contactPhone: "",
+  });
+  const [creatingEvent, setCreatingEvent] = useState(false);
+
+  // Add Photo Modal
+  const [showAddPhotoModal, setShowAddPhotoModal] = useState(false);
+  const [newPhotoForm, setNewPhotoForm] = useState({
+    url: "",
+    title: "",
+    subtitle: "",
+    tag: "Pre-Wedding",
+  });
+  const [addingPhoto, setAddingPhoto] = useState(false);
+
   const [guests, setGuests] = useState<Guest[]>([]);
   const [loading, setLoading] = useState(true);
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -241,6 +320,10 @@ export default function AdminDashboard() {
   // Place Card Designer states
   const [placeCardLayout, setPlaceCardLayout] = useState<"cameo" | "banner" | "side" | "minimal">("cameo");
   const [showQrOnCards, setShowQrOnCards] = useState(true);
+
+  const activeEvent = useMemo(() => {
+    return events.find((e) => e.id === activeEventId) || events[0] || null;
+  }, [events, activeEventId]);
 
   const dashboardMonogram = useMemo(() => {
     const parts = (settings.coupleNames || "").split(/&|and|\+/i).map((s) => s.trim()).filter(Boolean);
@@ -532,28 +615,59 @@ export default function AdminDashboard() {
   }
 
 
-  async function loadData() {
+  async function loadData(targetEventId?: string) {
     setLoading(true);
     try {
-      const [resGuests, resSettings] = await Promise.all([
-        fetch("/api/admin/guests"),
-        fetch("/api/admin/settings"),
-      ]);
+      // 1. Fetch manager profile & events list
+      const resEvents = await fetch("/api/admin/events");
+      if (resEvents.ok) {
+        const data = await resEvents.json();
+        setManager(data.manager || null);
+        const evList: WeddingEventItem[] = data.events || [];
+        setEvents(evList);
 
-      if (resGuests.ok) {
-        const guestData = await resGuests.json();
-        setGuests(Array.isArray(guestData) ? guestData : []);
-      }
+        // Determine which event is active
+        let selectedId = targetEventId || activeEventId;
+        if (!selectedId && typeof window !== "undefined") {
+          selectedId = localStorage.getItem("active_wedding_event_id") || "";
+        }
+        if (!selectedId || !evList.some((e) => e.id === selectedId)) {
+          selectedId = evList[0]?.id || "";
+        }
+        setActiveEventId(selectedId);
+        if (typeof window !== "undefined" && selectedId) {
+          localStorage.setItem("active_wedding_event_id", selectedId);
+        }
 
-      if (resSettings.ok) {
-        const settingsData = await resSettings.json();
-        if (settingsData && settingsData.coupleNames) {
-          setSettings({
-            ...settingsData,
-            eventDate: settingsData.eventDate
-              ? new Date(settingsData.eventDate).toISOString().slice(0, 16)
-              : "2026-10-04T19:00",
-          });
+        // 2. Fetch scoped guests, settings, and photos for selected event
+        if (selectedId) {
+          const [resGuests, resSettings, resPhotos] = await Promise.all([
+            fetch(`/api/admin/guests?eventId=${selectedId}`),
+            fetch(`/api/admin/settings?eventId=${selectedId}`),
+            fetch(`/api/admin/photos?eventId=${selectedId}`),
+          ]);
+
+          if (resGuests.ok) {
+            const guestData = await resGuests.json();
+            setGuests(Array.isArray(guestData) ? guestData : []);
+          }
+
+          if (resSettings.ok) {
+            const settingsData = await resSettings.json();
+            if (settingsData && settingsData.coupleNames) {
+              setSettings({
+                ...settingsData,
+                eventDate: settingsData.eventDate
+                  ? new Date(settingsData.eventDate).toISOString().slice(0, 16)
+                  : "2026-10-04T19:00",
+              });
+            }
+          }
+
+          if (resPhotos.ok) {
+            const photosData = await resPhotos.json();
+            setEventPhotos(photosData.photos || []);
+          }
         }
       }
     } catch (err) {
@@ -566,6 +680,96 @@ export default function AdminDashboard() {
   useEffect(() => {
     loadData();
   }, []);
+
+  function handleSelectEvent(newEventId: string) {
+    setActiveEventId(newEventId);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("active_wedding_event_id", newEventId);
+    }
+    loadData(newEventId);
+    showToast("Switched wedding event!");
+  }
+
+  async function handleCreateEvent(e: React.FormEvent) {
+    e.preventDefault();
+    if (!newEventForm.coupleNames || !newEventForm.venueName) return;
+    setCreatingEvent(true);
+    try {
+      const res = await fetch("/api/admin/events", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newEventForm),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        showToast(`Wedding event created for ${newEventForm.coupleNames}!`);
+        setShowCreateEventModal(false);
+        setNewEventForm({
+          coupleNames: "",
+          eventDate: new Date(Date.now() + 30 * 24 * 3600 * 1000).toISOString().slice(0, 16),
+          venueName: "",
+          venueAddress: "",
+          slug: "",
+          contactPhone: "",
+        });
+        loadData(data.event?.id);
+      } else {
+        const errData = await res.json();
+        alert(errData.error || "Failed to create event");
+      }
+    } catch {
+      alert("Network error creating event");
+    } finally {
+      setCreatingEvent(false);
+    }
+  }
+
+  async function handleAddPhoto(e: React.FormEvent) {
+    e.preventDefault();
+    if (!newPhotoForm.url || !activeEventId) return;
+    setAddingPhoto(true);
+    try {
+      const res = await fetch("/api/admin/photos", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...newPhotoForm,
+          eventId: activeEventId,
+          order: eventPhotos.length,
+        }),
+      });
+      if (res.ok) {
+        showToast("Photo added to EventPhoto table!");
+        setShowAddPhotoModal(false);
+        setNewPhotoForm({ url: "", title: "", subtitle: "", tag: "Pre-Wedding" });
+        const resPhotos = await fetch(`/api/admin/photos?eventId=${activeEventId}`);
+        if (resPhotos.ok) {
+          const data = await resPhotos.json();
+          setEventPhotos(data.photos || []);
+        }
+      } else {
+        const err = await res.json();
+        alert(err.error || "Failed to add photo");
+      }
+    } catch {
+      alert("Network error adding photo");
+    } finally {
+      setAddingPhoto(false);
+    }
+  }
+
+  async function handleDeletePhoto(photoId: string) {
+    if (!confirm("Are you sure you want to remove this photo from the table?")) return;
+    try {
+      const res = await fetch(`/api/admin/photos?id=${photoId}`, { method: "DELETE" });
+      if (res.ok) {
+        showToast("Photo removed from table!");
+        setEventPhotos((prev) => prev.filter((p) => p.id !== photoId));
+      }
+    } catch {
+      alert("Failed to delete photo");
+    }
+  }
 
   function handleCategoryChange(newType: Guest["inviteType"]) {
     setForm((prev) => {
@@ -589,14 +793,17 @@ export default function AdminDashboard() {
       await fetch("/api/admin/guests", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({
+          ...form,
+          eventId: activeEventId,
+        }),
       });
       showToast("New guest added and invite link generated!");
     }
 
     setForm(emptyForm);
     setShowAddModal(false);
-    loadData();
+    loadData(activeEventId);
   }
 
   function startEdit(g: Guest) {
@@ -615,12 +822,11 @@ export default function AdminDashboard() {
     setShowAddModal(true);
   }
 
-
   async function handleDelete(id: string) {
     if (!confirm("Are you sure you want to remove this guest? This will invalidate their link.")) return;
     await fetch(`/api/admin/guests/${id}`, { method: "DELETE" });
     showToast("Guest removed.");
-    loadData();
+    loadData(activeEventId);
   }
 
   function inviteLink(token: string) {
@@ -657,12 +863,15 @@ export default function AdminDashboard() {
       const res = await fetch("/api/admin/settings", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(settings),
+        body: JSON.stringify({
+          ...settings,
+          eventId: activeEventId,
+        }),
       });
 
       if (res.ok) {
         setSettingsSuccess(true);
-        showToast("Event settings updated!");
+        showToast("Event settings updated for this wedding!");
         setTimeout(() => setSettingsSuccess(false), 3000);
       }
     } catch {
@@ -735,6 +944,7 @@ export default function AdminDashboard() {
       });
   }, [guests, searchQuery, filterType, filterRsvp, filterViewed, sortBy]);
 
+  const currentEvent = events.find((e) => e.id === activeEventId) || events[0];
 
   return (
     <div className="min-h-screen bg-[#121013] text-[#fdfbf7] selection:bg-[#c5a059]/30 selection:text-[#f7e4be] px-4 py-8">
@@ -747,33 +957,70 @@ export default function AdminDashboard() {
 
       <div className="max-w-6xl mx-auto">
         {/* Top Executive Header */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-[#c5a059]/30 mb-8">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pb-6 border-b border-[#c5a059]/30 mb-8">
           <div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs uppercase tracking-[0.3em] text-[#dfba73] font-cinzel font-semibold">
-                Executive Portal
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs uppercase tracking-[0.3em] text-[#dfba73] font-cinzel font-semibold flex items-center gap-1.5">
+                <Crown className="w-3.5 h-3.5 text-[#dfba73]" /> Executive Event Portal
               </span>
-              <span className="px-2 py-0.5 rounded-full bg-[#c5a059]/20 text-[#edd892] text-[10px] font-mono border border-[#c5a059]/40">
-                Admin Mode
+              <span className="px-2.5 py-0.5 rounded-full bg-[#c5a059]/20 text-[#edd892] text-[10px] font-mono border border-[#c5a059]/40">
+                {manager ? (manager.company ? `${manager.company} (${manager.username})` : manager.username) : "Event Manager"}
               </span>
             </div>
             <h1 className="font-cinzel text-2xl sm:text-3xl font-bold text-[#fdfbf7] mt-1">
-              {settings.coupleNames} — Wedding Manager
+              {currentEvent?.coupleNames || settings.coupleNames}
             </h1>
+            <div className="flex flex-wrap items-center gap-2 mt-1 text-xs text-[#dfba73]/80">
+              <span className="px-2 py-0.5 rounded bg-[#231a20] border border-[#c5a059]/30 font-mono text-[11px] text-[#edd892]">
+                Slug: /e/{currentEvent?.slug || "wedding"}
+              </span>
+              <a
+                href={`/e/${currentEvent?.slug || "wedding"}`}
+                target="_blank"
+                rel="noreferrer"
+                className="hover:text-white flex items-center gap-1 text-[11px] underline"
+              >
+                <ExternalLink className="w-3 h-3" /> Preview Wedding
+              </a>
+            </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2.5">
+            {/* Wedding Switcher Selector */}
+            <div className="flex items-center gap-1.5 bg-[#1c161a] border border-[#c5a059]/50 rounded-xl px-2.5 py-1.5 shadow-md">
+              <Sparkles className="w-3.5 h-3.5 text-[#dfba73]" />
+              <select
+                value={activeEventId}
+                onChange={(e) => handleSelectEvent(e.target.value)}
+                className="bg-transparent text-xs font-cinzel font-semibold text-[#fdfbf7] focus:outline-none cursor-pointer max-w-[180px] sm:max-w-[220px]"
+              >
+                {events.map((ev) => (
+                  <option key={ev.id} value={ev.id} className="bg-[#1c161a] text-white">
+                    {ev.coupleNames}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* + New Wedding Button */}
+            <button
+              onClick={() => setShowCreateEventModal(true)}
+              className="btn-gold-shimmer px-3.5 py-2 rounded-xl text-xs font-cinzel font-bold flex items-center gap-1.5 shadow cursor-pointer"
+            >
+              <Plus className="w-3.5 h-3.5" /> New Wedding
+            </button>
+
             <button
               onClick={handleExportCSV}
-              className="px-4 py-2 rounded-xl bg-[#231a20] border border-[#c5a059]/40 text-[#dfba73] hover:bg-[#c5a059]/10 text-xs font-cinzel font-semibold flex items-center gap-1.5 transition cursor-pointer"
+              className="px-3.5 py-2 rounded-xl bg-[#231a20] border border-[#c5a059]/40 text-[#dfba73] hover:bg-[#c5a059]/10 text-xs font-cinzel font-semibold flex items-center gap-1.5 transition cursor-pointer"
             >
-              <FileSpreadsheet className="w-4 h-4" /> Export CSV
+              <FileSpreadsheet className="w-4 h-4" /> CSV
             </button>
             <button
               onClick={handleLogout}
-              className="px-4 py-2 rounded-xl bg-[#800020]/20 border border-rose-800/60 text-rose-300 hover:bg-rose-950/40 text-xs font-cinzel font-semibold flex items-center gap-1.5 transition cursor-pointer"
+              className="px-3.5 py-2 rounded-xl bg-[#800020]/20 border border-rose-800/60 text-rose-300 hover:bg-rose-950/40 text-xs font-cinzel font-semibold flex items-center gap-1.5 transition cursor-pointer"
             >
-              <LogOut className="w-4 h-4" /> Log Out
+              <LogOut className="w-4 h-4" /> Exit
             </button>
           </div>
         </div>
@@ -879,7 +1126,7 @@ export default function AdminDashboard() {
         <div className="flex items-center gap-2 mb-6 border-b border-[#c5a059]/20 pb-3 overflow-x-auto">
           <button
             onClick={() => setActiveTab("guests")}
-            className={`px-4 py-2 rounded-xl text-xs font-cinzel font-bold tracking-wider transition cursor-pointer flex items-center gap-2 ${
+            className={`px-4 py-2 rounded-xl text-xs font-cinzel font-bold tracking-wider transition cursor-pointer flex items-center gap-2 whitespace-nowrap ${
               activeTab === "guests"
                 ? "bg-[#800020] text-[#fdfbf7] border border-[#dfba73]/60 shadow-lg"
                 : "bg-[#231a20] text-[#fdfbf7]/70 hover:bg-[#c5a059]/10"
@@ -888,8 +1135,18 @@ export default function AdminDashboard() {
             <Users className="w-4 h-4" /> Guest Directory ({guests.length})
           </button>
           <button
+            onClick={() => setActiveTab("photos")}
+            className={`px-4 py-2 rounded-xl text-xs font-cinzel font-bold tracking-wider transition cursor-pointer flex items-center gap-2 whitespace-nowrap ${
+              activeTab === "photos"
+                ? "bg-[#800020] text-[#fdfbf7] border border-[#dfba73]/60 shadow-lg"
+                : "bg-[#231a20] text-[#fdfbf7]/70 hover:bg-[#c5a059]/10"
+            }`}
+          >
+            <Camera className="w-4 h-4" /> Photos Table ({eventPhotos.length})
+          </button>
+          <button
             onClick={() => setActiveTab("settings")}
-            className={`px-4 py-2 rounded-xl text-xs font-cinzel font-bold tracking-wider transition cursor-pointer flex items-center gap-2 ${
+            className={`px-4 py-2 rounded-xl text-xs font-cinzel font-bold tracking-wider transition cursor-pointer flex items-center gap-2 whitespace-nowrap ${
               activeTab === "settings"
                 ? "bg-[#800020] text-[#fdfbf7] border border-[#dfba73]/60 shadow-lg"
                 : "bg-[#231a20] text-[#fdfbf7]/70 hover:bg-[#c5a059]/10"
@@ -899,13 +1156,23 @@ export default function AdminDashboard() {
           </button>
           <button
             onClick={() => setActiveTab("tables")}
-            className={`px-4 py-2 rounded-xl text-xs font-cinzel font-bold tracking-wider transition cursor-pointer flex items-center gap-2 ${
+            className={`px-4 py-2 rounded-xl text-xs font-cinzel font-bold tracking-wider transition cursor-pointer flex items-center gap-2 whitespace-nowrap ${
               activeTab === "tables"
                 ? "bg-[#800020] text-[#fdfbf7] border border-[#dfba73]/60 shadow-lg"
                 : "bg-[#231a20] text-[#fdfbf7]/70 hover:bg-[#c5a059]/10"
             }`}
           >
             <Printer className="w-4 h-4" /> Printable Place Cards
+          </button>
+          <button
+            onClick={() => setActiveTab("events")}
+            className={`px-4 py-2 rounded-xl text-xs font-cinzel font-bold tracking-wider transition cursor-pointer flex items-center gap-2 whitespace-nowrap ${
+              activeTab === "events"
+                ? "bg-[#800020] text-[#fdfbf7] border border-[#dfba73]/60 shadow-lg"
+                : "bg-[#231a20] text-[#fdfbf7]/70 hover:bg-[#c5a059]/10"
+            }`}
+          >
+            <Sparkles className="w-4 h-4" /> All Weddings ({events.length})
           </button>
         </div>
 
@@ -2153,6 +2420,285 @@ export default function AdminDashboard() {
           </div>
         )}
 
+        {/* TAB: PHOTOS TABLE (Dedicated EventPhoto Database Records) */}
+        {activeTab === "photos" && (
+          <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 rounded-3xl bg-[#1c161a] border border-[#c5a059]/40 shadow-xl">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="px-2.5 py-0.5 rounded-full bg-[#c5a059]/20 text-[#edd892] text-[10px] font-mono border border-[#c5a059]/40">
+                    Relational Table: EventPhoto
+                  </span>
+                  <span className="text-xs text-[#dfba73] font-cinzel font-semibold">
+                    {eventPhotos.length} Records in Database
+                  </span>
+                </div>
+                <h2 className="font-cinzel text-xl sm:text-2xl font-bold text-[#dfba73] mt-1">
+                  Wedding Photo Gallery Table
+                </h2>
+                <p className="text-xs text-[#fdfbf7]/60 mt-1 max-w-2xl">
+                  Each photo is stored as an independent relational record in the <code className="text-[#dfba73]">EventPhoto</code> table with its own primary key, order, caption, category tag, and CDN link.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setShowAddPhotoModal(true)}
+                  className="btn-gold-shimmer px-5 py-2.5 rounded-xl text-xs font-cinzel font-bold flex items-center gap-2 shadow-lg cursor-pointer"
+                >
+                  <Plus className="w-4 h-4" /> Add Photo to Table
+                </button>
+              </div>
+            </div>
+
+            {/* Table Display */}
+            {eventPhotos.length === 0 ? (
+              <div className="text-center py-16 px-4 rounded-3xl bg-[#181216] border border-[#c5a059]/30">
+                <Camera className="w-12 h-12 text-[#dfba73]/40 mx-auto mb-3" />
+                <h3 className="font-cinzel text-lg font-bold text-[#fdfbf7]">No Photos in Table Yet</h3>
+                <p className="text-xs text-[#fdfbf7]/60 max-w-md mx-auto mt-1 mb-5">
+                  Add high-resolution pre-shoot portraits, couple moments, and wedding memories to populate the guest invitation gallery.
+                </p>
+                <button
+                  onClick={() => setShowAddPhotoModal(true)}
+                  className="btn-gold-shimmer px-6 py-2.5 rounded-xl text-xs font-cinzel font-bold inline-flex items-center gap-2 cursor-pointer"
+                >
+                  <Plus className="w-4 h-4" /> Add First Photo
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                <div className="rounded-3xl bg-[#181216] border border-[#c5a059]/40 overflow-hidden shadow-2xl">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-[#241a21] text-[#dfba73] font-cinzel font-bold border-b border-[#c5a059]/30">
+                        <tr>
+                          <th className="py-3.5 px-4 text-center w-16">#</th>
+                          <th className="py-3.5 px-4 w-24">Preview</th>
+                          <th className="py-3.5 px-4">Title & Subtitle</th>
+                          <th className="py-3.5 px-4">Tag / Category</th>
+                          <th className="py-3.5 px-4">Media URL</th>
+                          <th className="py-3.5 px-4">Created Date</th>
+                          <th className="py-3.5 px-4 text-right">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-[#c5a059]/15">
+                        {eventPhotos.map((photo, idx) => (
+                          <tr key={photo.id} className="hover:bg-[#231a20]/60 transition">
+                            <td className="py-3 px-4 text-center font-mono text-[#edd892]">
+                              {photo.order !== undefined ? photo.order + 1 : idx + 1}
+                            </td>
+                            <td className="py-3 px-4">
+                              <div className="relative w-16 h-12 rounded-lg overflow-hidden border border-[#c5a059]/40 bg-black/40">
+                                <img
+                                  src={photo.url}
+                                  alt={photo.title || "Wedding Photo"}
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
+                            </td>
+                            <td className="py-3 px-4">
+                              <div className="font-cinzel font-bold text-[#fdfbf7] text-sm">
+                                {photo.title || "Untitled Portrait"}
+                              </div>
+                              {photo.subtitle && (
+                                <div className="text-[11px] text-[#fdfbf7]/60 italic">
+                                  {photo.subtitle}
+                                </div>
+                              )}
+                            </td>
+                            <td className="py-3 px-4">
+                              <span className="px-2.5 py-1 rounded-full bg-[#800020]/30 text-[#edd892] text-[10px] font-cinzel font-semibold border border-[#c5a059]/30">
+                                {photo.tag || "Pre-Wedding"}
+                              </span>
+                            </td>
+                            <td className="py-3 px-4 max-w-xs">
+                              <div className="flex items-center gap-1.5">
+                                <span className="font-mono text-[11px] text-[#dfba73]/80 truncate block max-w-[200px]">
+                                  {photo.url}
+                                </span>
+                                <a
+                                  href={photo.url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="text-[#c5a059] hover:text-white shrink-0"
+                                  title="Open full image"
+                                >
+                                  <ExternalLink className="w-3.5 h-3.5" />
+                                </a>
+                              </div>
+                            </td>
+                            <td className="py-3 px-4 font-mono text-[11px] text-[#fdfbf7]/50">
+                              {new Date(photo.createdAt).toLocaleDateString()}
+                            </td>
+                            <td className="py-3 px-4 text-right">
+                              <button
+                                onClick={() => handleDeletePhoto(photo.id)}
+                                className="px-2.5 py-1.5 rounded-lg bg-rose-950/40 hover:bg-rose-900/60 border border-rose-800/40 text-rose-300 text-xs font-cinzel transition cursor-pointer inline-flex items-center gap-1"
+                                title="Delete from database table"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" /> Delete
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* Visual Grid Preview */}
+                <div className="p-6 rounded-3xl bg-[#181216] border border-[#c5a059]/30">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Sparkles className="w-4 h-4 text-[#dfba73]" />
+                    <h3 className="font-cinzel text-sm font-bold text-[#dfba73] uppercase tracking-wider">
+                      Live Gallery Showcase Preview
+                    </h3>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                    {eventPhotos.map((photo) => (
+                      <div
+                        key={`grid-${photo.id}`}
+                        className="group relative rounded-2xl overflow-hidden aspect-[4/3] border border-[#c5a059]/30 bg-black/40 shadow-md"
+                      >
+                        <img
+                          src={photo.url}
+                          alt={photo.title || "Gallery"}
+                          className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent p-3 flex flex-col justify-end opacity-90 group-hover:opacity-100 transition">
+                          <p className="font-cinzel font-bold text-xs text-[#fdfbf7] truncate">
+                            {photo.title || "Wedding Photo"}
+                          </p>
+                          <span className="text-[10px] text-[#dfba73] font-mono">
+                            {photo.tag || "Pre-Wedding"}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* TAB: ALL WEDDINGS PORTFOLIO */}
+        {activeTab === "events" && (
+          <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 rounded-3xl bg-[#1c161a] border border-[#c5a059]/40 shadow-xl">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="px-2.5 py-0.5 rounded-full bg-[#800020]/40 text-[#dfba73] text-[10px] font-cinzel font-semibold border border-[#dfba73]/40">
+                    SaaS Client Portfolio
+                  </span>
+                  <span className="text-xs text-[#edd892] font-mono">
+                    {events.length} Active Weddings
+                  </span>
+                </div>
+                <h2 className="font-cinzel text-xl sm:text-2xl font-bold text-[#dfba73] mt-1">
+                  All Client Wedding Events
+                </h2>
+                <p className="text-xs text-[#fdfbf7]/60 mt-1 max-w-2xl">
+                  Manage multiple independent client wedding portals. Each event has isolated guests, place cards, settings, photos, and custom vanity URL slug.
+                </p>
+              </div>
+
+              <button
+                onClick={() => setShowCreateEventModal(true)}
+                className="btn-gold-shimmer px-5 py-2.5 rounded-xl text-xs font-cinzel font-bold flex items-center gap-2 shadow-lg cursor-pointer"
+              >
+                <Plus className="w-4 h-4" /> Create New Wedding
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {events.map((ev) => {
+                const isCurrent = ev.id === activeEventId;
+                return (
+                  <div
+                    key={ev.id}
+                    className={`rounded-3xl p-5 border transition flex flex-col justify-between ${
+                      isCurrent
+                        ? "bg-[#23171f] border-[#dfba73] shadow-2xl ring-1 ring-[#dfba73]/40"
+                        : "bg-[#181216] border-[#c5a059]/30 hover:border-[#c5a059]/70 shadow-lg"
+                    }`}
+                  >
+                    <div>
+                      <div className="flex items-center justify-between gap-2 mb-3">
+                        <span className="font-mono text-[10px] text-[#dfba73] px-2 py-0.5 rounded bg-[#120e11] border border-[#c5a059]/30">
+                          /e/{ev.slug}
+                        </span>
+                        {isCurrent && (
+                          <span className="px-2.5 py-0.5 rounded-full bg-emerald-950/60 border border-emerald-500/50 text-emerald-300 text-[10px] font-cinzel font-bold">
+                            Active
+                          </span>
+                        )}
+                      </div>
+
+                      {ev.heroImageUrl && (
+                        <div className="relative w-full h-36 rounded-2xl overflow-hidden mb-3 border border-[#c5a059]/20">
+                          <img
+                            src={ev.heroImageUrl}
+                            alt={ev.coupleNames}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      )}
+
+                      <h3 className="font-cinzel text-lg font-bold text-[#fdfbf7]">
+                        {ev.coupleNames}
+                      </h3>
+
+                      <div className="mt-2 space-y-1.5 text-xs text-[#fdfbf7]/70 font-sans">
+                        <div className="flex items-center gap-1.5 text-[#edd892]">
+                          <Calendar className="w-3.5 h-3.5 text-[#dfba73]" />
+                          <span>{new Date(ev.eventDate).toLocaleDateString(undefined, { dateStyle: "medium" })}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-[#fdfbf7]/60">
+                          <Users className="w-3.5 h-3.5 text-[#dfba73]" />
+                          <span>Venue: {ev.venueName}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="pt-4 mt-4 border-t border-[#c5a059]/20 flex items-center justify-between gap-2">
+                      {isCurrent ? (
+                        <button
+                          onClick={() => setActiveTab("guests")}
+                          className="btn-gold-shimmer flex-1 py-2 rounded-xl text-xs font-cinzel font-bold text-center cursor-pointer"
+                        >
+                          Manage Guests & Portal
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => {
+                            handleSelectEvent(ev.id);
+                            setActiveTab("guests");
+                          }}
+                          className="flex-1 py-2 rounded-xl bg-[#2a1c24] border border-[#c5a059]/40 text-[#dfba73] hover:bg-[#800020] hover:text-white text-xs font-cinzel font-bold transition cursor-pointer"
+                        >
+                          Switch & Manage
+                        </button>
+                      )}
+
+                      <a
+                        href={`/e/${ev.slug}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="px-3 py-2 rounded-xl bg-[#1c1519] border border-[#c5a059]/30 text-[#dfba73] hover:text-white transition"
+                        title="Preview Public Wedding"
+                      >
+                        <ExternalLink className="w-4 h-4" />
+                      </a>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
       </div>
 
       {/* ADD / EDIT GUEST MODAL */}
@@ -2471,6 +3017,282 @@ export default function AdminDashboard() {
             >
               <Copy className="w-3.5 h-3.5" /> Copy Invite URL
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* CREATE NEW WEDDING MODAL */}
+      {showCreateEventModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 overflow-y-auto">
+          <div className="relative w-full max-w-lg rounded-3xl bg-[#1c1519] border border-[#c5a059]/60 p-6 sm:p-8 shadow-2xl my-8">
+            <button
+              onClick={() => setShowCreateEventModal(false)}
+              className="absolute top-5 right-5 text-[#fdfbf7]/60 hover:text-[#dfba73] cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#800020]/20 text-[#dfba73] text-xs font-cinzel font-semibold mb-2">
+              <Sparkles className="w-3.5 h-3.5" /> Commercial Multi-Tenancy
+            </div>
+            <h2 className="font-cinzel text-xl font-bold text-[#dfba73] mb-1">
+              Create New Wedding Event
+            </h2>
+            <p className="text-xs text-[#fdfbf7]/60 mb-5">
+              Set up a dedicated wedding event under your manager account with an isolated database record and unique slug.
+            </p>
+
+            <form onSubmit={handleCreateEvent} className="space-y-4">
+              <div>
+                <label className="block text-xs uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold mb-1">
+                  Couple Names *
+                </label>
+                <input
+                  required
+                  placeholder="e.g. Kasun & Shenali"
+                  value={newEventForm.coupleNames}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    const autoSlug = val
+                      .toLowerCase()
+                      .replace(/[^a-z0-9]+/g, "-")
+                      .replace(/(^-|-$)/g, "");
+                    setNewEventForm((prev) => ({
+                      ...prev,
+                      coupleNames: val,
+                      slug: prev.slug ? prev.slug : `${autoSlug}-2026`,
+                    }));
+                  }}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#261c22] border border-[#c5a059]/40 text-xs text-[#fdfbf7] focus:outline-none focus:border-[#dfba73]"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold mb-1">
+                    Event Slug (URL identifier) *
+                  </label>
+                  <input
+                    required
+                    placeholder="e.g. kasun-shenali-2026"
+                    value={newEventForm.slug}
+                    onChange={(e) =>
+                      setNewEventForm({
+                        ...newEventForm,
+                        slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""),
+                      })
+                    }
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#261c22] border border-[#c5a059]/40 text-xs font-mono text-[#edd892] focus:outline-none focus:border-[#dfba73]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold mb-1">
+                    Ceremony Date & Time *
+                  </label>
+                  <input
+                    type="datetime-local"
+                    required
+                    value={newEventForm.eventDate}
+                    onChange={(e) => setNewEventForm({ ...newEventForm, eventDate: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#261c22] border border-[#c5a059]/40 text-xs text-[#fdfbf7] focus:outline-none focus:border-[#dfba73]"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold mb-1">
+                  Venue Name *
+                </label>
+                <input
+                  required
+                  placeholder="e.g. Cinnamon Grand Colombo / Rose Garden Hall"
+                  value={newEventForm.venueName}
+                  onChange={(e) => setNewEventForm({ ...newEventForm, venueName: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#261c22] border border-[#c5a059]/40 text-xs text-[#fdfbf7] focus:outline-none focus:border-[#dfba73]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold mb-1">
+                  Venue Address
+                </label>
+                <input
+                  placeholder="e.g. 77 Galle Road, Colombo 03, Sri Lanka"
+                  value={newEventForm.venueAddress}
+                  onChange={(e) => setNewEventForm({ ...newEventForm, venueAddress: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#261c22] border border-[#c5a059]/40 text-xs text-[#fdfbf7] focus:outline-none focus:border-[#dfba73]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold mb-1">
+                  Event Contact Phone
+                </label>
+                <input
+                  placeholder="+94 77 123 4567"
+                  value={newEventForm.contactPhone}
+                  onChange={(e) => setNewEventForm({ ...newEventForm, contactPhone: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#261c22] border border-[#c5a059]/40 text-xs text-[#fdfbf7] focus:outline-none focus:border-[#dfba73]"
+                />
+              </div>
+
+              <div className="pt-3 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowCreateEventModal(false)}
+                  className="px-4 py-2.5 rounded-xl bg-[#261c22] text-[#fdfbf7]/70 text-xs font-cinzel font-semibold hover:bg-[#c5a059]/10 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={creatingEvent}
+                  className="btn-gold-shimmer px-6 py-2.5 rounded-xl text-xs font-cinzel font-bold shadow-lg disabled:opacity-50 cursor-pointer flex items-center gap-1.5"
+                >
+                  {creatingEvent ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
+                  {creatingEvent ? "Creating Wedding..." : "Create Wedding Event"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ADD PHOTO TO TABLE MODAL */}
+      {showAddPhotoModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 overflow-y-auto">
+          <div className="relative w-full max-w-lg rounded-3xl bg-[#1c1519] border border-[#c5a059]/60 p-6 sm:p-8 shadow-2xl my-8">
+            <button
+              onClick={() => setShowAddPhotoModal(false)}
+              className="absolute top-5 right-5 text-[#fdfbf7]/60 hover:text-[#dfba73] cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#800020]/20 text-[#dfba73] text-xs font-cinzel font-semibold mb-2">
+              <Camera className="w-3.5 h-3.5" /> Dedicated EventPhoto Table
+            </div>
+            <h2 className="font-cinzel text-xl font-bold text-[#dfba73] mb-1">
+              Add Photo to Wedding Table
+            </h2>
+            <p className="text-xs text-[#fdfbf7]/60 mb-5">
+              Upload a picture or provide an image link to store a new record in the <code className="text-[#dfba73]">EventPhoto</code> table.
+            </p>
+
+            <form onSubmit={handleAddPhoto} className="space-y-4">
+              <div>
+                <label className="block text-xs uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold mb-1">
+                  Upload Photo File or Enter URL *
+                </label>
+                <div className="flex gap-2 mb-2">
+                  <label className="flex-1 btn-gold-shimmer px-3.5 py-2.5 rounded-xl text-xs font-cinzel font-bold flex items-center justify-center gap-1.5 cursor-pointer shadow">
+                    {uploadingField === "addPhotoModal" ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>Uploading file...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="w-3.5 h-3.5" />
+                        <span>Choose Photo from Device</span>
+                      </>
+                    )}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      disabled={uploadingField !== null}
+                      className="hidden"
+                      onChange={(e) =>
+                        handleImageUpload(e, "addPhotoModal", (url) =>
+                          setNewPhotoForm((prev) => ({ ...prev, url }))
+                        )
+                      }
+                    />
+                  </label>
+                </div>
+
+                <input
+                  required
+                  placeholder="https://... or /uploads/..."
+                  value={newPhotoForm.url}
+                  onChange={(e) => setNewPhotoForm({ ...newPhotoForm, url: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#261c22] border border-[#c5a059]/40 text-xs font-mono text-[#fdfbf7] focus:outline-none focus:border-[#dfba73]"
+                />
+              </div>
+
+              {newPhotoForm.url && (
+                <div className="relative w-full h-36 rounded-2xl overflow-hidden border border-[#c5a059]/40 bg-black/40">
+                  <img
+                    src={newPhotoForm.url}
+                    alt="Preview"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              )}
+
+              <div>
+                <label className="block text-xs uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold mb-1">
+                  Photo Caption / Title
+                </label>
+                <input
+                  placeholder="e.g. Golden Hour at Botanical Gardens"
+                  value={newPhotoForm.title}
+                  onChange={(e) => setNewPhotoForm({ ...newPhotoForm, title: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#261c22] border border-[#c5a059]/40 text-xs text-[#fdfbf7] focus:outline-none focus:border-[#dfba73]"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold mb-1">
+                    Subtitle / Location
+                  </label>
+                  <input
+                    placeholder="e.g. Peradeniya, Sri Lanka"
+                    value={newPhotoForm.subtitle}
+                    onChange={(e) => setNewPhotoForm({ ...newPhotoForm, subtitle: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#261c22] border border-[#c5a059]/40 text-xs text-[#fdfbf7] focus:outline-none focus:border-[#dfba73]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold mb-1">
+                    Category Tag
+                  </label>
+                  <select
+                    value={newPhotoForm.tag}
+                    onChange={(e) => setNewPhotoForm({ ...newPhotoForm, tag: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#261c22] border border-[#c5a059]/40 text-xs text-[#dfba73] focus:outline-none"
+                  >
+                    <option value="Pre-Wedding">Pre-Wedding</option>
+                    <option value="Ceremony">Ceremony</option>
+                    <option value="Poruwa">Poruwa Ceremony</option>
+                    <option value="Reception">Reception</option>
+                    <option value="Portrait">Couple Portrait</option>
+                    <option value="Family">Family & Friends</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="pt-3 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowAddPhotoModal(false)}
+                  className="px-4 py-2.5 rounded-xl bg-[#261c22] text-[#fdfbf7]/70 text-xs font-cinzel font-semibold hover:bg-[#c5a059]/10 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={addingPhoto || !newPhotoForm.url}
+                  className="btn-gold-shimmer px-6 py-2.5 rounded-xl text-xs font-cinzel font-bold shadow-lg disabled:opacity-50 cursor-pointer flex items-center gap-1.5"
+                >
+                  {addingPhoto ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
+                  {addingPhoto ? "Saving Photo..." : "Save Photo to Table"}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
