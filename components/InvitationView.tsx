@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import Image from "next/image";
 import QRCode from "qrcode";
 import confetti from "canvas-confetti";
@@ -189,6 +189,49 @@ export default function InvitationView({
   const [showCinemaModal, setShowCinemaModal] = useState(false);
   const heroVideoRef = useRef<HTMLVideoElement>(null);
   const modalVideoRef = useRef<HTMLVideoElement>(null);
+  const heroVideoContainerRef = useRef<HTMLDivElement>(null);
+
+  // High performance Range streaming endpoint for uploaded video files
+  const videoStreamUrl = useMemo(() => {
+    if (!settings.heroVideoUrl) return "";
+    if (settings.heroVideoUrl.startsWith("/uploads/") || settings.heroVideoUrl.startsWith("/audio/")) {
+      return `/api/media/stream?src=${encodeURIComponent(settings.heroVideoUrl)}`;
+    }
+    return settings.heroVideoUrl;
+  }, [settings.heroVideoUrl]);
+
+  // Viewport-aware video observer: pause when scrolled out of view to save bandwidth & GPU
+  useEffect(() => {
+    if (!envelopeOpened || !heroVideoContainerRef.current) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!heroVideoRef.current) return;
+          if (entry.isIntersecting) {
+            if (isVideoPlaying && heroVideoRef.current.paused) {
+              heroVideoRef.current.play().catch(() => {});
+            }
+          } else {
+            if (!heroVideoRef.current.paused) {
+              heroVideoRef.current.pause();
+            }
+          }
+        });
+      },
+      { threshold: 0.15, rootMargin: "100px 0px" }
+    );
+
+    observer.observe(heroVideoContainerRef.current);
+    return () => observer.disconnect();
+  }, [envelopeOpened, isVideoPlaying]);
+
+  // Auto-play hero video when envelope opens
+  useEffect(() => {
+    if (envelopeOpened && heroVideoRef.current && isVideoPlaying) {
+      heroVideoRef.current.play().catch(() => {});
+    }
+  }, [envelopeOpened, isVideoPlaying]);
 
   // Read saved locale on mount
   useEffect(() => {
@@ -510,6 +553,7 @@ export default function InvitationView({
   const handleOpenEnvelope = (selectedLocale: Locale) => {
     setLocale(selectedLocale);
     setEnvelopeOpened(true);
+    setIsVideoPlaying(true);
     // Broadcast event to start music player
     if (typeof window !== "undefined") {
       window.dispatchEvent(new Event("start_wedding_music"));
@@ -775,15 +819,16 @@ export default function InvitationView({
                     </div>
                   ) : (
                     /* DIRECT MP4/WEBM VIDEO PLAYER */
-                    <div className="relative h-80 sm:h-96 w-full overflow-hidden flex items-center justify-center">
+                    <div ref={heroVideoContainerRef} className="relative h-80 sm:h-96 w-full overflow-hidden flex items-center justify-center">
                       <video
                         ref={heroVideoRef}
-                        src={settings.heroVideoUrl}
+                        src={envelopeOpened ? videoStreamUrl : undefined}
                         poster={settings.videoThumbnailUrl || heroImageSrc}
-                        autoPlay
+                        autoPlay={envelopeOpened}
                         loop
                         muted={isVideoMuted}
                         playsInline
+                        preload={envelopeOpened ? "metadata" : "none"}
                         className="w-full h-full object-cover object-center transition duration-700 group-hover:scale-105"
                       />
 
@@ -953,6 +998,7 @@ export default function InvitationView({
                     alt={t.cantWaitToWelcome}
                     fill
                     sizes="160px"
+                    loading="lazy"
                     className="object-cover transition duration-700 group-hover:scale-110"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
@@ -1052,6 +1098,7 @@ export default function InvitationView({
                     alt={settings.coupleNames}
                     fill
                     sizes="80px"
+                    loading="lazy"
                     className="object-cover object-top"
                   />
                 </div>
@@ -1092,6 +1139,7 @@ export default function InvitationView({
                       alt="Guest Reception QR Code"
                       width={110}
                       height={110}
+                      loading="lazy"
                       className="w-24 h-24 sm:w-28 sm:h-28"
                     />
                     <span className="text-[9px] uppercase tracking-wider text-[#800020] font-cinzel font-bold mt-1 text-center max-w-[120px]">
@@ -1281,7 +1329,7 @@ export default function InvitationView({
                       fill
                       sizes="(max-width: 640px) 100vw, 550px"
                       className="object-cover object-center transition duration-500"
-                      priority
+                      loading="lazy"
                     />
                   </div>
 
@@ -1385,6 +1433,7 @@ export default function InvitationView({
                       alt={item.title || `Photo ${idx + 1}`}
                       fill
                       sizes="100px"
+                      loading="lazy"
                       className="object-cover"
                     />
                     {currentPhotoIndex === idx && (
@@ -1760,6 +1809,7 @@ export default function InvitationView({
                     alt="Blessings from Couple"
                     fill
                     sizes="320px"
+                    loading="lazy"
                     className="object-cover transition duration-500 group-hover:scale-105"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
@@ -1926,11 +1976,12 @@ export default function InvitationView({
             ) : (
               <video
                 ref={modalVideoRef}
-                src={settings.heroVideoUrl}
+                src={videoStreamUrl}
                 poster={settings.videoThumbnailUrl || heroImageSrc}
                 autoPlay
                 controls
                 playsInline
+                preload="metadata"
                 className="w-full h-full object-contain"
               />
             )}
