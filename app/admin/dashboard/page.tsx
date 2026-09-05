@@ -48,11 +48,22 @@ import {
   FolderPlus,
   Tag,
   Link2,
+  ShieldCheck,
+  UserPlus,
+  Building2,
+  Briefcase,
 } from "lucide-react";
 
 export type WeddingEventItem = {
   id: string;
   slug: string;
+  managerId?: string;
+  manager?: {
+    id: string;
+    username: string;
+    name: string;
+    company?: string | null;
+  };
   coupleNames: string;
   eventDate: string;
   venueName: string;
@@ -97,6 +108,27 @@ export type ManagerProfile = {
   email?: string | null;
   phone?: string | null;
   role: string;
+};
+
+export type EventManagerListItem = {
+  id: string;
+  username: string;
+  name: string;
+  company?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  role: string;
+  createdAt: string;
+  _count?: {
+    events: number;
+  };
+  events?: {
+    id: string;
+    slug: string;
+    coupleNames: string;
+    eventDate: string;
+    venueName: string;
+  }[];
 };
 
 type Guest = {
@@ -239,11 +271,32 @@ const emptyForm: FormState = {
 };
 
 export default function AdminDashboard() {
-  const [activeTab, setActiveTab] = useState<"guests" | "photos" | "settings" | "tables" | "events">("guests");
+  const [activeTab, setActiveTab] = useState<
+    "guests" | "photos" | "settings" | "tables" | "events" | "managers"
+  >("guests");
   const [manager, setManager] = useState<ManagerProfile | null>(null);
   const [events, setEvents] = useState<WeddingEventItem[]>([]);
   const [activeEventId, setActiveEventId] = useState<string>("");
   const [eventPhotos, setEventPhotos] = useState<EventPhotoItem[]>([]);
+
+  // Super Admin: Event Managers Directory state
+  const [managers, setManagers] = useState<EventManagerListItem[]>([]);
+  const [showCreateManagerModal, setShowCreateManagerModal] = useState(false);
+  const [newManagerForm, setNewManagerForm] = useState({
+    username: "",
+    password: "",
+    name: "",
+    company: "",
+    email: "",
+    phone: "",
+    role: "MANAGER",
+    createStarterWedding: true,
+    starterCoupleNames: "",
+    starterVenueName: "",
+  });
+  const [creatingManager, setCreatingManager] = useState(false);
+  const [managerSearchQuery, setManagerSearchQuery] = useState("");
+  const [selectedManagerFilter, setSelectedManagerFilter] = useState<string>("ALL");
 
   // Create Wedding Modal
   const [showCreateEventModal, setShowCreateEventModal] = useState(false);
@@ -254,6 +307,7 @@ export default function AdminDashboard() {
     venueAddress: "",
     slug: "",
     contactPhone: "",
+    managerId: "",
   });
   const [creatingEvent, setCreatingEvent] = useState(false);
 
@@ -669,6 +723,10 @@ export default function AdminDashboard() {
             setEventPhotos(photosData.photos || []);
           }
         }
+
+        if (data.manager?.role === "SUPER_ADMIN") {
+          loadManagers();
+        }
       }
     } catch (err) {
       console.error(err);
@@ -676,6 +734,93 @@ export default function AdminDashboard() {
       setLoading(false);
     }
   }
+
+  async function loadManagers() {
+    try {
+      const res = await fetch("/api/admin/managers");
+      if (res.ok) {
+        const data = await res.json();
+        setManagers(data.managers || []);
+      }
+    } catch (err) {
+      console.error("Load managers error:", err);
+    }
+  }
+
+  async function handleCreateManager(e: React.FormEvent) {
+    e.preventDefault();
+    setCreatingManager(true);
+    try {
+      const res = await fetch("/api/admin/managers", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newManagerForm),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showToast(`Event Manager "@${newManagerForm.username}" created successfully!`);
+        setShowCreateManagerModal(false);
+        setNewManagerForm({
+          username: "",
+          password: "",
+          name: "",
+          company: "",
+          email: "",
+          phone: "",
+          role: "MANAGER",
+          createStarterWedding: true,
+          starterCoupleNames: "",
+          starterVenueName: "",
+        });
+        loadManagers();
+        loadData();
+      } else {
+        alert(data.error || "Failed to create Event Manager");
+      }
+    } catch {
+      alert("Network error creating Event Manager");
+    } finally {
+      setCreatingManager(false);
+    }
+  }
+
+  async function handleDeleteManager(managerId: string, username: string) {
+    if (
+      !confirm(
+        `Are you sure you want to delete Event Manager "@${username}"? All associated weddings and invitations will be permanently removed.`
+      )
+    ) {
+      return;
+    }
+    try {
+      const res = await fetch(`/api/admin/managers?id=${managerId}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showToast(`Event Manager "@${username}" removed.`);
+        loadManagers();
+        loadData();
+      } else {
+        alert(data.error || "Failed to delete Event Manager");
+      }
+    } catch {
+      alert("Network error deleting Event Manager");
+    }
+  }
+
+  const filteredManagers = useMemo(() => {
+    if (!managerSearchQuery.trim()) return managers;
+    const q = managerSearchQuery.toLowerCase();
+    return managers.filter(
+      (m) =>
+        m.name.toLowerCase().includes(q) ||
+        m.username.toLowerCase().includes(q) ||
+        (m.company && m.company.toLowerCase().includes(q)) ||
+        (m.email && m.email.toLowerCase().includes(q)) ||
+        (m.phone && m.phone.includes(q))
+    );
+  }, [managers, managerSearchQuery]);
 
   useEffect(() => {
     loadData();
@@ -711,6 +856,7 @@ export default function AdminDashboard() {
           venueAddress: "",
           slug: "",
           contactPhone: "",
+          managerId: "",
         });
         loadData(data.event?.id);
       } else {
@@ -960,12 +1106,25 @@ export default function AdminDashboard() {
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pb-6 border-b border-[#c5a059]/30 mb-8">
           <div>
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs uppercase tracking-[0.3em] text-[#dfba73] font-cinzel font-semibold flex items-center gap-1.5">
-                <Crown className="w-3.5 h-3.5 text-[#dfba73]" /> Executive Event Portal
-              </span>
-              <span className="px-2.5 py-0.5 rounded-full bg-[#c5a059]/20 text-[#edd892] text-[10px] font-mono border border-[#c5a059]/40">
-                {manager ? (manager.company ? `${manager.company} (${manager.username})` : manager.username) : "Event Manager"}
-              </span>
+              {manager?.role === "SUPER_ADMIN" ? (
+                <>
+                  <span className="text-xs uppercase tracking-[0.3em] text-[#dfba73] font-cinzel font-bold flex items-center gap-1.5">
+                    <Crown className="w-3.5 h-3.5 text-[#dfba73]" /> Super Admin Portal
+                  </span>
+                  <span className="px-2.5 py-0.5 rounded-full bg-[#800020]/40 text-[#dfba73] text-[10px] font-mono border border-[#dfba73]/40">
+                    Platform Owner (@{manager.username})
+                  </span>
+                </>
+              ) : (
+                <>
+                  <span className="text-xs uppercase tracking-[0.3em] text-emerald-400 font-cinzel font-bold flex items-center gap-1.5">
+                    <Briefcase className="w-3.5 h-3.5 text-emerald-400" /> Event Manager Portal
+                  </span>
+                  <span className="px-2.5 py-0.5 rounded-full bg-emerald-950/40 text-emerald-300 text-[10px] font-mono border border-emerald-500/40">
+                    {manager?.company ? `${manager.company} (@${manager?.username})` : `@${manager?.username}`}
+                  </span>
+                </>
+              )}
             </div>
             <h1 className="font-cinzel text-2xl sm:text-3xl font-bold text-[#fdfbf7] mt-1">
               {currentEvent?.coupleNames || settings.coupleNames}
@@ -974,6 +1133,11 @@ export default function AdminDashboard() {
               <span className="px-2 py-0.5 rounded bg-[#231a20] border border-[#c5a059]/30 font-mono text-[11px] text-[#edd892]">
                 Slug: /e/{currentEvent?.slug || "wedding"}
               </span>
+              {currentEvent?.manager && manager?.role === "SUPER_ADMIN" && (
+                <span className="px-2 py-0.5 rounded bg-[#800020]/20 border border-[#dfba73]/30 text-[11px] text-[#dfba73] font-sans">
+                  Planner: {currentEvent.manager.name} ({currentEvent.manager.company || currentEvent.manager.username})
+                </span>
+              )}
               <a
                 href={`/e/${currentEvent?.slug || "wedding"}`}
                 target="_blank"
@@ -992,15 +1156,26 @@ export default function AdminDashboard() {
               <select
                 value={activeEventId}
                 onChange={(e) => handleSelectEvent(e.target.value)}
-                className="bg-transparent text-xs font-cinzel font-semibold text-[#fdfbf7] focus:outline-none cursor-pointer max-w-[180px] sm:max-w-[220px]"
+                className="bg-transparent text-xs font-cinzel font-semibold text-[#fdfbf7] focus:outline-none cursor-pointer max-w-[200px] sm:max-w-[260px]"
               >
                 {events.map((ev) => (
                   <option key={ev.id} value={ev.id} className="bg-[#1c161a] text-white">
-                    {ev.coupleNames}
+                    {ev.coupleNames} {manager?.role === "SUPER_ADMIN" && ev.manager ? `(${ev.manager.company || ev.manager.name})` : ""}
                   </option>
                 ))}
               </select>
             </div>
+
+            {/* Super Admin: + Add Event Manager Button */}
+            {manager?.role === "SUPER_ADMIN" && (
+              <button
+                onClick={() => setShowCreateManagerModal(true)}
+                className="px-3.5 py-2 rounded-xl bg-[#800020] hover:bg-[#6b0f24] text-white text-xs font-cinzel font-bold flex items-center gap-1.5 shadow border border-[#dfba73]/60 cursor-pointer"
+                title="Create a new Event Manager login"
+              >
+                <UserPlus className="w-3.5 h-3.5" /> + Manager
+              </button>
+            )}
 
             {/* + New Wedding Button */}
             <button
@@ -1172,8 +1347,20 @@ export default function AdminDashboard() {
                 : "bg-[#231a20] text-[#fdfbf7]/70 hover:bg-[#c5a059]/10"
             }`}
           >
-            <Sparkles className="w-4 h-4" /> All Weddings ({events.length})
+            <Sparkles className="w-4 h-4" /> {manager?.role === "SUPER_ADMIN" ? `All Platform Weddings (${events.length})` : `My Weddings (${events.length})`}
           </button>
+          {manager?.role === "SUPER_ADMIN" && (
+            <button
+              onClick={() => setActiveTab("managers")}
+              className={`px-4 py-2 rounded-xl text-xs font-cinzel font-bold tracking-wider transition cursor-pointer flex items-center gap-2 whitespace-nowrap ${
+                activeTab === "managers"
+                  ? "bg-[#800020] text-[#fdfbf7] border border-[#dfba73] shadow-lg ring-1 ring-[#dfba73]/40"
+                  : "bg-[#2a1721] text-[#dfba73] hover:bg-[#c5a059]/15 border border-[#c5a059]/30"
+              }`}
+            >
+              <ShieldCheck className="w-4 h-4 text-[#dfba73]" /> Event Managers ({managers.length})
+            </button>
+          )}
         </div>
 
         {/* TAB 1: GUEST DIRECTORY */}
@@ -2699,6 +2886,171 @@ export default function AdminDashboard() {
           </div>
         )}
 
+        {/* TAB: EVENT MANAGERS DIRECTORY (Super Admin Exclusive) */}
+        {activeTab === "managers" && manager?.role === "SUPER_ADMIN" && (
+          <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 rounded-3xl bg-[#1c161a] border border-[#dfba73]/50 shadow-2xl">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="px-2.5 py-0.5 rounded-full bg-[#800020]/40 text-[#dfba73] text-[10px] font-cinzel font-bold border border-[#dfba73]/40 flex items-center gap-1">
+                    <ShieldCheck className="w-3 h-3 text-[#edd892]" /> Super Admin Access
+                  </span>
+                  <span className="text-xs text-[#edd892] font-mono">
+                    {managers.length} Registered Planners
+                  </span>
+                </div>
+                <h2 className="font-cinzel text-xl sm:text-2xl font-bold text-[#dfba73] mt-1">
+                  Event Managers & Planners Directory
+                </h2>
+                <p className="text-xs text-[#fdfbf7]/60 mt-1 max-w-2xl">
+                  Create and manage independent Event Manager accounts. Each planner logs in with their unique username and password to access their own isolated wedding dashboard and client portfolios.
+                </p>
+              </div>
+
+              <button
+                onClick={() => setShowCreateManagerModal(true)}
+                className="btn-gold-shimmer px-5 py-2.5 rounded-xl text-xs font-cinzel font-bold flex items-center gap-2 shadow-lg cursor-pointer"
+              >
+                <UserPlus className="w-4 h-4" /> Add Event Manager
+              </button>
+            </div>
+
+            {/* Quick Metrics */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="p-4 rounded-2xl bg-[#1c161a] border border-[#c5a059]/30">
+                <span className="text-[10px] uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold">Total Event Managers</span>
+                <div className="font-cinzel text-2xl font-bold text-[#fdfbf7] mt-1">{managers.length}</div>
+                <span className="text-[10px] text-[#fdfbf7]/50 mt-0.5 block font-sans">Active SaaS planners</span>
+              </div>
+              <div className="p-4 rounded-2xl bg-[#1c161a] border border-[#c5a059]/30">
+                <span className="text-[10px] uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold">Total Client Weddings</span>
+                <div className="font-cinzel text-2xl font-bold text-[#fdfbf7] mt-1">{events.length}</div>
+                <span className="text-[10px] text-[#fdfbf7]/50 mt-0.5 block font-sans">Portfolios across all managers</span>
+              </div>
+              <div className="p-4 rounded-2xl bg-[#1c161a] border border-[#c5a059]/30">
+                <span className="text-[10px] uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold">Platform Guests</span>
+                <div className="font-cinzel text-2xl font-bold text-emerald-400 mt-1">
+                  {events.reduce((acc, ev) => acc + (ev._count?.guests || 0), 0)}
+                </div>
+                <span className="text-[10px] text-[#fdfbf7]/50 mt-0.5 block font-sans">Invitations provisioned</span>
+              </div>
+            </div>
+
+            {/* Search Bar */}
+            <div className="flex items-center gap-3">
+              <div className="relative flex-1">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#c5a059]/60" />
+                <input
+                  type="text"
+                  placeholder="Search managers by name, username, agency, or email..."
+                  value={managerSearchQuery}
+                  onChange={(e) => setManagerSearchQuery(e.target.value)}
+                  className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-[#1c161a] border border-[#c5a059]/40 text-xs text-[#fdfbf7] placeholder-[#fdfbf7]/40 focus:outline-none focus:border-[#dfba73]"
+                />
+              </div>
+            </div>
+
+            {/* Table of Event Managers */}
+            <div className="rounded-3xl bg-[#181216] border border-[#c5a059]/40 overflow-hidden shadow-2xl">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-[#241a21] text-[#dfba73] font-cinzel font-bold border-b border-[#c5a059]/30">
+                    <tr>
+                      <th className="py-3.5 px-4">Manager / Agency</th>
+                      <th className="py-3.5 px-4">Login Username</th>
+                      <th className="py-3.5 px-4">Contact Info</th>
+                      <th className="py-3.5 px-4 text-center">Role</th>
+                      <th className="py-3.5 px-4 text-center">Managed Weddings</th>
+                      <th className="py-3.5 px-4">Created Date</th>
+                      <th className="py-3.5 px-4 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#c5a059]/15">
+                    {filteredManagers.map((mgr) => {
+                      const isSelf = mgr.id === manager.id;
+                      const weddingCount = mgr._count?.events || mgr.events?.length || 0;
+                      return (
+                        <tr key={mgr.id} className="hover:bg-[#231a20]/60 transition">
+                          <td className="py-3.5 px-4">
+                            <div className="font-cinzel font-bold text-[#fdfbf7] text-sm flex items-center gap-1.5">
+                              {mgr.name}
+                              {isSelf && (
+                                <span className="px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 text-[9px] font-mono border border-amber-500/40">
+                                  You
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-[11px] text-[#edd892]/80 flex items-center gap-1 mt-0.5">
+                              <Building2 className="w-3 h-3 text-[#dfba73]" />
+                              {mgr.company || "Independent Planner"}
+                            </div>
+                          </td>
+                          <td className="py-3.5 px-4 font-mono text-xs text-[#dfba73]">
+                            @{mgr.username}
+                          </td>
+                          <td className="py-3.5 px-4 text-[11px] space-y-0.5">
+                            {mgr.email && (
+                              <div className="text-[#fdfbf7]/80 truncate max-w-[180px]">{mgr.email}</div>
+                            )}
+                            {mgr.phone && (
+                              <div className="text-[#fdfbf7]/50 font-mono">{mgr.phone}</div>
+                            )}
+                            {!mgr.email && !mgr.phone && <span className="text-white/40">—</span>}
+                          </td>
+                          <td className="py-3.5 px-4 text-center">
+                            {mgr.role === "SUPER_ADMIN" ? (
+                              <span className="px-2.5 py-1 rounded-full bg-[#800020]/40 text-[#dfba73] text-[10px] font-cinzel font-bold border border-[#dfba73]/40 inline-flex items-center gap-1">
+                                <Crown className="w-2.5 h-2.5" /> Super Admin
+                              </span>
+                            ) : (
+                              <span className="px-2.5 py-1 rounded-full bg-emerald-950/50 text-emerald-300 text-[10px] font-cinzel font-semibold border border-emerald-600/40">
+                                Event Manager
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-3.5 px-4 text-center">
+                            <span className="px-2.5 py-1 rounded-lg bg-[#2a1c24] border border-[#c5a059]/30 text-[#edd892] font-mono font-bold text-xs">
+                              {weddingCount} {weddingCount === 1 ? "Wedding" : "Weddings"}
+                            </span>
+                          </td>
+                          <td className="py-3.5 px-4 font-mono text-[11px] text-[#fdfbf7]/50">
+                            {new Date(mgr.createdAt).toLocaleDateString()}
+                          </td>
+                          <td className="py-3.5 px-4 text-right">
+                            <div className="flex items-center justify-end gap-1.5">
+                              {mgr.events && mgr.events.length > 0 && (
+                                <button
+                                  onClick={() => {
+                                    handleSelectEvent(mgr.events![0].id);
+                                    setActiveTab("guests");
+                                  }}
+                                  className="px-2.5 py-1.5 rounded-lg bg-[#2a1c24] hover:bg-[#800020] text-[#dfba73] hover:text-white border border-[#c5a059]/40 text-xs font-cinzel transition cursor-pointer"
+                                  title="Open Manager's Wedding"
+                                >
+                                  View Wedding
+                                </button>
+                              )}
+                              {!isSelf && mgr.username !== "admin" && (
+                                <button
+                                  onClick={() => handleDeleteManager(mgr.id, mgr.username)}
+                                  className="px-2.5 py-1.5 rounded-lg bg-rose-950/40 hover:bg-rose-900/60 border border-rose-800/40 text-rose-300 text-xs font-cinzel transition cursor-pointer"
+                                  title="Delete Event Manager Account"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
       </div>
 
       {/* ADD / EDIT GUEST MODAL */}
@@ -3137,6 +3489,28 @@ export default function AdminDashboard() {
                 />
               </div>
 
+              {manager?.role === "SUPER_ADMIN" && managers.length > 0 && (
+                <div>
+                  <label className="block text-xs uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold mb-1">
+                    Assign to Event Manager
+                  </label>
+                  <select
+                    value={newEventForm.managerId || manager.id}
+                    onChange={(e) => setNewEventForm({ ...newEventForm, managerId: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#261c22] border border-[#c5a059]/40 text-xs text-[#dfba73] focus:outline-none"
+                  >
+                    <option value={manager.id}>Assign to Myself (Super Admin)</option>
+                    {managers
+                      .filter((m) => m.id !== manager.id)
+                      .map((m) => (
+                        <option key={m.id} value={m.id}>
+                          {m.name} (@{m.username}) {m.company ? `— ${m.company}` : ""}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+              )}
+
               <div className="pt-3 flex items-center justify-end gap-2">
                 <button
                   type="button"
@@ -3290,6 +3664,184 @@ export default function AdminDashboard() {
                 >
                   {addingPhoto ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
                   {addingPhoto ? "Saving Photo..." : "Save Photo to Table"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* CREATE EVENT MANAGER MODAL (Super Admin) */}
+      {showCreateManagerModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4 overflow-y-auto">
+          <div className="relative w-full max-w-lg rounded-3xl bg-[#1c1519] border border-[#dfba73]/60 p-6 sm:p-8 shadow-2xl my-8">
+            <button
+              onClick={() => setShowCreateManagerModal(false)}
+              className="absolute top-5 right-5 text-[#fdfbf7]/60 hover:text-[#dfba73] cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#800020]/20 text-[#dfba73] text-xs font-cinzel font-semibold mb-2">
+              <ShieldCheck className="w-3.5 h-3.5 text-[#edd892]" /> Super Admin Provisioning
+            </div>
+            <h2 className="font-cinzel text-xl font-bold text-[#dfba73] mb-1">
+              Add New Event Manager
+            </h2>
+            <p className="text-xs text-[#fdfbf7]/60 mb-5">
+              Create an isolated planner account. The event manager can log in with their unique username and password to access their own isolated wedding dashboard and client portfolios.
+            </p>
+
+            <form onSubmit={handleCreateManager} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold mb-1">
+                    Unique Username *
+                  </label>
+                  <input
+                    required
+                    placeholder="e.g. royal_planner"
+                    value={newManagerForm.username}
+                    onChange={(e) =>
+                      setNewManagerForm({
+                        ...newManagerForm,
+                        username: e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, ""),
+                      })
+                    }
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#261c22] border border-[#c5a059]/40 text-xs font-mono text-[#edd892] focus:outline-none focus:border-[#dfba73]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold mb-1">
+                    Password *
+                  </label>
+                  <input
+                    type="password"
+                    required
+                    placeholder="Minimum 5 characters"
+                    value={newManagerForm.password}
+                    onChange={(e) => setNewManagerForm({ ...newManagerForm, password: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#261c22] border border-[#c5a059]/40 text-xs text-[#fdfbf7] focus:outline-none focus:border-[#dfba73]"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold mb-1">
+                    Planner Full Name *
+                  </label>
+                  <input
+                    required
+                    placeholder="e.g. Kasun Fernando"
+                    value={newManagerForm.name}
+                    onChange={(e) => setNewManagerForm({ ...newManagerForm, name: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#261c22] border border-[#c5a059]/40 text-xs text-[#fdfbf7] focus:outline-none focus:border-[#dfba73]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold mb-1">
+                    Agency / Company Name
+                  </label>
+                  <input
+                    placeholder="e.g. Royal Blooms Wedding Co."
+                    value={newManagerForm.company}
+                    onChange={(e) => setNewManagerForm({ ...newManagerForm, company: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#261c22] border border-[#c5a059]/40 text-xs text-[#fdfbf7] focus:outline-none focus:border-[#dfba73]"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold mb-1">
+                    Email Address
+                  </label>
+                  <input
+                    type="email"
+                    placeholder="planner@company.com"
+                    value={newManagerForm.email}
+                    onChange={(e) => setNewManagerForm({ ...newManagerForm, email: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#261c22] border border-[#c5a059]/40 text-xs text-[#fdfbf7] focus:outline-none focus:border-[#dfba73]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold mb-1">
+                    Contact Phone
+                  </label>
+                  <input
+                    placeholder="+94 77 123 4567"
+                    value={newManagerForm.phone}
+                    onChange={(e) => setNewManagerForm({ ...newManagerForm, phone: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#261c22] border border-[#c5a059]/40 text-xs text-[#fdfbf7] focus:outline-none focus:border-[#dfba73]"
+                  />
+                </div>
+              </div>
+
+              {/* Starter Wedding option */}
+              <div className="p-4 rounded-2xl bg-[#261c22] border border-[#c5a059]/30 space-y-3">
+                <label className="flex items-center gap-2 cursor-pointer text-xs font-cinzel font-semibold text-[#dfba73]">
+                  <input
+                    type="checkbox"
+                    checked={newManagerForm.createStarterWedding}
+                    onChange={(e) =>
+                      setNewManagerForm({ ...newManagerForm, createStarterWedding: e.target.checked })
+                    }
+                    className="rounded accent-[#800020]"
+                  />
+                  <span>Create initial client wedding for this manager</span>
+                </label>
+
+                {newManagerForm.createStarterWedding && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                    <div>
+                      <label className="block text-[10px] uppercase tracking-wider text-[#edd892] font-cinzel font-semibold mb-1">
+                        Couple Names *
+                      </label>
+                      <input
+                        placeholder="e.g. Kasun & Shenali"
+                        value={newManagerForm.starterCoupleNames}
+                        onChange={(e) =>
+                          setNewManagerForm({ ...newManagerForm, starterCoupleNames: e.target.value })
+                        }
+                        className="w-full px-3 py-2 rounded-lg bg-[#1a1217] border border-[#c5a059]/30 text-xs text-[#fdfbf7] focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] uppercase tracking-wider text-[#edd892] font-cinzel font-semibold mb-1">
+                        Venue Name
+                      </label>
+                      <input
+                        placeholder="e.g. Shangri-La Ballroom"
+                        value={newManagerForm.starterVenueName}
+                        onChange={(e) =>
+                          setNewManagerForm({ ...newManagerForm, starterVenueName: e.target.value })
+                        }
+                        className="w-full px-3 py-2 rounded-lg bg-[#1a1217] border border-[#c5a059]/30 text-xs text-[#fdfbf7] focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="pt-3 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowCreateManagerModal(false)}
+                  className="px-4 py-2.5 rounded-xl bg-[#261c22] text-[#fdfbf7]/70 text-xs font-cinzel font-semibold hover:bg-[#c5a059]/10 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={creatingManager}
+                  className="btn-gold-shimmer px-6 py-2.5 rounded-xl text-xs font-cinzel font-bold shadow-lg disabled:opacity-50 cursor-pointer flex items-center gap-1.5"
+                >
+                  {creatingManager ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <UserPlus className="w-3.5 h-3.5" />}
+                  {creatingManager ? "Creating Planner Account..." : "Create Event Manager"}
                 </button>
               </div>
             </form>

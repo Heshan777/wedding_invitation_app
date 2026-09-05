@@ -26,9 +26,10 @@ export async function GET(req: NextRequest) {
     return NextResponse.json([]);
   }
 
-  // Verify manager owns this event
+  // Verify manager owns this event (Super Admin can access any event)
+  const isSuperAdmin = manager.role === "SUPER_ADMIN";
   const event = await prisma.weddingEvent.findFirst({
-    where: { id: eventId, managerId: manager.id },
+    where: isSuperAdmin ? { id: eventId } : { id: eventId, managerId: manager.id },
   });
 
   if (!event) {
@@ -49,12 +50,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const isSuperAdmin = manager.role === "SUPER_ADMIN";
   const body = await req.json();
   let targetEventId = body.eventId;
 
   if (!targetEventId) {
     const firstEvent = await prisma.weddingEvent.findFirst({
-      where: { managerId: manager.id },
+      where: isSuperAdmin ? {} : { managerId: manager.id },
       orderBy: { createdAt: "desc" },
     });
     targetEventId = firstEvent?.id;
@@ -66,7 +68,7 @@ export async function POST(req: NextRequest) {
 
   // Verify ownership
   const event = await prisma.weddingEvent.findFirst({
-    where: { id: targetEventId, managerId: manager.id },
+    where: isSuperAdmin ? { id: targetEventId } : { id: targetEventId, managerId: manager.id },
   });
 
   if (!event) {
