@@ -5,7 +5,11 @@ export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
   try {
+    const { searchParams } = new URL(req.url);
+    const eventId = searchParams.get("eventId");
+
     const wishes = await prisma.guestbookWish.findMany({
+      where: eventId ? { eventId } : undefined,
       orderBy: { createdAt: "desc" },
       take: 50,
     });
@@ -19,7 +23,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { action, id, authorName, message } = body;
+    const { action, id, authorName, message, eventId } = body;
 
     if (action === "like" && id) {
       const updated = await prisma.guestbookWish.update({
@@ -32,6 +36,7 @@ export async function POST(req: NextRequest) {
     if (authorName && message) {
       const newWish = await prisma.guestbookWish.create({
         data: {
+          eventId: eventId || null,
           authorName: String(authorName).trim(),
           message: String(message).trim(),
         },

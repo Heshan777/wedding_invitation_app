@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -164,10 +164,20 @@ export default function AdminLoginPage() {
             </button>
           </form>
 
-          {/* Footer Note */}
-          <div className="text-center mt-6 pt-4 border-t border-[#c5a059]/20">
-            <p className="text-[10px] text-[#fdfbf7]/40 font-sans">
-              Protected & encrypted session management.
+          {/* Registration Link */}
+          <div className="text-center mt-5 pt-4 border-t border-[#c5a059]/20">
+            <p className="text-xs text-[#edd892]/70 font-sans mb-2">
+              Need an account for your events company?
+            </p>
+            <a
+              href="/admin/register"
+              className="inline-flex items-center gap-1.5 text-xs font-cinzel font-bold text-[#ffd700] hover:underline"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-[#ffd700]" />
+              Create Event Manager Account
+            </a>
+            <p className="text-[10px] text-[#fdfbf7]/40 font-sans mt-3">
+              Protected & encrypted multi-tenant session management.
             </p>
           </div>
         </div>

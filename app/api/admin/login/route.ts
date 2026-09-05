@@ -1,22 +1,31 @@
-import {NextRequest, NextResponse} from 'next/server';
-import { verifyAdminCredentials, createAdminSession } from '@/lib/auth';
+import { NextRequest, NextResponse } from "next/server";
+import { verifyManagerCredentials, createManagerSession } from "@/lib/auth";
 
 export async function POST(req: NextRequest) {
-    const {username, password } = await req.json();
-
-    console.log("DEBUG username env:", process.env.ADMIN_USERNAME);
-    console.log("DEBUG hash env:", process.env.ADMIN_PASSWORD_HASH);
-    console.log("DEBUG received username:", username);
+  try {
+    const { username, password } = await req.json();
 
     if (!username || !password) {
-        return NextResponse.json({ error: "Missing credentials" }, { status: 400 });
+      return NextResponse.json({ error: "Missing username or password" }, { status: 400 });
     }
 
-    const valid = await verifyAdminCredentials(username, password);
-    if (!valid) {
-        return NextResponse.json({ error: "Invalid username or password" }, { status: 401 });
+    const manager = await verifyManagerCredentials(username, password);
+    if (!manager) {
+      return NextResponse.json({ error: "Invalid username or password" }, { status: 401 });
     }
-    
-    await createAdminSession();
-    return NextResponse.json({ success: true });
+
+    await createManagerSession(manager);
+    return NextResponse.json({
+      success: true,
+      manager: {
+        id: manager.id,
+        username: manager.username,
+        name: manager.name,
+        role: manager.role,
+      },
+    });
+  } catch (err: any) {
+    console.error("Login error:", err);
+    return NextResponse.json({ error: "Authentication failed" }, { status: 500 });
+  }
 }

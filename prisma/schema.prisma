@@ -4,36 +4,136 @@ generator client {
 
 datasource db {
     provider = "postgresql"
-    url = env("DATABASE_URL")
+    url      = env("DATABASE_URL")
 }
 
+// 1. Event Manager (SaaS Account Holder / Planner)
+model EventManager {
+    id        String         @id @default(cuid())
+    username  String         @unique
+    password  String         // bcrypt hashed password
+    name      String         // Manager / Planner Name
+    email     String?        @unique
+    company   String?        // e.g. "Royal Elegance Events"
+    phone     String?
+    role      String         @default("MANAGER") // MANAGER | SUPER_ADMIN
+    events    WeddingEvent[]
+    createdAt DateTime       @default(now())
+    updatedAt DateTime       @updatedAt
+}
+
+// 2. Wedding Event (Unique wedding with CUID primary key & URL-friendly slug)
+model WeddingEvent {
+    id                   String          @id @default(cuid())
+    slug                 String          @unique // e.g. "sandharu-and-sanduni-2026"
+    managerId            String
+    manager              EventManager    @relation(fields: [managerId], references: [id], onDelete: Cascade)
+    
+    coupleNames          String          @default("Sandharu & Sanduni")
+    hostIntro            String          @default("With gratitude and joyful hearts, we cordially invite")
+    invitationBody       String          @default("to join us as we celebrate this special day...")
+    eventDate            DateTime
+    venueName            String
+    venueAddress         String
+    venueLat             Float           @default(6.9271)
+    venueLng             Float           @default(79.9426)
+    contactPhone         String?         @default("+94 77 123 4567")
+
+    // Media & Visual Assets
+    heroImageUrl         String?         @default("/uploads/preshoot-photo-Pragya-Siddharth-Pix-1788547160301-318.jpg")
+    heroVideoUrl         String?         @default("/uploads/preshoot-video-0903-1788547888302-520.mp4")
+    videoThumbnailUrl    String?         @default("/uploads/preshoot-photo-Pragya-Siddharth-Pix-1788547160301-318.jpg")
+    welcomeImageUrl      String?         @default("/uploads/preshoot-photo-423f40cc366ebcbcb01c-1788547168710-655.jpg")
+    placeCardImageUrl    String?         @default("/uploads/preshoot-photo-e5a487a560c507085cda-1788547177206-113.jpg")
+    placeCardNote        String?         @default("Thank you for sharing our joy and celebrating with us!")
+    blessingImageUrl     String?         @default("/uploads/preshoot-photo-OIP2-1788547184704-193.webp")
+    musicUrl             String?         @default("/audio/background.mp3")
+
+    // Themes & Schedule
+    dressCodeTitle       String?         @default("Royal Splendor & Black Tie")
+    dressCodeDescription String?         @default("Traditional Sri Lankan elegance or formal evening attire in warm tones of gold, burgundy, and ivory.")
+    timelineJson         String?
+    galleryJson          String?         // Retained for fallback compatibility
+
+    // Relational Tables
+    photos               EventPhoto[]
+    guests               Guest[]
+    tables               EventTable[]
+    wishes               GuestbookWish[]
+
+    createdAt            DateTime        @default(now())
+    updatedAt            DateTime        @updatedAt
+}
+
+// 3. Dedicated Event Photo Table (Separated photos with ordering and tags)
+model EventPhoto {
+    id        String       @id @default(cuid())
+    eventId   String
+    event     WeddingEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+    url       String
+    title     String?
+    subtitle  String?
+    tag       String?      @default("Pre-Wedding") // Pre-Wedding | Ceremony | Reception | Candid
+    order     Int          @default(0)
+    createdAt DateTime     @default(now())
+    updatedAt DateTime     @updatedAt
+
+    @@index([eventId, order])
+}
+
+// 4. Dedicated Event Table (Seating Arrangements)
+model EventTable {
+    id          String       @id @default(cuid())
+    eventId     String
+    event       WeddingEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+    tableNumber Int
+    tableName   String?      // e.g. "Royal Lotus VIP", "Family Head Table"
+    capacity    Int          @default(8)
+    notes       String?
+    createdAt   DateTime     @default(now())
+    updatedAt   DateTime     @updatedAt
+
+    @@unique([eventId, tableNumber])
+}
+
+// 5. Guest Table (Linked to WeddingEvent)
 model Guest {
-    id              String    @id @default(cuid())
-    token           String    @unique @default(cuid())
+    id              String        @id @default(cuid())
+    eventId         String?
+    event           WeddingEvent? @relation(fields: [eventId], references: [id], onDelete: Cascade)
+    token           String        @unique @default(cuid())
     displayName     String
     salutation      String
-    inviteType      String    @default("SINGLE")
+    inviteType      String        @default("SINGLE")
     tableNumber     Int
     notes           String?
     phone           String?
-    rsvpStatus      String    @default("PENDING") // PENDING | ATTENDING | DECLINED
-    attendeeCount   Int       @default(1)
-    dietary         String?   @default("NONE") // NONE | VEGETARIAN | VEGAN | HALAL | GLUTEN_FREE | OTHER
+    rsvpStatus      String        @default("PENDING") // PENDING | ATTENDING | DECLINED
+    attendeeCount   Int           @default(1)
+    dietary         String?       @default("NONE") // NONE | VEGETARIAN | VEGAN | HALAL | GLUTEN_FREE | OTHER
     rsvpMessage     String?
     viewedAt        DateTime?
     rsvpSubmittedAt DateTime?
-    createdAt       DateTime  @default(now())
-    updatedAt       DateTime  @updatedAt
+    createdAt       DateTime      @default(now())
+    updatedAt       DateTime      @updatedAt
+
+    @@index([eventId])
 }
 
+// 6. Guestbook Wishes (Linked to WeddingEvent)
 model GuestbookWish {
-    id          String   @id @default(cuid())
-    authorName  String
-    message     String
-    likes       Int      @default(0)
-    createdAt   DateTime @default(now())
+    id         String        @id @default(cuid())
+    eventId    String?
+    event      WeddingEvent? @relation(fields: [eventId], references: [id], onDelete: Cascade)
+    authorName String
+    message    String
+    likes      Int           @default(0)
+    createdAt  DateTime      @default(now())
+
+    @@index([eventId])
 }
 
+// 7. Legacy EventSettings (Kept for backward compatibility during migration)
 model EventSettings {
     id                   String   @id @default("singleton")
     coupleNames          String   @default("Sandharu & Sanduni")
@@ -47,20 +147,14 @@ model EventSettings {
     heroImageUrl         String?  @default("/uploads/preshoot-photo-Pragya-Siddharth-Pix-1788547160301-318.jpg")
     heroVideoUrl         String?  @default("/uploads/preshoot-video-0903-1788547888302-520.mp4")
     videoThumbnailUrl    String?  @default("/uploads/preshoot-photo-Pragya-Siddharth-Pix-1788547160301-318.jpg")
-
     galleryJson          String?
     blessingImageUrl     String?  @default("/uploads/preshoot-photo-OIP2-1788547184704-193.webp")
     welcomeImageUrl      String?  @default("/uploads/preshoot-photo-423f40cc366ebcbcb01c-1788547168710-655.jpg")
     placeCardImageUrl    String?  @default("/uploads/preshoot-photo-e5a487a560c507085cda-1788547177206-113.jpg")
     placeCardNote        String?  @default("Thank you for sharing our joy and celebrating with us!")
-
     musicUrl             String?  @default("/audio/background.mp3")
     dressCodeTitle       String?  @default("Royal Splendor & Black Tie")
     dressCodeDescription String?  @default("Traditional Sri Lankan elegance or formal evening attire in warm tones of gold, burgundy, and ivory.")
     timelineJson         String?
     contactPhone         String?  @default("+94 77 123 4567")
 }
-
-
-
-

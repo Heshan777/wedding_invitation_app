@@ -1,8 +1,37 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { isAdminAuthenticated } from "@/lib/auth";
+import { getAuthenticatedManager } from "@/lib/auth";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const manager = await getAuthenticatedManager();
+  const { searchParams } = new URL(req.url);
+  const eventId = searchParams.get("eventId");
+
+  if (manager && eventId) {
+    const event = await prisma.weddingEvent.findFirst({
+      where: { id: eventId, managerId: manager.id },
+      include: {
+        photos: { orderBy: { order: "asc" } },
+        tables: { orderBy: { tableNumber: "asc" } },
+      },
+    });
+    if (event) return NextResponse.json(event);
+  }
+
+  // Fallback to manager's latest event
+  if (manager) {
+    const event = await prisma.weddingEvent.findFirst({
+      where: { managerId: manager.id },
+      orderBy: { createdAt: "desc" },
+      include: {
+        photos: { orderBy: { order: "asc" } },
+        tables: { orderBy: { tableNumber: "asc" } },
+      },
+    });
+    if (event) return NextResponse.json(event);
+  }
+
+  // Fallback to legacy singleton
   const settings = await prisma.eventSettings.findUnique({
     where: { id: "singleton" },
   });
@@ -10,11 +39,15 @@ export async function GET() {
 }
 
 export async function PATCH(req: NextRequest) {
-  if (!(await isAdminAuthenticated())) {
+  const manager = await getAuthenticatedManager();
+  if (!manager) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const body = await req.json();
+  const { searchParams } = new URL(req.url);
+  const eventId = body.eventId || searchParams.get("eventId");
+
   const {
     coupleNames,
     hostIntro,
@@ -39,6 +72,83 @@ export async function PATCH(req: NextRequest) {
     contactPhone,
   } = body;
 
+  // Update specific WeddingEvent if eventId is provided or manager has events
+  if (eventId) {
+    const event = await prisma.weddingEvent.findFirst({
+      where: { id: eventId, managerId: manager.id },
+    });
+    if (event) {
+      const updated = await prisma.weddingEvent.update({
+        where: { id: event.id },
+        data: {
+          coupleNames,
+          hostIntro,
+          invitationBody,
+          eventDate: eventDate ? new Date(eventDate) : undefined,
+          venueName,
+          venueAddress,
+          venueLat: venueLat !== undefined ? Number(venueLat) : undefined,
+          venueLng: venueLng !== undefined ? Number(venueLng) : undefined,
+          heroImageUrl,
+          heroVideoUrl,
+          videoThumbnailUrl,
+          galleryJson,
+          blessingImageUrl,
+          welcomeImageUrl,
+          placeCardImageUrl,
+          placeCardNote,
+          musicUrl,
+          dressCodeTitle,
+          dressCodeDescription,
+          timelineJson,
+          contactPhone,
+        },
+      });
+
+      // Also mirror to legacy EventSettings if it's the primary event
+      await prisma.eventSettings.upsert({
+        where: { id: "singleton" },
+        update: {
+          coupleNames,
+          hostIntro,
+          invitationBody,
+          eventDate: eventDate ? new Date(eventDate) : undefined,
+          venueName,
+          venueAddress,
+          venueLat: venueLat !== undefined ? Number(venueLat) : undefined,
+          venueLng: venueLng !== undefined ? Number(venueLng) : undefined,
+          heroImageUrl,
+          heroVideoUrl,
+          videoThumbnailUrl,
+          galleryJson,
+          blessingImageUrl,
+          welcomeImageUrl,
+          placeCardImageUrl,
+          placeCardNote,
+          musicUrl,
+          dressCodeTitle,
+          dressCodeDescription,
+          timelineJson,
+          contactPhone,
+        },
+        create: {
+          id: "singleton",
+          coupleNames: coupleNames || "Sandharu & Sanduni",
+          hostIntro: hostIntro || "We cordially invite you",
+          invitationBody: invitationBody || "to celebrate with us",
+          eventDate: eventDate ? new Date(eventDate) : new Date(),
+          venueName: venueName || "Rose Garden Banquet Hall",
+          venueAddress: venueAddress || "Kadawatha",
+          venueLat: Number(venueLat) || 7.00365,
+          venueLng: Number(venueLng) || 79.9426,
+        },
+      }).catch(() => {});
+
+      return NextResponse.json(updated);
+    }
+  }
+
+  // Fallback: update legacy EventSettings
   const updated = await prisma.eventSettings.upsert({
     where: { id: "singleton" },
     update: {
@@ -74,26 +184,8 @@ export async function PATCH(req: NextRequest) {
       venueAddress: venueAddress || "Kadawatha",
       venueLat: Number(venueLat) || 7.00365,
       venueLng: Number(venueLng) || 79.9426,
-      heroImageUrl: heroImageUrl || "/uploads/preshoot-photo-Pragya-Siddharth-Pix-1788547160301-318.jpg",
-      heroVideoUrl: heroVideoUrl || "/uploads/preshoot-video-0903-1788547888302-520.mp4",
-      videoThumbnailUrl: videoThumbnailUrl || null,
-      galleryJson: galleryJson || null,
-      blessingImageUrl: blessingImageUrl || "/uploads/preshoot-photo-OIP2-1788547184704-193.webp",
-      welcomeImageUrl: welcomeImageUrl || "/uploads/preshoot-photo-423f40cc366ebcbcb01c-1788547168710-655.jpg",
-      placeCardImageUrl: placeCardImageUrl || "/uploads/preshoot-photo-e5a487a560c507085cda-1788547177206-113.jpg",
-
-      placeCardNote: placeCardNote || "Thank you for sharing our joy and celebrating with us!",
-      musicUrl: musicUrl || "/audio/background.mp3",
-      dressCodeTitle: dressCodeTitle || "Royal Splendor & Black Tie",
-      dressCodeDescription: dressCodeDescription || "Traditional Sri Lankan elegance or formal evening attire in warm tones of gold, burgundy, and ivory.",
-      timelineJson: timelineJson || null,
-      contactPhone: contactPhone || "+94 77 123 4567",
     },
   });
 
-
   return NextResponse.json(updated);
 }
-
-
-

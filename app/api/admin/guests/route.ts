@@ -1,22 +1,77 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { isAdminAuthenticated } from "@/lib/auth";
+import { getAuthenticatedManager } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
-  if (!(await isAdminAuthenticated())) {
+export async function GET(req: NextRequest) {
+  const manager = await getAuthenticatedManager();
+  if (!manager) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  const guests = await prisma.guest.findMany({ orderBy: { createdAt: "desc" } });
+
+  const { searchParams } = new URL(req.url);
+  let eventId = searchParams.get("eventId");
+
+  // If no eventId specified, default to the manager's most recent event
+  if (!eventId) {
+    const firstEvent = await prisma.weddingEvent.findFirst({
+      where: { managerId: manager.id },
+      orderBy: { createdAt: "desc" },
+    });
+    eventId = firstEvent?.id || null;
+  }
+
+  if (!eventId) {
+    return NextResponse.json([]);
+  }
+
+  // Verify manager owns this event
+  const event = await prisma.weddingEvent.findFirst({
+    where: { id: eventId, managerId: manager.id },
+  });
+
+  if (!event) {
+    return NextResponse.json({ error: "Access denied" }, { status: 403 });
+  }
+
+  const guests = await prisma.guest.findMany({
+    where: { eventId },
+    orderBy: { createdAt: "desc" },
+  });
+
   return NextResponse.json(guests);
 }
 
 export async function POST(req: NextRequest) {
-  if (!(await isAdminAuthenticated())) {
+  const manager = await getAuthenticatedManager();
+  if (!manager) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
   const body = await req.json();
+  let targetEventId = body.eventId;
+
+  if (!targetEventId) {
+    const firstEvent = await prisma.weddingEvent.findFirst({
+      where: { managerId: manager.id },
+      orderBy: { createdAt: "desc" },
+    });
+    targetEventId = firstEvent?.id;
+  }
+
+  if (!targetEventId) {
+    return NextResponse.json({ error: "No wedding event found to attach guest" }, { status: 400 });
+  }
+
+  // Verify ownership
+  const event = await prisma.weddingEvent.findFirst({
+    where: { id: targetEventId, managerId: manager.id },
+  });
+
+  if (!event) {
+    return NextResponse.json({ error: "Access denied to event" }, { status: 403 });
+  }
 
   // Bulk Import support
   if (body.action === "bulk" && Array.isArray(body.guests)) {
@@ -25,6 +80,7 @@ export async function POST(req: NextRequest) {
       if (!item.displayName) continue;
       const newGuest = await prisma.guest.create({
         data: {
+          eventId: targetEventId,
           displayName: String(item.displayName).trim(),
           salutation: item.salutation ? String(item.salutation).trim() : "Mr & Mrs",
           inviteType: ["SINGLE", "COUPLE", "FAMILY"].includes(item.inviteType) ? item.inviteType : "COUPLE",
@@ -49,6 +105,7 @@ export async function POST(req: NextRequest) {
 
   const guest = await prisma.guest.create({
     data: {
+      eventId: targetEventId,
       displayName: String(displayName).trim(),
       salutation: String(salutation).trim(),
       inviteType,
@@ -61,4 +118,4 @@ export async function POST(req: NextRequest) {
     },
   });
   return NextResponse.json(guest);
-}
+}
