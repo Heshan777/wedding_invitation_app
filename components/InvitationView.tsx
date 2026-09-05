@@ -38,9 +38,23 @@ import VenueMap from "./VenueMap";
 import FallingDecor from "./FallingDecor";
 import MusicPlayer from "./MusicPlayer";
 import EnvelopeOpening from "./EnvelopeOpening";
+import ScrollProgress from "./ScrollProgress";
+import ScrollReveal from "./ScrollReveal";
 import { formatEventDate } from "@/lib/date";
 import { generateICS } from "@/lib/calendar";
 import { translations, Locale } from "@/lib/translations";
+
+function FloralDivider({ className = "" }: { className?: string }) {
+  return (
+    <div className={`flex items-center justify-center gap-2.5 my-6 pointer-events-none select-none ${className}`}>
+      <div className="h-px w-10 sm:w-16 bg-gradient-to-r from-transparent to-[#c5a059]" />
+      <span className="text-[#c5a059] text-[10px]">❦</span>
+      <span className="text-[#800020] text-xs animate-pulse">🌸</span>
+      <span className="text-[#c5a059] text-[10px]">❧</span>
+      <div className="h-px w-10 sm:w-16 bg-gradient-to-l from-transparent to-[#c5a059]" />
+    </div>
+  );
+}
 
 type Guest = {
   id?: string;
@@ -582,8 +596,11 @@ export default function InvitationView({
         onOpen={handleOpenEnvelope}
       />
 
-      {/* Floating Animated Rose Petals & Gold Sparkles */}
+      {/* Floating Animated Rose Petals & Gold Sparkles Across All Sections */}
       <FallingDecor />
+
+      {/* Interactive Golden Floral Scroll Progress Bar */}
+      <ScrollProgress />
 
       {/* Floating Luxury Language Switcher */}
       <div className="fixed top-4 right-4 z-40 flex items-center gap-1 p-1 rounded-full bg-[#181114]/90 border border-[#dfba73]/60 shadow-[0_4px_20px_rgba(0,0,0,0.6)] backdrop-blur-md">
@@ -615,37 +632,89 @@ export default function InvitationView({
           <div className="absolute inset-2 sm:inset-3 rounded-2xl border-2 border-[#c5a059]/40 pointer-events-none" />
           <div className="absolute inset-3 sm:inset-4 rounded-2xl border border-[#c5a059]/20 pointer-events-none" />
 
+          {/* Top-to-Bottom Royal Floral Botanical Borders (Left & Right) */}
+          <div className="absolute top-10 bottom-10 left-1 sm:left-2.5 w-4 pointer-events-none select-none flex flex-col justify-around items-center opacity-40 text-[#800020] text-xs z-10">
+            <span className="animate-pulse-slow">🌸</span>
+            <span className="text-[#c5a059] text-[10px]">🌿</span>
+            <span className="text-sm">🌹</span>
+            <span className="text-[#c5a059] text-[10px]">🌿</span>
+            <span className="text-xs">🌺</span>
+            <span className="text-[#c5a059] text-[10px]">🌿</span>
+            <span className="text-sm">🌸</span>
+            <span className="text-[#c5a059] text-[10px]">🌿</span>
+            <span className="text-sm">🌹</span>
+            <span className="text-[#c5a059] text-[10px]">🌿</span>
+            <span className="text-xs">🏵️</span>
+            <span className="text-[#c5a059] text-[10px]">🌿</span>
+            <span className="text-sm">🌸</span>
+            <span className="text-[#c5a059] text-[10px]">🌿</span>
+            <span className="text-sm">🌹</span>
+            <span className="text-[#c5a059] text-[10px]">🌿</span>
+            <span className="text-xs">🌸</span>
+          </div>
+
+          <div className="absolute top-10 bottom-10 right-1 sm:right-2.5 w-4 pointer-events-none select-none flex flex-col justify-around items-center opacity-40 text-[#800020] text-xs z-10">
+            <span className="animate-pulse-slow">🌸</span>
+            <span className="text-[#c5a059] text-[10px]">🌿</span>
+            <span className="text-sm">🌹</span>
+            <span className="text-[#c5a059] text-[10px]">🌿</span>
+            <span className="text-xs">🌺</span>
+            <span className="text-[#c5a059] text-[10px]">🌿</span>
+            <span className="text-sm">🌸</span>
+            <span className="text-[#c5a059] text-[10px]">🌿</span>
+            <span className="text-sm">🌹</span>
+            <span className="text-[#c5a059] text-[10px]">🌿</span>
+            <span className="text-xs">🏵️</span>
+            <span className="text-[#c5a059] text-[10px]">🌿</span>
+            <span className="text-sm">🌸</span>
+            <span className="text-[#c5a059] text-[10px]">🌿</span>
+            <span className="text-sm">🌹</span>
+            <span className="text-[#c5a059] text-[10px]">🌿</span>
+            <span className="text-xs">🌸</span>
+          </div>
+
           {/* Corner Vintage Filigree Accents */}
           <div className="absolute top-4 left-4 text-[#c5a059] text-base select-none">⚜</div>
           <div className="absolute top-4 right-4 text-[#c5a059] text-base select-none">⚜</div>
           <div className="absolute bottom-4 left-4 text-[#c5a059] text-base select-none">⚜</div>
           <div className="absolute bottom-4 right-4 text-[#c5a059] text-base select-none">⚜</div>
 
-          {/* Header Crown / Monogram */}
-          <div className="text-center pt-2 mb-4">
-            <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-[#800020]/10 border border-[#c5a059]/50 shadow-inner mb-3">
-              <span className="font-cinzel text-xl font-bold text-[#800020]">
-                {monogram}
-              </span>
+          {/* Header Crown / Monogram with Scroll Reveal */}
+          <ScrollReveal variant="fade-up" duration={750}>
+            {/* Header Floral Garland Flourish */}
+            <div className="flex items-center justify-center gap-2 mb-1.5 select-none pointer-events-none text-xs">
+              <span className="text-[#c5a059]">❀</span>
+              <span className="text-sm animate-pulse-slow">🌸</span>
+              <span className="text-[#800020] font-serif text-base">⚜</span>
+              <span className="text-sm animate-pulse-slow">🌸</span>
+              <span className="text-[#c5a059]">❀</span>
             </div>
-            <p className="text-[11px] sm:text-xs uppercase tracking-[0.35em] text-[#8c6a2b] font-cinzel font-semibold">
-              {t.royalHomecoming}
+
+            <div className="text-center pt-1 mb-4">
+              <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-[#800020]/10 border border-[#c5a059]/50 shadow-inner mb-3">
+                <span className="font-cinzel text-xl font-bold text-[#800020]">
+                  {monogram}
+                </span>
+              </div>
+              <p className="text-[11px] sm:text-xs uppercase tracking-[0.35em] text-[#8c6a2b] font-cinzel font-semibold">
+                {t.royalHomecoming}
+              </p>
+              <h1 className="font-serif italic text-4xl sm:text-5xl text-[#6b0f24] font-bold mt-1 tracking-tight">
+                {t.invitationTitle}
+              </h1>
+            </div>
+
+            {/* Intro Ribbon */}
+            <div className="flex items-center justify-center gap-3 my-4">
+              <div className="h-px w-12 bg-gradient-to-r from-transparent to-[#c5a059]" />
+              <Sparkles className="w-4 h-4 text-[#c5a059]" />
+              <div className="h-px w-12 bg-gradient-to-l from-transparent to-[#c5a059]" />
+            </div>
+
+            <p className="text-center text-sm sm:text-base text-[#3d3238] font-sans leading-relaxed mb-4">
+              {t.familyIntro}
             </p>
-            <h1 className="font-serif italic text-4xl sm:text-5xl text-[#6b0f24] font-bold mt-1 tracking-tight">
-              {t.invitationTitle}
-            </h1>
-          </div>
-
-          {/* Intro Ribbon */}
-          <div className="flex items-center justify-center gap-3 my-4">
-            <div className="h-px w-12 bg-gradient-to-r from-transparent to-[#c5a059]" />
-            <Sparkles className="w-4 h-4 text-[#c5a059]" />
-            <div className="h-px w-12 bg-gradient-to-l from-transparent to-[#c5a059]" />
-          </div>
-
-          <p className="text-center text-sm sm:text-base text-[#3d3238] font-sans leading-relaxed mb-4">
-            {t.familyIntro}
-          </p>
+          </ScrollReveal>
 
           {/* Interactive Pre-Shoot Film / Couple Photo Switcher Pills */}
           {settings.heroVideoUrl && (
@@ -677,9 +746,10 @@ export default function InvitationView({
             </div>
           )}
 
-          {/* Luxury Couple Hero Pre-Shoot Video / Photo Cinema Card */}
-          <div className="relative w-full my-6">
-            <div className="relative rounded-3xl overflow-hidden border-2 border-[#c5a059]/60 shadow-2xl bg-[#1a1215] group">
+          {/* Luxury Couple Hero Pre-Shoot Video / Photo Cinema Card with Scroll Reveal */}
+          <ScrollReveal variant="scale-up" duration={850}>
+            <div className="relative w-full my-6">
+              <div className="relative rounded-3xl overflow-hidden border-2 border-[#c5a059]/60 shadow-2xl bg-[#1a1215] group">
               {settings.heroVideoUrl && mediaMode === "video" ? (
                 /* PRE-SHOOT CINEMATIC VIDEO MODE */
                 <div className="relative w-full overflow-hidden bg-black">
@@ -840,814 +910,898 @@ export default function InvitationView({
               )}
             </div>
           </div>
+        </ScrollReveal>
 
-          {/* Host Intro */}
-          <p className="text-center text-sm sm:text-base text-[#3d3238] font-sans leading-relaxed my-6 px-2">
-            {settings.hostIntro}
-          </p>
+          {/* Floral Section Divider */}
+          <FloralDivider />
 
-          {/* Personalized Guest Salutation Card */}
-          <div className="relative my-6 rounded-2xl bg-gradient-to-r from-[#800020] via-[#6b0f24] to-[#420614] p-5 text-center text-[#fdfbf7] shadow-xl border border-[#dfba73]/40">
-            <div className="text-[10px] uppercase tracking-[0.25em] text-[#edd892] font-cinzel font-semibold mb-1">
-              {t.honouredGuest}
-            </div>
-            <div className="font-serif italic text-2xl sm:text-3xl font-bold tracking-wide">
-              {formatInviteLine(guest)}
-            </div>
-          </div>
+          {/* Host Intro & Personalized Guest Salutation Card with Scroll Reveal */}
+          <ScrollReveal variant="fade-up" duration={750}>
+            {/* Host Intro */}
+            <p className="text-center text-sm sm:text-base text-[#3d3238] font-sans leading-relaxed my-4 px-2">
+              {settings.hostIntro}
+            </p>
 
-          {/* SWEET COUPLE WARM WELCOME VIGNETTE */}
-          <div className="relative my-8 rounded-3xl overflow-hidden border-2 border-[#c5a059]/60 bg-gradient-to-b from-[#2a1721] via-[#1c0e16] to-[#12080e] text-[#fdfbf7] p-6 sm:p-8 shadow-2xl">
-            {/* Ornate Corner Stars */}
-            <div className="absolute top-3 left-3 text-[#edd892]/60 text-xs select-none">✦</div>
-            <div className="absolute top-3 right-3 text-[#edd892]/60 text-xs select-none">✦</div>
-            <div className="absolute bottom-3 left-3 text-[#edd892]/60 text-xs select-none">✦</div>
-            <div className="absolute bottom-3 right-3 text-[#edd892]/60 text-xs select-none">✦</div>
-
-            <div className="flex flex-col sm:flex-row items-center gap-5 sm:gap-6">
-              {/* Sweet Couple Portrait Cameo */}
-              <div className="relative w-32 h-32 sm:w-40 sm:h-40 rounded-full overflow-hidden border-4 border-[#dfba73] shadow-[0_0_25px_rgba(223,186,115,0.4)] flex-shrink-0 group">
-                <Image
-                  src={welcomeImageSrc}
-                  alt={t.cantWaitToWelcome}
-                  fill
-                  sizes="160px"
-                  className="object-cover transition duration-700 group-hover:scale-110"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+            {/* Personalized Guest Salutation Card */}
+            <div className="relative my-6 rounded-2xl bg-gradient-to-r from-[#800020] via-[#6b0f24] to-[#420614] p-5 text-center text-[#fdfbf7] shadow-xl border border-[#dfba73]/40">
+              <div className="text-[10px] uppercase tracking-[0.25em] text-[#edd892] font-cinzel font-semibold mb-1">
+                {t.honouredGuest}
               </div>
-
-              {/* Sweet Welcome Narrative */}
-              <div className="text-center sm:text-left flex-1">
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#800020]/80 text-[#edd892] text-[10px] sm:text-xs font-cinzel font-semibold mb-2 border border-[#dfba73]/40">
-                  <Heart className="w-3.5 h-3.5 fill-[#ffd700] text-[#ffd700]" /> {t.withAllOurLove}
-                </div>
-                <h3 className="font-serif italic text-2xl sm:text-3xl text-[#fff8ea] font-bold">
-                  {t.cantWaitToWelcome}
-                </h3>
-                <p className="font-sans text-xs sm:text-sm text-[#edd892]/90 leading-relaxed mt-2">
-                  {t.sweetWelcomeSub}
-                </p>
-
-                {/* Sweet Interactive Reaction Buttons */}
-                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mt-4">
-                  <button
-                    type="button"
-                    onClick={() => triggerReaction("love")}
-                    className="px-3 py-1.5 rounded-full bg-white/10 hover:bg-[#800020] border border-[#c5a059]/40 text-[#edd892] text-xs font-sans font-semibold flex items-center gap-1.5 transition cursor-pointer active:scale-95"
-                  >
-                    💖 {t.happyCouple}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => triggerReaction("cheers")}
-                    className="px-3 py-1.5 rounded-full bg-white/10 hover:bg-[#800020] border border-[#c5a059]/40 text-[#edd892] text-xs font-sans font-semibold flex items-center gap-1.5 transition cursor-pointer active:scale-95"
-                  >
-                    🥂 Cheers & Love
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => triggerReaction("bless")}
-                    className="px-3 py-1.5 rounded-full bg-white/10 hover:bg-[#800020] border border-[#c5a059]/40 text-[#edd892] text-xs font-sans font-semibold flex items-center gap-1.5 transition cursor-pointer active:scale-95"
-                  >
-                    ✨ Auspicious Blessings
-                  </button>
-                </div>
+              <div className="font-serif italic text-2xl sm:text-3xl font-bold tracking-wide">
+                {formatInviteLine(guest)}
               </div>
             </div>
-          </div>
+          </ScrollReveal>
 
-          <p className="text-center text-sm sm:text-base text-[#3d3238] font-sans leading-relaxed my-6 px-2">
-            {settings.invitationBody}
-          </p>
+          {/* Floral Section Divider */}
+          <FloralDivider />
 
-          {/* Golden Date & Time Badge */}
-          <div className="my-8 text-center bg-gradient-to-b from-[#fdf6e7] to-[#faedd0] rounded-2xl p-6 border border-[#c5a059]/50 shadow-md">
-            <div className="w-16 h-px bg-[#c5a059] mx-auto mb-2" />
-            <p className="font-cinzel text-xl sm:text-2xl text-[#800020] font-bold uppercase tracking-wider">
-              {date.weekday}
-            </p>
-            <p className="font-serif italic text-base text-[#8c6a2b]">{date.month}</p>
-            <p className="font-cinzel text-6xl sm:text-7xl text-[#1a1517] font-black my-1">
-              {String(date.day).padStart(2, "0")}
-              <sup className="text-2xl sm:text-3xl text-[#800020] font-serif italic ml-1">
-                {date.ordinal}
-              </sup>
-            </p>
-            <p className="font-cinzel text-xl text-[#800020] font-semibold tracking-widest">
-              {date.year}
-            </p>
-            <div className="w-16 h-px bg-[#c5a059] mx-auto mt-2" />
-            <p className="text-xs sm:text-sm text-[#4a3b32] font-sans font-medium mt-3">
-              Ceremony & Reception from <span className="font-bold text-[#800020]">{date.time}</span> onwards
-            </p>
-          </div>
+          {/* SWEET COUPLE WARM WELCOME VIGNETTE with Scroll Reveal */}
+          <ScrollReveal variant="scale-up" duration={850}>
+            <div className="relative my-8 rounded-3xl overflow-hidden border-2 border-[#c5a059]/60 bg-gradient-to-b from-[#2a1721] via-[#1c0e16] to-[#12080e] text-[#fdfbf7] p-6 sm:p-8 shadow-2xl">
+              {/* Ornate Corner Stars */}
+              <div className="absolute top-3 left-3 text-[#edd892]/60 text-xs select-none">✦</div>
+              <div className="absolute top-3 right-3 text-[#edd892]/60 text-xs select-none">✦</div>
+              <div className="absolute bottom-3 left-3 text-[#edd892]/60 text-xs select-none">✦</div>
+              <div className="absolute bottom-3 right-3 text-[#edd892]/60 text-xs select-none">✦</div>
 
-          {/* VIRTUAL LUXURY TABLE SEATING PLACE CARD */}
-          <div className="my-8 rounded-3xl border-2 border-[#c5a059] bg-gradient-to-b from-[#fffdfa] via-[#faf5ec] to-[#f5eedf] p-6 sm:p-7 shadow-2xl relative overflow-hidden text-[#1a1517]">
-            {/* Ornate Gold Border Filigrees */}
-            <div className="absolute inset-2 rounded-2xl border border-[#c5a059]/30 pointer-events-none" />
-            <div className="absolute top-3 left-3 text-[#c5a059] text-xs select-none">⚜</div>
-            <div className="absolute top-3 right-3 text-[#c5a059] text-xs select-none">⚜</div>
-            <div className="absolute bottom-3 left-3 text-[#c5a059] text-xs select-none">⚜</div>
-            <div className="absolute bottom-3 right-3 text-[#c5a059] text-xs select-none">⚜</div>
-
-            {/* Header Couple Cameo & Title */}
-            <div className="flex flex-col items-center text-center pb-4 border-b border-[#c5a059]/30">
-              <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden border-2 border-[#c5a059] shadow-md mb-2 bg-[#800020]/10">
-                <Image
-                  src={placeCardImageSrc}
-                  alt={settings.coupleNames}
-                  fill
-                  sizes="80px"
-                  className="object-cover object-top"
-                />
-              </div>
-              <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.25em] text-[#800020] font-cinzel font-bold">
-                {settings.coupleNames}
-              </p>
-              <span className="text-[9px] uppercase tracking-wider text-[#8c6a2b] font-cinzel">
-                {t.vipSeatingTitle}
-              </span>
-            </div>
-
-            {/* Guest & Table Details */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 py-4">
-              <div className="text-center sm:text-left">
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#800020]/10 text-[#800020] text-xs font-cinzel font-semibold mb-1">
-                  <QrCode className="w-3.5 h-3.5" /> {t.vipCheckinPass}
+              <div className="flex flex-col sm:flex-row items-center gap-5 sm:gap-6">
+                {/* Sweet Couple Portrait Cameo */}
+                <div className="relative w-32 h-32 sm:w-40 sm:h-40 rounded-full overflow-hidden border-4 border-[#dfba73] shadow-[0_0_25px_rgba(223,186,115,0.4)] flex-shrink-0 group">
+                  <Image
+                    src={welcomeImageSrc}
+                    alt={t.cantWaitToWelcome}
+                    fill
+                    sizes="160px"
+                    className="object-cover transition duration-700 group-hover:scale-110"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
                 </div>
-                <h3 className="font-serif italic text-2xl sm:text-3xl font-bold text-[#6b0f24]">
-                  {formatInviteLine(guest)}
-                </h3>
-                <div className="flex items-center justify-center sm:justify-start gap-2 mt-1 text-xs text-[#5a483e]">
-                  <Users className="w-3.5 h-3.5 text-[#800020]" />
-                  <span>{t.guestPlural}: <strong>{guest.inviteType === "COUPLE" ? "2 Persons (Couple)" : guest.inviteType === "FAMILY" ? "Family Group" : "1 Person"}</strong></span>
-                </div>
-                <div className="mt-3 flex items-center justify-center sm:justify-start gap-2">
-                  <span className="text-xs text-[#5a483e] font-sans font-medium">{t.tablePrefix}:</span>
-                  <div className="px-4 py-1.5 rounded-xl bg-[#800020] text-[#fdfbf7] font-cinzel font-bold text-base shadow-md">
-                    {t.tableNumber(guest.tableNumber)}
+
+                {/* Sweet Welcome Narrative */}
+                <div className="text-center sm:text-left flex-1">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#800020]/80 text-[#edd892] text-[10px] sm:text-xs font-cinzel font-semibold mb-2 border border-[#dfba73]/40">
+                    <Heart className="w-3.5 h-3.5 fill-[#ffd700] text-[#ffd700]" /> {t.withAllOurLove}
+                  </div>
+                  <h3 className="font-serif italic text-2xl sm:text-3xl text-[#fff8ea] font-bold">
+                    {t.cantWaitToWelcome}
+                  </h3>
+                  <p className="font-sans text-xs sm:text-sm text-[#edd892]/90 leading-relaxed mt-2">
+                    {t.sweetWelcomeSub}
+                  </p>
+
+                  {/* Sweet Interactive Reaction Buttons */}
+                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mt-4">
+                    <button
+                      type="button"
+                      onClick={() => triggerReaction("love")}
+                      className="px-3 py-1.5 rounded-full bg-white/10 hover:bg-[#800020] border border-[#c5a059]/40 text-[#edd892] text-xs font-sans font-semibold flex items-center gap-1.5 transition cursor-pointer active:scale-95"
+                    >
+                      💖 {t.happyCouple}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => triggerReaction("cheers")}
+                      className="px-3 py-1.5 rounded-full bg-white/10 hover:bg-[#800020] border border-[#c5a059]/40 text-[#edd892] text-xs font-sans font-semibold flex items-center gap-1.5 transition cursor-pointer active:scale-95"
+                    >
+                      🥂 Cheers & Love
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => triggerReaction("bless")}
+                      className="px-3 py-1.5 rounded-full bg-white/10 hover:bg-[#800020] border border-[#c5a059]/40 text-[#edd892] text-xs font-sans font-semibold flex items-center gap-1.5 transition cursor-pointer active:scale-95"
+                    >
+                      ✨ Auspicious Blessings
+                    </button>
                   </div>
                 </div>
               </div>
-
-              {/* QR Code Scannable Reception Pass */}
-              {qrDataUrl && (
-                <div className="flex flex-col items-center bg-white p-2.5 rounded-2xl border border-[#c5a059]/50 shadow-md">
-                  <Image
-                    src={qrDataUrl}
-                    alt="Guest Reception QR Code"
-                    width={110}
-                    height={110}
-                    className="w-24 h-24 sm:w-28 sm:h-28"
-                  />
-                  <span className="text-[9px] uppercase tracking-wider text-[#800020] font-cinzel font-bold mt-1 text-center max-w-[120px]">
-                    {t.scanAtEntrance}
-                  </span>
-                </div>
-              )}
             </div>
+          </ScrollReveal>
 
-            {/* Sweet Couple Note */}
-            <div className="pt-3 border-t border-[#c5a059]/30 text-center">
-              <p className="font-serif italic text-xs sm:text-sm text-[#6b0f24] font-medium">
-                &ldquo;{placeCardNote}&rdquo;
+          {/* Floral Section Divider */}
+          <FloralDivider />
+
+          {/* Invitation Body & Golden Date/Time Badge with Scroll Reveal */}
+          <ScrollReveal variant="fade-up" duration={800}>
+            <p className="text-center text-sm sm:text-base text-[#3d3238] font-sans leading-relaxed my-6 px-2">
+              {settings.invitationBody}
+            </p>
+
+            {/* Golden Date & Time Badge */}
+            <div className="my-8 text-center bg-gradient-to-b from-[#fdf6e7] to-[#faedd0] rounded-2xl p-6 border border-[#c5a059]/50 shadow-md">
+              <div className="w-16 h-px bg-[#c5a059] mx-auto mb-2" />
+              <p className="font-cinzel text-xl sm:text-2xl text-[#800020] font-bold uppercase tracking-wider">
+                {date.weekday}
+              </p>
+              <p className="font-serif italic text-base text-[#8c6a2b]">{date.month}</p>
+              <p className="font-cinzel text-6xl sm:text-7xl text-[#1a1517] font-black my-1">
+                {String(date.day).padStart(2, "0")}
+                <sup className="text-2xl sm:text-3xl text-[#800020] font-serif italic ml-1">
+                  {date.ordinal}
+                </sup>
+              </p>
+              <p className="font-cinzel text-xl text-[#800020] font-semibold tracking-widest">
+                {date.year}
+              </p>
+              <div className="w-16 h-px bg-[#c5a059] mx-auto mt-2" />
+              <p className="text-xs sm:text-sm text-[#4a3b32] font-sans font-medium mt-3">
+                Ceremony & Reception from <span className="font-bold text-[#800020]">{date.time}</span> onwards
               </p>
             </div>
-          </div>
+          </ScrollReveal>
 
-          {/* Live Countdown Section */}
-          <div className="my-8">
-            <CountdownTimer targetDate={settings.eventDate} locale={locale} />
-          </div>
+          {/* Floral Section Divider */}
+          <FloralDivider />
 
-          {/* Programme / Event Itinerary Timeline */}
-          <div className="my-10">
-            <div className="text-center mb-6">
-              <span className="text-[11px] uppercase tracking-[0.25em] text-[#8c6a2b] font-cinzel font-semibold">
-                {t.programmeSubtitle}
-              </span>
-              <h3 className="font-serif italic text-2xl sm:text-3xl text-[#6b0f24] font-bold">
-                {t.programmeTitle}
-              </h3>
+          {/* VIRTUAL LUXURY TABLE SEATING PLACE CARD with Scroll Reveal */}
+          <ScrollReveal variant="scale-up" duration={850}>
+            <div className="my-8 rounded-3xl border-2 border-[#c5a059] bg-gradient-to-b from-[#fffdfa] via-[#faf5ec] to-[#f5eedf] p-6 sm:p-7 shadow-2xl relative overflow-hidden text-[#1a1517]">
+              {/* Ornate Gold Border Filigrees */}
+              <div className="absolute inset-2 rounded-2xl border border-[#c5a059]/30 pointer-events-none" />
+              <div className="absolute top-3 left-3 text-[#c5a059] text-xs select-none">⚜</div>
+              <div className="absolute top-3 right-3 text-[#c5a059] text-xs select-none">⚜</div>
+              <div className="absolute bottom-3 left-3 text-[#c5a059] text-xs select-none">⚜</div>
+              <div className="absolute bottom-3 right-3 text-[#c5a059] text-xs select-none">⚜</div>
+
+              {/* Header Couple Cameo & Title */}
+              <div className="flex flex-col items-center text-center pb-4 border-b border-[#c5a059]/30">
+                <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden border-2 border-[#c5a059] shadow-md mb-2 bg-[#800020]/10">
+                  <Image
+                    src={placeCardImageSrc}
+                    alt={settings.coupleNames}
+                    fill
+                    sizes="80px"
+                    className="object-cover object-top"
+                  />
+                </div>
+                <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.25em] text-[#800020] font-cinzel font-bold">
+                  {settings.coupleNames}
+                </p>
+                <span className="text-[9px] uppercase tracking-wider text-[#8c6a2b] font-cinzel">
+                  {t.vipSeatingTitle}
+                </span>
+              </div>
+
+              {/* Guest & Table Details */}
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 py-4">
+                <div className="text-center sm:text-left">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#800020]/10 text-[#800020] text-xs font-cinzel font-semibold mb-1">
+                    <QrCode className="w-3.5 h-3.5" /> {t.vipCheckinPass}
+                  </div>
+                  <h3 className="font-serif italic text-2xl sm:text-3xl font-bold text-[#6b0f24]">
+                    {formatInviteLine(guest)}
+                  </h3>
+                  <div className="flex items-center justify-center sm:justify-start gap-2 mt-1 text-xs text-[#5a483e]">
+                    <Users className="w-3.5 h-3.5 text-[#800020]" />
+                    <span>{t.guestPlural}: <strong>{guest.inviteType === "COUPLE" ? "2 Persons (Couple)" : guest.inviteType === "FAMILY" ? "Family Group" : "1 Person"}</strong></span>
+                  </div>
+                  <div className="mt-3 flex items-center justify-center sm:justify-start gap-2">
+                    <span className="text-xs text-[#5a483e] font-sans font-medium">{t.tablePrefix}:</span>
+                    <div className="px-4 py-1.5 rounded-xl bg-[#800020] text-[#fdfbf7] font-cinzel font-bold text-base shadow-md">
+                      {t.tableNumber(guest.tableNumber)}
+                    </div>
+                  </div>
+                </div>
+
+                {/* QR Code Scannable Reception Pass */}
+                {qrDataUrl && (
+                  <div className="flex flex-col items-center bg-white p-2.5 rounded-2xl border border-[#c5a059]/50 shadow-md">
+                    <Image
+                      src={qrDataUrl}
+                      alt="Guest Reception QR Code"
+                      width={110}
+                      height={110}
+                      className="w-24 h-24 sm:w-28 sm:h-28"
+                    />
+                    <span className="text-[9px] uppercase tracking-wider text-[#800020] font-cinzel font-bold mt-1 text-center max-w-[120px]">
+                      {t.scanAtEntrance}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Sweet Couple Note */}
+              <div className="pt-3 border-t border-[#c5a059]/30 text-center">
+                <p className="font-serif italic text-xs sm:text-sm text-[#6b0f24] font-medium">
+                  &ldquo;{placeCardNote}&rdquo;
+                </p>
+              </div>
             </div>
+          </ScrollReveal>
+
+          {/* Floral Section Divider */}
+          <FloralDivider />
+
+          {/* Live Countdown Section with Scroll Reveal */}
+          <ScrollReveal variant="fade-up" duration={750}>
+            <div className="my-8">
+              <CountdownTimer targetDate={settings.eventDate} locale={locale} />
+            </div>
+          </ScrollReveal>
+
+          {/* Floral Section Divider */}
+          <FloralDivider />
+
+          {/* Programme / Event Itinerary Timeline with Staggered Scroll Reveal */}
+          <div className="my-10">
+            <ScrollReveal variant="fade-up" duration={750}>
+              <div className="text-center mb-6">
+                <span className="text-[11px] uppercase tracking-[0.25em] text-[#8c6a2b] font-cinzel font-semibold">
+                  {t.programmeSubtitle}
+                </span>
+                <h3 className="font-serif italic text-2xl sm:text-3xl text-[#6b0f24] font-bold">
+                  {t.programmeTitle}
+                </h3>
+              </div>
+            </ScrollReveal>
 
             <div className="space-y-3">
               {parsedTimeline.map((evt: any, idx: number) => (
-                <div
+                <ScrollReveal
                   key={idx}
-                  className="flex items-start gap-3.5 p-3.5 rounded-2xl bg-[#fbf7ee] border border-[#c5a059]/30 hover:border-[#c5a059] shadow-sm transition duration-200"
+                  variant="fade-up"
+                  delay={idx * 80}
+                  duration={650}
                 >
-                  <div className="min-w-[85px] px-2.5 py-1.5 rounded-xl bg-[#800020]/10 text-[#800020] font-cinzel text-xs font-bold text-center border border-[#800020]/20 shadow-xs">
-                    {evt.time}
+                  <div className="flex items-start gap-3.5 p-3.5 rounded-2xl bg-[#fbf7ee] border border-[#c5a059]/30 hover:border-[#c5a059] shadow-sm transition duration-200">
+                    <div className="min-w-[85px] px-2.5 py-1.5 rounded-xl bg-[#800020]/10 text-[#800020] font-cinzel text-xs font-bold text-center border border-[#800020]/20 shadow-xs">
+                      {evt.time}
+                    </div>
+                    <div>
+                      <h4 className="font-cinzel text-xs sm:text-sm font-bold text-[#1a1517]">
+                        {evt.title}
+                      </h4>
+                      <p className="text-[11px] sm:text-xs text-[#5a483e] font-sans mt-0.5">
+                        {evt.desc}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="font-cinzel text-xs sm:text-sm font-bold text-[#1a1517]">
-                      {evt.title}
-                    </h4>
-                    <p className="text-[11px] sm:text-xs text-[#5a483e] font-sans mt-0.5">
-                      {evt.desc}
-                    </p>
-                  </div>
-                </div>
+                </ScrollReveal>
               ))}
             </div>
           </div>
 
-          {/* DRESS CODE & STYLE PALETTE SECTION */}
-          <div className="my-10 p-6 rounded-3xl bg-gradient-to-b from-[#fffdfa] to-[#fbf6eb] border-2 border-[#c5a059]/40 shadow-xl text-center">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#800020]/10 text-[#800020] text-xs font-cinzel font-semibold mb-2">
-              <Sparkles className="w-3.5 h-3.5 text-[#c5a059]" /> {t.dressCodeGuideTitle}
-            </div>
-            <h3 className="font-serif italic text-2xl sm:text-3xl text-[#6b0f24] font-bold">
-              {settings.dressCodeTitle || t.dressCodeDefaultTitle}
-            </h3>
-            <p className="text-xs sm:text-sm text-[#5a483e] max-w-md mx-auto mt-2 leading-relaxed">
-              {settings.dressCodeDescription || t.dressCodeDefaultDesc}
-            </p>
+          {/* Floral Section Divider */}
+          <FloralDivider />
 
-            {/* Color Palette Swatches */}
-            <div className="mt-5 pt-4 border-t border-[#c5a059]/30">
-              <span className="text-[10px] uppercase tracking-widest text-[#8c6a2b] font-cinzel font-semibold block mb-3">
-                {t.colorPaletteTitle}
-              </span>
-              <div className="flex items-center justify-center gap-3 sm:gap-4 flex-wrap">
-                {t.paletteColors.map((c, i) => (
-                  <div key={i} className="flex flex-col items-center gap-1.5">
-                    <div
-                      className="w-9 h-9 sm:w-11 sm:h-11 rounded-full shadow-md transition-transform hover:scale-110 flex items-center justify-center border-2 border-white/80"
-                      style={{ backgroundColor: c.hex }}
-                    />
-                    <span className="text-[9px] font-cinzel text-[#5a483e] font-medium">
-                      {c.name}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Moments of Love & Pre-Wedding Gallery Section */}
-          <div className="my-10 p-5 sm:p-6 rounded-3xl bg-gradient-to-b from-[#fffdfa] to-[#fbf6eb] border-2 border-[#c5a059]/50 shadow-xl">
-            <div className="text-center mb-6">
+          {/* DRESS CODE & STYLE PALETTE SECTION with Scroll Reveal */}
+          <ScrollReveal variant="fade-up" duration={800}>
+            <div className="my-10 p-6 rounded-3xl bg-gradient-to-b from-[#fffdfa] to-[#fbf6eb] border-2 border-[#c5a059]/40 shadow-xl text-center">
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#800020]/10 text-[#800020] text-xs font-cinzel font-semibold mb-2">
-                <Camera className="w-3.5 h-3.5 text-[#c5a059]" /> {t.momentsOfLoveTitle}
+                <Sparkles className="w-3.5 h-3.5 text-[#c5a059]" /> {t.dressCodeGuideTitle}
               </div>
               <h3 className="font-serif italic text-2xl sm:text-3xl text-[#6b0f24] font-bold">
-                {t.momentsOfLoveTitle}
+                {settings.dressCodeTitle || t.dressCodeDefaultTitle}
               </h3>
-              <p className="font-serif italic text-xs sm:text-sm text-[#8c6a2b] mt-1">
-                &ldquo;{t.momentsOfLoveSubtitle}&rdquo;
+              <p className="text-xs sm:text-sm text-[#5a483e] max-w-md mx-auto mt-2 leading-relaxed">
+                {settings.dressCodeDescription || t.dressCodeDefaultDesc}
               </p>
-            </div>
 
-            {/* Floating Heart Fountain Emitters */}
-            {floatingHearts.map((h) => (
-              <div
-                key={h.id}
-                className="absolute bottom-20 z-30 pointer-events-none animate-heart-float select-none text-center"
-                style={{
-                  left: `${h.left}%`,
-                  fontSize: `${h.size}px`,
-                }}
-              >
-                💖
-              </div>
-            ))}
-
-            {/* 3D Interactive Featured Photo Carousel Card */}
-            <div
-              ref={galleryCardRef}
-
-              onMouseMove={handleGalleryMouseMove}
-              onMouseLeave={handleGalleryMouseLeave}
-              onTouchStart={handleTouchStart}
-              onTouchEnd={handleTouchEnd}
-              style={{
-                perspective: "1000px",
-                transform: `rotateX(${galleryTilt.x}deg) rotateY(${galleryTilt.y}deg)`,
-              }}
-              className="relative rounded-2xl overflow-hidden border-2 border-[#c5a059]/70 shadow-2xl bg-[#140e11] group transition-transform duration-200 ease-out"
-            >
-              {/* Autoplay Golden Progress Bar Line */}
-              {isSlideshowPlaying && (
-                <div className="absolute top-0 inset-x-0 h-1 bg-white/20 z-30 overflow-hidden">
-                  <div
-                    key={`progress-${currentPhotoIndex}`}
-                    className="h-full bg-gradient-to-r from-[#ffd700] via-[#dfba73] to-[#fff2cf]"
-                    style={{
-                      animation: "gold-progress 5s linear forwards",
-                    }}
-                  />
-                </div>
-              )}
-
-              {/* Ambient Bokeh & Twinkling Particles Overlay */}
-              <div className="absolute inset-0 pointer-events-none z-20 overflow-hidden">
-                <div className="absolute top-6 left-12 w-6 h-6 rounded-full bg-[#ffd700]/30 blur-sm animate-bokeh" />
-                <div className="absolute bottom-14 right-10 w-9 h-9 rounded-full bg-[#dfba73]/25 blur-md animate-bokeh [animation-delay:2s]" />
-                <div className="absolute top-1/2 left-1/3 w-4 h-4 rounded-full bg-[#fff2cf]/40 blur-xs animate-bokeh [animation-delay:4s]" />
-              </div>
-
-              <div className="relative h-64 sm:h-84 w-full overflow-hidden flex items-center justify-center">
-                {/* Ken Burns Romantic Zooming Image Container */}
-                <div
-                  key={`photo-${currentPhotoIndex}`}
-                  className="relative w-full h-full animate-ken-burns"
-                >
-                  <Image
-                    src={parsedGallery[currentPhotoIndex]?.src || heroImageSrc}
-                    alt={parsedGallery[currentPhotoIndex]?.title || settings.coupleNames}
-                    fill
-                    sizes="(max-width: 640px) 100vw, 550px"
-                    className="object-cover object-center transition duration-500"
-                    priority
-                  />
-                </div>
-
-                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-black/35 pointer-events-none z-10" />
-
-                {/* Top Bar Badge & Controls */}
-                <div className="absolute top-3 inset-x-3 flex items-center justify-between z-20">
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/60 backdrop-blur-md border border-[#c5a059]/40 text-[#edd892] text-[10px] font-cinzel font-semibold shadow-lg">
-                    <Sparkles className="w-3 h-3 text-[#ffd700] animate-spin-slow" />
-                    <span>{t.photoCount(currentPhotoIndex + 1, parsedGallery.length)}</span>
-                  </div>
-
-                  <div className="flex items-center gap-1.5">
-                    {/* Autoplay / Pause Toggle */}
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setIsSlideshowPlaying((prev) => !prev);
-                      }}
-                      className={`p-2 rounded-full backdrop-blur-md border text-xs font-cinzel font-semibold transition cursor-pointer shadow-md flex items-center gap-1 ${
-                        isSlideshowPlaying
-                          ? "bg-[#800020] text-[#ffd700] border-[#ffd700]"
-                          : "bg-black/60 text-[#dfba73] border-[#c5a059]/40 hover:bg-[#800020]"
-                      }`}
-                      title={isSlideshowPlaying ? t.pauseSlideshow : t.playSlideshow}
-                    >
-                      {isSlideshowPlaying ? (
-                        <Pause className="w-3.5 h-3.5" />
-                      ) : (
-                        <Play className="w-3.5 h-3.5 fill-current" />
-                      )}
-                      <span className="text-[10px] hidden sm:inline">
-                        {isSlideshowPlaying ? t.pauseSlideshow : t.playSlideshow}
-                      </span>
-                    </button>
-
-                    {/* Lightbox Expand Button */}
-                    <button
-                      type="button"
-                      onClick={() => openLightbox(currentPhotoIndex)}
-                      className="p-2 rounded-full bg-black/60 hover:bg-[#800020] text-[#edd892] backdrop-blur-md border border-[#c5a059]/40 transition shadow-md cursor-pointer"
-                      title="Expand to Fullscreen"
-                    >
-                      <Maximize2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
-
-                {/* Carousel Left & Right Navigation Arrows */}
-                <button
-                  type="button"
-                  onClick={handlePrevPhoto}
-                  className="absolute left-2.5 top-1/2 -translate-y-1/2 z-20 p-2.5 rounded-full bg-black/50 hover:bg-[#800020] text-white backdrop-blur-md border border-[#c5a059]/40 transition opacity-80 hover:opacity-100 hover:scale-110 active:scale-95 cursor-pointer shadow-lg"
-                  title="Previous Photo"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-                <button
-                  type="button"
-                  onClick={handleNextPhoto}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 z-20 p-2.5 rounded-full bg-black/50 hover:bg-[#800020] text-white backdrop-blur-md border border-[#c5a059]/40 transition opacity-80 hover:opacity-100 hover:scale-110 active:scale-95 cursor-pointer shadow-lg"
-                  title="Next Photo"
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-
-                {/* Photo Caption Overlay */}
-                <div className="absolute bottom-0 inset-x-0 p-4 sm:p-5 text-white z-20">
-                  <div className="inline-block px-2.5 py-0.5 rounded-full bg-[#800020]/80 text-[#edd892] text-[9px] font-cinzel uppercase tracking-wider mb-1">
-                    {parsedGallery[currentPhotoIndex]?.tag || "Pre-Wedding"}
-                  </div>
-                  <h4 className="font-cinzel text-base sm:text-lg font-bold text-[#fff8ea] drop-shadow-md">
-                    {parsedGallery[currentPhotoIndex]?.title}
-                  </h4>
-                  <p className="text-xs text-[#dfba73] font-sans mt-0.5 drop-shadow">
-                    {parsedGallery[currentPhotoIndex]?.subtitle}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Animated Thumbnail Strip Selector */}
-            <div className="grid grid-cols-4 gap-2.5 mt-3.5">
-              {parsedGallery.map((item: any, idx: number) => (
-                <button
-                  key={idx}
-                  type="button"
-                  onClick={() => {
-                    setCurrentPhotoIndex(idx);
-                    setIsSlideshowPlaying(false);
-                  }}
-                  className={`relative h-14 sm:h-16 rounded-xl overflow-hidden border-2 transition-all duration-300 cursor-pointer ${
-                    currentPhotoIndex === idx
-                      ? "border-[#ffd700] ring-2 ring-[#ffd700] scale-105 shadow-[0_0_15px_rgba(223,186,115,0.6)] animate-glow-gold z-10"
-                      : "border-[#c5a059]/40 opacity-70 hover:opacity-100 hover:scale-102"
-                  }`}
-                >
-                  <Image
-                    src={item.src}
-                    alt={item.title || `Photo ${idx + 1}`}
-                    fill
-                    sizes="100px"
-                    className="object-cover"
-                  />
-                  {currentPhotoIndex === idx && (
-                    <div className="absolute inset-0 bg-[#800020]/15 border-t border-[#ffd700]/60 pointer-events-none" />
-                  )}
-                </button>
-              ))}
-            </div>
-
-            {/* Interactive Love Reaction Bar */}
-            <div className="mt-5 pt-4 border-t border-[#c5a059]/30 flex items-center justify-between flex-wrap gap-2">
-              <span className="text-xs text-[#5a483e] font-sans">
-                {t.loveReactions}:
-              </span>
-              <button
-                type="button"
-                onClick={handleSendLove}
-                className={`px-4 py-2 rounded-full text-xs font-cinzel font-bold flex items-center gap-2 transition cursor-pointer shadow-md active:scale-95 ${
-                  hasLiked
-                    ? "bg-[#800020] text-[#fdfbf7] scale-105 border border-[#c5a059] shadow-[0_0_15px_rgba(128,0,32,0.5)]"
-                    : "bg-white text-[#800020] hover:bg-[#800020]/10 border border-[#c5a059]/50"
-                }`}
-              >
-                <Heart
-                  className={`w-4 h-4 ${
-                    hasLiked ? "fill-current text-[#edd892] animate-bounce" : "text-[#800020]"
-                  }`}
-                />
-                <span>{hasLiked ? t.loved : t.sendLove}</span>
-                <span className="px-1.5 py-0.5 rounded-full bg-black/10 text-[10px]">
-                  {loveCount}
+              {/* Color Palette Swatches with Staggered Visual Elegance */}
+              <div className="mt-5 pt-4 border-t border-[#c5a059]/30">
+                <span className="text-[10px] uppercase tracking-widest text-[#8c6a2b] font-cinzel font-semibold block mb-3">
+                  {t.colorPaletteTitle}
                 </span>
-              </button>
-            </div>
-          </div>
-
-          {/* Venue & Location Suite */}
-          <div className="my-10">
-            <div className="text-center mb-4">
-              <span className="text-[11px] uppercase tracking-[0.25em] text-[#8c6a2b] font-cinzel font-semibold">
-                {t.venueSubtitle}
-              </span>
-              <h3 className="font-serif italic text-2xl sm:text-3xl text-[#6b0f24] font-bold">
-                {settings.venueName}
-              </h3>
-              <p className="text-xs sm:text-sm text-[#5a483e] mt-1 max-w-sm mx-auto">
-                {settings.venueAddress}
-              </p>
-            </div>
-
-            {/* Interactive Leaflet Venue Map */}
-            <VenueMap
-              lat={settings.venueLat}
-              lng={settings.venueLng}
-              venueName={settings.venueName}
-            />
-
-            {/* Quick Navigation Buttons (Including Ride Booking) */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-4">
-              <a
-                href={googleMapsUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn-gold-shimmer py-2.5 px-3 rounded-xl text-center text-xs font-cinzel font-semibold flex items-center justify-center gap-1.5 shadow-md hover:scale-[1.02] transition"
-              >
-                <Compass className="w-3.5 h-3.5" /> {t.googleMaps}
-              </a>
-              <a
-                href={appleMapsUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="bg-[#1a1517] text-[#fdfbf7] hover:bg-black py-2.5 px-3 rounded-xl text-center text-xs font-cinzel font-semibold flex items-center justify-center gap-1.5 shadow-md hover:scale-[1.02] transition"
-              >
-                <Navigation className="w-3.5 h-3.5 text-[#dfba73]" /> {t.appleMaps}
-              </a>
-              <a
-                href={wazeUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="bg-[#2a1a20] text-[#edd892] hover:bg-[#800020] py-2.5 px-3 rounded-xl text-center text-xs font-cinzel font-semibold flex items-center justify-center gap-1.5 shadow-md hover:scale-[1.02] transition"
-              >
-                <MapPin className="w-3.5 h-3.5" /> {t.waze}
-              </a>
-              <a
-                href={uberUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="bg-black text-white hover:bg-neutral-900 py-2.5 px-3 rounded-xl text-center text-xs font-cinzel font-semibold flex items-center justify-center gap-1.5 shadow-md hover:scale-[1.02] transition border border-[#c5a059]/40"
-              >
-                <Navigation className="w-3.5 h-3.5 text-emerald-400" /> {t.uberRide}
-              </a>
-            </div>
-
-            {/* Copy Address Button */}
-            <button
-              onClick={handleCopyAddress}
-              className="mt-2.5 w-full py-2.5 px-4 rounded-xl bg-[#800020]/10 hover:bg-[#800020]/20 text-[#800020] text-xs font-cinzel font-semibold flex items-center justify-center gap-2 transition cursor-pointer border border-[#c5a059]/30"
-            >
-              {copiedAddress ? (
-                <>
-                  <Check className="w-4 h-4 text-emerald-600" /> {t.addressCopied}
-                </>
-              ) : (
-                <>
-                  <Copy className="w-3.5 h-3.5" /> {t.copyAddress}
-                </>
-              )}
-            </button>
-          </div>
-
-          {/* Calendar Integration Hub (Luxury Dropdown Suite) */}
-          <div className="my-8 p-5 rounded-2xl bg-[#fbf7ee] border border-[#c5a059]/40 text-center">
-            <div className="flex items-center justify-center gap-2 mb-2 text-[#800020]">
-              <Calendar className="w-4 h-4" />
-              <span className="font-cinzel text-xs uppercase tracking-widest font-semibold">
-                {t.addToCalendarTitle}
-              </span>
-            </div>
-            <p className="text-xs text-[#5a483e] mb-4">
-              {t.addToCalendarSub}
-            </p>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              <a
-                href={googleCalendarWebUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="py-2 px-2.5 rounded-xl bg-[#800020] text-[#fdfbf7] hover:bg-[#5c0017] text-[11px] font-cinzel font-semibold flex items-center justify-center gap-1.5 shadow transition"
-              >
-                <Calendar className="w-3.5 h-3.5 text-[#edd892]" /> {t.googleCalendar}
-              </a>
-              <button
-                onClick={handleDownloadICS}
-                className="py-2 px-2.5 rounded-xl bg-[#1a1517] text-[#fdfbf7] hover:bg-black text-[11px] font-cinzel font-semibold flex items-center justify-center gap-1.5 shadow transition cursor-pointer"
-              >
-                <Calendar className="w-3.5 h-3.5 text-[#dfba73]" /> {t.appleCalendar}
-              </button>
-              <a
-                href={outlookCalendarWebUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="py-2 px-2.5 rounded-xl bg-[#0078d4] text-white hover:bg-[#005a9e] text-[11px] font-cinzel font-semibold flex items-center justify-center gap-1.5 shadow transition"
-              >
-                <Calendar className="w-3.5 h-3.5" /> {t.outlookCalendar}
-              </a>
-              <a
-                href={yahooCalendarWebUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="py-2 px-2.5 rounded-xl bg-[#5f01d1] text-white hover:bg-[#4900a3] text-[11px] font-cinzel font-semibold flex items-center justify-center gap-1.5 shadow transition"
-              >
-                <Calendar className="w-3.5 h-3.5" /> {t.yahooCalendar}
-              </a>
-            </div>
-          </div>
-
-          {/* Interactive Production RSVP Suite with Dietary Tracker */}
-          <div className="my-10 p-6 sm:p-7 rounded-3xl bg-gradient-to-b from-[#fffdfa] to-[#f7f2e7] border-2 border-[#c5a059]/60 shadow-2xl">
-            <div className="text-center mb-5">
-              <div className="inline-flex items-center gap-1.5 text-[#800020] text-xs font-cinzel font-semibold mb-1">
-                <MessageSquareHeart className="w-4 h-4 text-[#c5a059]" /> {t.rsvpTitle}
-              </div>
-              <h3 className="font-serif italic text-2xl sm:text-3xl text-[#6b0f24] font-bold">
-                {t.rsvpTitle}
-              </h3>
-              <p className="text-xs text-[#5a483e] mt-1">
-                {t.rsvpSubtitle}
-              </p>
-            </div>
-
-            {rsvpSubmitted && !submittingRsvp ? (
-              <div className="text-center py-6 px-4 bg-[#800020]/10 rounded-2xl border border-[#c5a059]/40 space-y-3">
-                <Heart className="w-10 h-10 text-[#800020] mx-auto fill-[#800020] animate-pulse" />
-                <h4 className="font-cinzel text-lg font-bold text-[#800020]">
-                  {t.rsvpSuccessTitle}
-                </h4>
-                <p className="text-xs text-[#3d3238]">
-                  {rsvpStatus === "attending"
-                    ? `${t.rsvpSuccessAttending} (${rsvpCount} ${rsvpCount === 1 ? t.guestSingle : t.guestPlural}).`
-                    : t.rsvpSuccessDeclined}
-                </p>
-                <button
-                  type="button"
-                  onClick={() => setRsvpSubmitted(false)}
-                  className="text-xs text-[#800020] hover:underline font-cinzel font-semibold cursor-pointer pt-2"
-                >
-                  {t.modifyRsvp}
-                </button>
-              </div>
-            ) : (
-              <form onSubmit={handleRsvpSubmit} className="space-y-4">
-                {/* Attending / Decline Options */}
-                <div className="grid grid-cols-2 gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setRsvpStatus("attending")}
-                    className={`py-3.5 px-3 rounded-2xl font-cinzel text-xs font-bold border transition cursor-pointer flex flex-col items-center gap-1 ${
-                      rsvpStatus === "attending"
-                        ? "bg-[#800020] text-[#fdfbf7] border-[#dfba73] shadow-md scale-[1.02]"
-                        : "bg-white text-[#1a1517] border-[#c5a059]/40 hover:bg-[#800020]/5"
-                    }`}
-                  >
-                    <span>🍾 {t.joyfullyAccept}</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setRsvpStatus("declined")}
-                    className={`py-3.5 px-3 rounded-2xl font-cinzel text-xs font-bold border transition cursor-pointer flex flex-col items-center gap-1 ${
-                      rsvpStatus === "declined"
-                        ? "bg-[#4a3b32] text-[#fdfbf7] border-[#dfba73] shadow-md scale-[1.02]"
-                        : "bg-white text-[#1a1517] border-[#c5a059]/40 hover:bg-[#800020]/5"
-                    }`}
-                  >
-                    <span>🕊 {t.regretfullyDecline}</span>
-                  </button>
+                <div className="flex items-center justify-center gap-3 sm:gap-4 flex-wrap">
+                  {t.paletteColors.map((c, i) => (
+                    <div
+                      key={i}
+                      className="flex flex-col items-center gap-1.5 transition-transform hover:scale-110"
+                      style={{ transitionDelay: `${i * 60}ms` }}
+                    >
+                      <div
+                        className="w-9 h-9 sm:w-11 sm:h-11 rounded-full shadow-md flex items-center justify-center border-2 border-white/80"
+                        style={{ backgroundColor: c.hex }}
+                      />
+                      <span className="text-[9px] font-cinzel text-[#5a483e] font-medium">
+                        {c.name}
+                      </span>
+                    </div>
+                  ))}
                 </div>
+              </div>
+            </div>
+          </ScrollReveal>
 
-                {/* Headcount & Dietary if attending */}
-                {rsvpStatus === "attending" && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-                    <div>
-                      <label className="block text-xs font-cinzel font-semibold text-[#1a1517] mb-1">
-                        {t.numberOfGuests}
-                      </label>
-                      <select
-                        value={rsvpCount}
-                        onChange={(e) => setRsvpCount(Number(e.target.value))}
-                        className="w-full px-3 py-2.5 rounded-xl bg-white border border-[#c5a059]/60 text-xs text-[#1a1517] focus:outline-none focus:ring-2 focus:ring-[#800020]"
-                      >
-                        {Array.from({ length: maxAttendees }, (_, i) => i + 1).map((num) => (
-                          <option key={num} value={num}>
-                            {num} {num === 1 ? t.guestSingle : t.guestPlural}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+          {/* Floral Section Divider */}
+          <FloralDivider />
 
-                    <div>
-                      <label className="block text-xs font-cinzel font-semibold text-[#1a1517] mb-1">
-                        {t.dietaryTitle}
-                      </label>
-                      <select
-                        value={dietary}
-                        onChange={(e) => setDietary(e.target.value)}
-                        className="w-full px-3 py-2.5 rounded-xl bg-white border border-[#c5a059]/60 text-xs text-[#1a1517] focus:outline-none focus:ring-2 focus:ring-[#800020]"
-                      >
-                        {t.dietaryOptions.map((opt) => (
-                          <option key={opt.key} value={opt.key}>
-                            {opt.label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+          {/* Moments of Love & Pre-Wedding Gallery Section with Scroll Reveal */}
+          <ScrollReveal variant="scale-up" duration={850}>
+            <div className="my-10 p-5 sm:p-6 rounded-3xl bg-gradient-to-b from-[#fffdfa] to-[#fbf6eb] border-2 border-[#c5a059]/50 shadow-xl">
+              <div className="text-center mb-6">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#800020]/10 text-[#800020] text-xs font-cinzel font-semibold mb-2">
+                  <Camera className="w-3.5 h-3.5 text-[#c5a059]" /> {t.momentsOfLoveTitle}
+                </div>
+                <h3 className="font-serif italic text-2xl sm:text-3xl text-[#6b0f24] font-bold">
+                  {t.momentsOfLoveTitle}
+                </h3>
+                <p className="font-serif italic text-xs sm:text-sm text-[#8c6a2b] mt-1">
+                  &ldquo;{t.momentsOfLoveSubtitle}&rdquo;
+                </p>
+              </div>
+
+              {/* Floating Heart Fountain Emitters */}
+              {floatingHearts.map((h) => (
+                <div
+                  key={h.id}
+                  className="absolute bottom-20 z-30 pointer-events-none animate-heart-float select-none text-center"
+                  style={{
+                    left: `${h.left}%`,
+                    fontSize: `${h.size}px`,
+                  }}
+                >
+                  💖
+                </div>
+              ))}
+
+              {/* 3D Interactive Featured Photo Carousel Card */}
+              <div
+                ref={galleryCardRef}
+                onMouseMove={handleGalleryMouseMove}
+                onMouseLeave={handleGalleryMouseLeave}
+                onTouchStart={handleTouchStart}
+                onTouchEnd={handleTouchEnd}
+                style={{
+                  perspective: "1000px",
+                  transform: `rotateX(${galleryTilt.x}deg) rotateY(${galleryTilt.y}deg)`,
+                }}
+                className="relative rounded-2xl overflow-hidden border-2 border-[#c5a059]/70 shadow-2xl bg-[#140e11] group transition-transform duration-200 ease-out"
+              >
+                {/* Autoplay Golden Progress Bar Line */}
+                {isSlideshowPlaying && (
+                  <div className="absolute top-0 inset-x-0 h-1 bg-white/20 z-30 overflow-hidden">
+                    <div
+                      key={`progress-${currentPhotoIndex}`}
+                      className="h-full bg-gradient-to-r from-[#ffd700] via-[#dfba73] to-[#fff2cf]"
+                      style={{
+                        animation: "gold-progress 5s linear forwards",
+                      }}
+                    />
                   </div>
                 )}
 
-                {/* Blessing Message directly linked to Digital Guestbook */}
-                <div>
-                  <label className="block text-xs font-cinzel font-semibold text-[#1a1517] mb-1">
-                    {t.leaveBlessingPrompt}
-                  </label>
-                  <textarea
-                    rows={3}
-                    placeholder={t.blessingPlaceholder}
-                    value={rsvpWish}
-                    onChange={(e) => setRsvpWish(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#c5a059]/60 text-xs text-[#1a1517] focus:outline-none focus:ring-2 focus:ring-[#800020] resize-none"
-                  />
+                {/* Ambient Bokeh & Twinkling Particles Overlay */}
+                <div className="absolute inset-0 pointer-events-none z-20 overflow-hidden">
+                  <div className="absolute top-6 left-12 w-6 h-6 rounded-full bg-[#ffd700]/30 blur-sm animate-bokeh" />
+                  <div className="absolute bottom-14 right-10 w-9 h-9 rounded-full bg-[#dfba73]/25 blur-md animate-bokeh [animation-delay:2s]" />
+                  <div className="absolute top-1/2 left-1/3 w-4 h-4 rounded-full bg-[#fff2cf]/40 blur-xs animate-bokeh [animation-delay:4s]" />
                 </div>
 
-                <button
-                  type="submit"
-                  disabled={!rsvpStatus || submittingRsvp}
-                  className="w-full py-3.5 rounded-xl btn-gold-shimmer text-xs font-cinzel font-bold uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg disabled:opacity-50 cursor-pointer"
-                >
-                  <Send className="w-3.5 h-3.5" />
-                  {submittingRsvp ? t.submittingRsvp : t.submitRsvp}
-                </button>
-              </form>
-            )}
-          </div>
+                <div className="relative h-64 sm:h-84 w-full overflow-hidden flex items-center justify-center">
+                  {/* Ken Burns Romantic Zooming Image Container */}
+                  <div
+                    key={`photo-${currentPhotoIndex}`}
+                    className="relative w-full h-full animate-ken-burns"
+                  >
+                    <Image
+                      src={parsedGallery[currentPhotoIndex]?.src || heroImageSrc}
+                      alt={parsedGallery[currentPhotoIndex]?.title || settings.coupleNames}
+                      fill
+                      sizes="(max-width: 640px) 100vw, 550px"
+                      className="object-cover object-center transition duration-500"
+                      priority
+                    />
+                  </div>
 
-          {/* DIGITAL WISHES GUESTBOOK STREAM */}
-          <div className="my-10 p-6 rounded-3xl bg-gradient-to-b from-[#fffdfa] to-[#fbf6eb] border-2 border-[#c5a059]/50 shadow-xl">
-            <div className="text-center mb-6">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#800020]/10 text-[#800020] text-xs font-cinzel font-semibold mb-2">
-                <Heart className="w-3.5 h-3.5 text-[#c5a059] fill-[#c5a059]" /> {t.guestbookTitle}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-black/35 pointer-events-none z-10" />
+
+                  {/* Top Bar Badge & Controls */}
+                  <div className="absolute top-3 inset-x-3 flex items-center justify-between z-20">
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/60 backdrop-blur-md border border-[#c5a059]/40 text-[#edd892] text-[10px] font-cinzel font-semibold shadow-lg">
+                      <Sparkles className="w-3 h-3 text-[#ffd700] animate-spin-slow" />
+                      <span>{t.photoCount(currentPhotoIndex + 1, parsedGallery.length)}</span>
+                    </div>
+
+                    <div className="flex items-center gap-1.5">
+                      {/* Autoplay / Pause Toggle */}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setIsSlideshowPlaying((prev) => !prev);
+                        }}
+                        className={`p-2 rounded-full backdrop-blur-md border text-xs font-cinzel font-semibold transition cursor-pointer shadow-md flex items-center gap-1 ${
+                          isSlideshowPlaying
+                            ? "bg-[#800020] text-[#ffd700] border-[#ffd700]"
+                            : "bg-black/60 text-[#dfba73] border-[#c5a059]/40 hover:bg-[#800020]"
+                        }`}
+                        title={isSlideshowPlaying ? t.pauseSlideshow : t.playSlideshow}
+                      >
+                        {isSlideshowPlaying ? (
+                          <Pause className="w-3.5 h-3.5" />
+                        ) : (
+                          <Play className="w-3.5 h-3.5 fill-current" />
+                        )}
+                        <span className="text-[10px] hidden sm:inline">
+                          {isSlideshowPlaying ? t.pauseSlideshow : t.playSlideshow}
+                        </span>
+                      </button>
+
+                      {/* Lightbox Expand Button */}
+                      <button
+                        type="button"
+                        onClick={() => openLightbox(currentPhotoIndex)}
+                        className="p-2 rounded-full bg-black/60 hover:bg-[#800020] text-[#edd892] backdrop-blur-md border border-[#c5a059]/40 transition shadow-md cursor-pointer"
+                        title="Expand to Fullscreen"
+                      >
+                        <Maximize2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Carousel Left & Right Navigation Arrows */}
+                  <button
+                    type="button"
+                    onClick={handlePrevPhoto}
+                    className="absolute left-2.5 top-1/2 -translate-y-1/2 z-20 p-2.5 rounded-full bg-black/50 hover:bg-[#800020] text-white backdrop-blur-md border border-[#c5a059]/40 transition opacity-80 hover:opacity-100 hover:scale-110 active:scale-95 cursor-pointer shadow-lg"
+                    title="Previous Photo"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleNextPhoto}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 z-20 p-2.5 rounded-full bg-black/50 hover:bg-[#800020] text-white backdrop-blur-md border border-[#c5a059]/40 transition opacity-80 hover:opacity-100 hover:scale-110 active:scale-95 cursor-pointer shadow-lg"
+                    title="Next Photo"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+
+                  {/* Photo Caption Overlay */}
+                  <div className="absolute bottom-0 inset-x-0 p-4 sm:p-5 text-white z-20">
+                    <div className="inline-block px-2.5 py-0.5 rounded-full bg-[#800020]/80 text-[#edd892] text-[9px] font-cinzel uppercase tracking-wider mb-1">
+                      {parsedGallery[currentPhotoIndex]?.tag || "Pre-Wedding"}
+                    </div>
+                    <h4 className="font-cinzel text-base sm:text-lg font-bold text-[#fff8ea] drop-shadow-md">
+                      {parsedGallery[currentPhotoIndex]?.title}
+                    </h4>
+                    <p className="text-xs text-[#dfba73] font-sans mt-0.5 drop-shadow">
+                      {parsedGallery[currentPhotoIndex]?.subtitle}
+                    </p>
+                  </div>
+                </div>
               </div>
-              <h3 className="font-serif italic text-2xl sm:text-3xl text-[#6b0f24] font-bold">
-                {t.guestbookTitle}
-              </h3>
-              <p className="text-xs text-[#5a483e] mt-1">
-                {t.guestbookSubtitle}
+
+              {/* Animated Thumbnail Strip Selector */}
+              <div className="grid grid-cols-4 gap-2.5 mt-3.5">
+                {parsedGallery.map((item: any, idx: number) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => {
+                      setCurrentPhotoIndex(idx);
+                      setIsSlideshowPlaying(false);
+                    }}
+                    className={`relative h-14 sm:h-16 rounded-xl overflow-hidden border-2 transition-all duration-300 cursor-pointer ${
+                      currentPhotoIndex === idx
+                        ? "border-[#ffd700] ring-2 ring-[#ffd700] scale-105 shadow-[0_0_15px_rgba(223,186,115,0.6)] animate-glow-gold z-10"
+                        : "border-[#c5a059]/40 opacity-70 hover:opacity-100 hover:scale-102"
+                    }`}
+                  >
+                    <Image
+                      src={item.src}
+                      alt={item.title || `Photo ${idx + 1}`}
+                      fill
+                      sizes="100px"
+                      className="object-cover"
+                    />
+                    {currentPhotoIndex === idx && (
+                      <div className="absolute inset-0 bg-[#800020]/15 border-t border-[#ffd700]/60 pointer-events-none" />
+                    )}
+                  </button>
+                ))}
+              </div>
+
+              {/* Interactive Love Reaction Bar */}
+              <div className="mt-5 pt-4 border-t border-[#c5a059]/30 flex items-center justify-between flex-wrap gap-2">
+                <span className="text-xs text-[#5a483e] font-sans">
+                  {t.loveReactions}:
+                </span>
+                <button
+                  type="button"
+                  onClick={handleSendLove}
+                  className={`px-4 py-2 rounded-full text-xs font-cinzel font-bold flex items-center gap-2 transition cursor-pointer shadow-md active:scale-95 ${
+                    hasLiked
+                      ? "bg-[#800020] text-[#fdfbf7] scale-105 border border-[#c5a059] shadow-[0_0_15px_rgba(128,0,32,0.5)]"
+                      : "bg-white text-[#800020] hover:bg-[#800020]/10 border border-[#c5a059]/50"
+                  }`}
+                >
+                  <Heart
+                    className={`w-4 h-4 ${
+                      hasLiked ? "fill-current text-[#edd892] animate-bounce" : "text-[#800020]"
+                    }`}
+                  />
+                  <span>{hasLiked ? t.loved : t.sendLove}</span>
+                  <span className="px-1.5 py-0.5 rounded-full bg-black/10 text-[10px]">
+                    {loveCount}
+                  </span>
+                </button>
+              </div>
+            </div>
+          </ScrollReveal>
+
+          {/* Floral Section Divider */}
+          <FloralDivider />
+
+          {/* Venue & Location Suite with Scroll Reveal */}
+          <ScrollReveal variant="fade-up" duration={800}>
+            <div className="my-10">
+              <div className="text-center mb-4">
+                <span className="text-[11px] uppercase tracking-[0.25em] text-[#8c6a2b] font-cinzel font-semibold">
+                  {t.venueSubtitle}
+                </span>
+                <h3 className="font-serif italic text-2xl sm:text-3xl text-[#6b0f24] font-bold">
+                  {settings.venueName}
+                </h3>
+                <p className="text-xs sm:text-sm text-[#5a483e] mt-1 max-w-sm mx-auto">
+                  {settings.venueAddress}
+                </p>
+              </div>
+
+              {/* Interactive Leaflet Venue Map */}
+              <VenueMap
+                lat={settings.venueLat}
+                lng={settings.venueLng}
+                venueName={settings.venueName}
+              />
+
+              {/* Quick Navigation Buttons (Including Ride Booking) */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-4">
+                <a
+                  href={googleMapsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn-gold-shimmer py-2.5 px-3 rounded-xl text-center text-xs font-cinzel font-semibold flex items-center justify-center gap-1.5 shadow-md hover:scale-[1.02] transition"
+                >
+                  <Compass className="w-3.5 h-3.5" /> {t.googleMaps}
+                </a>
+                <a
+                  href={appleMapsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="bg-[#1a1517] text-[#fdfbf7] hover:bg-black py-2.5 px-3 rounded-xl text-center text-xs font-cinzel font-semibold flex items-center justify-center gap-1.5 shadow-md hover:scale-[1.02] transition"
+                >
+                  <Navigation className="w-3.5 h-3.5 text-[#dfba73]" /> {t.appleMaps}
+                </a>
+                <a
+                  href={wazeUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="bg-[#2a1a20] text-[#edd892] hover:bg-[#800020] py-2.5 px-3 rounded-xl text-center text-xs font-cinzel font-semibold flex items-center justify-center gap-1.5 shadow-md hover:scale-[1.02] transition"
+                >
+                  <MapPin className="w-3.5 h-3.5" /> {t.waze}
+                </a>
+                <a
+                  href={uberUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="bg-black text-white hover:bg-neutral-900 py-2.5 px-3 rounded-xl text-center text-xs font-cinzel font-semibold flex items-center justify-center gap-1.5 shadow-md hover:scale-[1.02] transition border border-[#c5a059]/40"
+                >
+                  <Navigation className="w-3.5 h-3.5 text-emerald-400" /> {t.uberRide}
+                </a>
+              </div>
+
+              {/* Copy Address Button */}
+              <button
+                onClick={handleCopyAddress}
+                className="mt-2.5 w-full py-2.5 px-4 rounded-xl bg-[#800020]/10 hover:bg-[#800020]/20 text-[#800020] text-xs font-cinzel font-semibold flex items-center justify-center gap-2 transition cursor-pointer border border-[#c5a059]/30"
+              >
+                {copiedAddress ? (
+                  <>
+                    <Check className="w-4 h-4 text-emerald-600" /> {t.addressCopied}
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-3.5 h-3.5" /> {t.copyAddress}
+                  </>
+                )}
+              </button>
+            </div>
+          </ScrollReveal>
+
+          {/* Floral Section Divider */}
+          <FloralDivider />
+
+          {/* Calendar Integration Hub with Scroll Reveal */}
+          <ScrollReveal variant="fade-up" duration={750}>
+            <div className="my-8 p-5 rounded-2xl bg-[#fbf7ee] border border-[#c5a059]/40 text-center">
+              <div className="flex items-center justify-center gap-2 mb-2 text-[#800020]">
+                <Calendar className="w-4 h-4" />
+                <span className="font-cinzel text-xs uppercase tracking-widest font-semibold">
+                  {t.addToCalendarTitle}
+                </span>
+              </div>
+              <p className="text-xs text-[#5a483e] mb-4">
+                {t.addToCalendarSub}
+              </p>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <a
+                  href={googleCalendarWebUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="py-2 px-2.5 rounded-xl bg-[#800020] text-[#fdfbf7] hover:bg-[#5c0017] text-[11px] font-cinzel font-semibold flex items-center justify-center gap-1.5 shadow transition"
+                >
+                  <Calendar className="w-3.5 h-3.5 text-[#edd892]" /> {t.googleCalendar}
+                </a>
+                <button
+                  onClick={handleDownloadICS}
+                  className="py-2 px-2.5 rounded-xl bg-[#1a1517] text-[#fdfbf7] hover:bg-black text-[11px] font-cinzel font-semibold flex items-center justify-center gap-1.5 shadow transition cursor-pointer"
+                >
+                  <Calendar className="w-3.5 h-3.5 text-[#dfba73]" /> {t.appleCalendar}
+                </button>
+                <a
+                  href={outlookCalendarWebUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="py-2 px-2.5 rounded-xl bg-[#0078d4] text-white hover:bg-[#005a9e] text-[11px] font-cinzel font-semibold flex items-center justify-center gap-1.5 shadow transition"
+                >
+                  <Calendar className="w-3.5 h-3.5" /> {t.outlookCalendar}
+                </a>
+                <a
+                  href={yahooCalendarWebUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="py-2 px-2.5 rounded-xl bg-[#5f01d1] text-white hover:bg-[#4900a3] text-[11px] font-cinzel font-semibold flex items-center justify-center gap-1.5 shadow transition"
+                >
+                  <Calendar className="w-3.5 h-3.5" /> {t.yahooCalendar}
+                </a>
+              </div>
+            </div>
+          </ScrollReveal>
+
+          {/* Floral Section Divider */}
+          <FloralDivider />
+
+          {/* Interactive Production RSVP Suite with Scroll Reveal */}
+          <ScrollReveal variant="scale-up" duration={850}>
+            <div className="my-10 p-6 sm:p-7 rounded-3xl bg-gradient-to-b from-[#fffdfa] to-[#f7f2e7] border-2 border-[#c5a059]/60 shadow-2xl">
+              <div className="text-center mb-5">
+                <div className="inline-flex items-center gap-1.5 text-[#800020] text-xs font-cinzel font-semibold mb-1">
+                  <MessageSquareHeart className="w-4 h-4 text-[#c5a059]" /> {t.rsvpTitle}
+                </div>
+                <h3 className="font-serif italic text-2xl sm:text-3xl text-[#6b0f24] font-bold">
+                  {t.rsvpTitle}
+                </h3>
+                <p className="text-xs text-[#5a483e] mt-1">
+                  {t.rsvpSubtitle}
+                </p>
+              </div>
+
+              {rsvpSubmitted && !submittingRsvp ? (
+                <div className="text-center py-6 px-4 bg-[#800020]/10 rounded-2xl border border-[#c5a059]/40 space-y-3">
+                  <Heart className="w-10 h-10 text-[#800020] mx-auto fill-[#800020] animate-pulse" />
+                  <h4 className="font-cinzel text-lg font-bold text-[#800020]">
+                    {t.rsvpSuccessTitle}
+                  </h4>
+                  <p className="text-xs text-[#3d3238]">
+                    {rsvpStatus === "attending"
+                      ? `${t.rsvpSuccessAttending} (${rsvpCount} ${rsvpCount === 1 ? t.guestSingle : t.guestPlural}).`
+                      : t.rsvpSuccessDeclined}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setRsvpSubmitted(false)}
+                    className="text-xs text-[#800020] hover:underline font-cinzel font-semibold cursor-pointer pt-2"
+                  >
+                    {t.modifyRsvp}
+                  </button>
+                </div>
+              ) : (
+                <form onSubmit={handleRsvpSubmit} className="space-y-4">
+                  {/* Attending / Decline Options */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setRsvpStatus("attending")}
+                      className={`py-3.5 px-3 rounded-2xl font-cinzel text-xs font-bold border transition cursor-pointer flex flex-col items-center gap-1 ${
+                        rsvpStatus === "attending"
+                          ? "bg-[#800020] text-[#fdfbf7] border-[#dfba73] shadow-md scale-[1.02]"
+                          : "bg-white text-[#1a1517] border-[#c5a059]/40 hover:bg-[#800020]/5"
+                      }`}
+                    >
+                      <span>🍾 {t.joyfullyAccept}</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setRsvpStatus("declined")}
+                      className={`py-3.5 px-3 rounded-2xl font-cinzel text-xs font-bold border transition cursor-pointer flex flex-col items-center gap-1 ${
+                        rsvpStatus === "declined"
+                          ? "bg-[#4a3b32] text-[#fdfbf7] border-[#dfba73] shadow-md scale-[1.02]"
+                          : "bg-white text-[#1a1517] border-[#c5a059]/40 hover:bg-[#800020]/5"
+                      }`}
+                    >
+                      <span>🕊 {t.regretfullyDecline}</span>
+                    </button>
+                  </div>
+
+                  {/* Headcount & Dietary if attending */}
+                  {rsvpStatus === "attending" && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                      <div>
+                        <label className="block text-xs font-cinzel font-semibold text-[#1a1517] mb-1">
+                          {t.numberOfGuests}
+                        </label>
+                        <select
+                          value={rsvpCount}
+                          onChange={(e) => setRsvpCount(Number(e.target.value))}
+                          className="w-full px-3 py-2.5 rounded-xl bg-white border border-[#c5a059]/60 text-xs text-[#1a1517] focus:outline-none focus:ring-2 focus:ring-[#800020]"
+                        >
+                          {Array.from({ length: maxAttendees }, (_, i) => i + 1).map((num) => (
+                            <option key={num} value={num}>
+                              {num} {num === 1 ? t.guestSingle : t.guestPlural}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-cinzel font-semibold text-[#1a1517] mb-1">
+                          {t.dietaryTitle}
+                        </label>
+                        <select
+                          value={dietary}
+                          onChange={(e) => setDietary(e.target.value)}
+                          className="w-full px-3 py-2.5 rounded-xl bg-white border border-[#c5a059]/60 text-xs text-[#1a1517] focus:outline-none focus:ring-2 focus:ring-[#800020]"
+                        >
+                          {t.dietaryOptions.map((opt) => (
+                            <option key={opt.key} value={opt.key}>
+                              {opt.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Blessing Message directly linked to Digital Guestbook */}
+                  <div>
+                    <label className="block text-xs font-cinzel font-semibold text-[#1a1517] mb-1">
+                      {t.leaveBlessingPrompt}
+                    </label>
+                    <textarea
+                      rows={3}
+                      placeholder={t.blessingPlaceholder}
+                      value={rsvpWish}
+                      onChange={(e) => setRsvpWish(e.target.value)}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#c5a059]/60 text-xs text-[#1a1517] focus:outline-none focus:ring-2 focus:ring-[#800020] resize-none"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={!rsvpStatus || submittingRsvp}
+                    className="w-full py-3.5 rounded-xl btn-gold-shimmer text-xs font-cinzel font-bold uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg disabled:opacity-50 cursor-pointer"
+                  >
+                    <Send className="w-3.5 h-3.5" />
+                    {submittingRsvp ? t.submittingRsvp : t.submitRsvp}
+                  </button>
+                </form>
+              )}
+            </div>
+          </ScrollReveal>
+
+          {/* Floral Section Divider */}
+          <FloralDivider />
+
+          {/* DIGITAL WISHES GUESTBOOK STREAM with Scroll Reveal */}
+          <ScrollReveal variant="fade-up" duration={800}>
+            <div className="my-10 p-6 rounded-3xl bg-gradient-to-b from-[#fffdfa] to-[#fbf6eb] border-2 border-[#c5a059]/50 shadow-xl">
+              <div className="text-center mb-6">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#800020]/10 text-[#800020] text-xs font-cinzel font-semibold mb-2">
+                  <Heart className="w-3.5 h-3.5 text-[#c5a059] fill-[#c5a059]" /> {t.guestbookTitle}
+                </div>
+                <h3 className="font-serif italic text-2xl sm:text-3xl text-[#6b0f24] font-bold">
+                  {t.guestbookTitle}
+                </h3>
+                <p className="text-xs text-[#5a483e] mt-1">
+                  {t.guestbookSubtitle}
+                </p>
+              </div>
+
+              {loadingWishes ? (
+                <div className="text-center py-6 text-xs text-[#8c6a2b] font-cinzel">
+                  Loading blessings...
+                </div>
+              ) : wishes.length === 0 ? (
+                <div className="text-center py-6 px-4 rounded-2xl bg-white/60 border border-[#c5a059]/30 text-xs text-[#5a483e] font-sans italic">
+                  {t.noWishesYet} 💖
+                </div>
+              ) : (
+                <div className="space-y-3 max-h-80 overflow-y-auto pr-1">
+                  {wishes.map((w) => (
+                    <div
+                      key={w.id}
+                      className="p-4 rounded-2xl bg-white border border-[#c5a059]/40 shadow-sm flex items-start justify-between gap-3"
+                    >
+                      <div className="flex-1">
+                        <h5 className="font-cinzel text-xs font-bold text-[#800020]">
+                          {w.authorName}
+                        </h5>
+                        <p className="font-serif italic text-xs text-[#2a1d25] mt-1 leading-relaxed">
+                          &ldquo;{w.message}&rdquo;
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleLikeWish(w.id)}
+                        className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-cinzel transition cursor-pointer ${
+                          likedWishIds.includes(w.id)
+                            ? "bg-[#800020] text-white border border-[#c5a059]"
+                            : "bg-[#fbf6eb] text-[#800020] hover:bg-[#800020]/10 border border-[#c5a059]/30"
+                        }`}
+                      >
+                        <Heart
+                          className={`w-3 h-3 ${
+                            likedWishIds.includes(w.id) ? "fill-current text-[#dfba73]" : "text-[#800020]"
+                          }`}
+                        />
+                        <span>{w.likes}</span>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </ScrollReveal>
+
+          {/* Floral Section Divider */}
+          <FloralDivider />
+
+          {/* Blessing Illustration & Couple Moment with Scroll Reveal */}
+          <ScrollReveal variant="fade-up" duration={750}>
+            <div className="my-8 text-center">
+              <div className="relative max-w-xs mx-auto rounded-2xl overflow-hidden border border-[#c5a059]/40 shadow-lg mb-4 group cursor-pointer" onClick={() => openLightbox(1)}>
+                <div className="relative h-48 w-full">
+                  <Image
+                    src={blessingImageSrc}
+                    alt="Blessings from Couple"
+                    fill
+                    sizes="320px"
+                    className="object-cover transition duration-500 group-hover:scale-105"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                  <div className="absolute bottom-2 inset-x-0 text-center">
+                    <span className="text-[10px] font-cinzel text-[#edd892] uppercase tracking-widest font-semibold flex items-center justify-center gap-1">
+                      <Sparkles className="w-3 h-3 text-[#dfba73]" /> {t.withAllOurLove}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <p className="font-serif italic text-base sm:text-lg text-[#6b0f24] font-medium mt-3">
+                &ldquo;{t.footerBlessing}&rdquo;
               </p>
             </div>
 
-            {loadingWishes ? (
-              <div className="text-center py-6 text-xs text-[#8c6a2b] font-cinzel">
-                Loading blessings...
-              </div>
-            ) : wishes.length === 0 ? (
-              <div className="text-center py-6 px-4 rounded-2xl bg-white/60 border border-[#c5a059]/30 text-xs text-[#5a483e] font-sans italic">
-                {t.noWishesYet} 💖
-              </div>
-            ) : (
-              <div className="space-y-3 max-h-80 overflow-y-auto pr-1">
-                {wishes.map((w) => (
-                  <div
-                    key={w.id}
-                    className="p-4 rounded-2xl bg-white border border-[#c5a059]/40 shadow-sm flex items-start justify-between gap-3"
-                  >
-                    <div className="flex-1">
-                      <h5 className="font-cinzel text-xs font-bold text-[#800020]">
-                        {w.authorName}
-                      </h5>
-                      <p className="font-serif italic text-xs text-[#2a1d25] mt-1 leading-relaxed">
-                        &ldquo;{w.message}&rdquo;
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => handleLikeWish(w.id)}
-                      className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-cinzel transition cursor-pointer ${
-                        likedWishIds.includes(w.id)
-                          ? "bg-[#800020] text-white border border-[#c5a059]"
-                          : "bg-[#fbf6eb] text-[#800020] hover:bg-[#800020]/10 border border-[#c5a059]/30"
-                      }`}
-                    >
-                      <Heart
-                        className={`w-3 h-3 ${
-                          likedWishIds.includes(w.id) ? "fill-current text-[#dfba73]" : "text-[#800020]"
-                        }`}
-                      />
-                      <span>{w.likes}</span>
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Blessing Illustration & Couple Moment */}
-          <div className="my-8 text-center">
-            <div className="relative max-w-xs mx-auto rounded-2xl overflow-hidden border border-[#c5a059]/40 shadow-lg mb-4 group cursor-pointer" onClick={() => openLightbox(1)}>
-              <div className="relative h-48 w-full">
-                <Image
-                  src={blessingImageSrc}
-                  alt="Blessings from Couple"
-                  fill
-                  sizes="320px"
-                  className="object-cover transition duration-500 group-hover:scale-105"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                <div className="absolute bottom-2 inset-x-0 text-center">
-                  <span className="text-[10px] font-cinzel text-[#edd892] uppercase tracking-widest font-semibold flex items-center justify-center gap-1">
-                    <Sparkles className="w-3 h-3 text-[#dfba73]" /> {t.withAllOurLove}
-                  </span>
-                </div>
-              </div>
+            {/* Social Share & Link Actions */}
+            <div className="pt-6 border-t border-[#c5a059]/30 flex flex-col sm:flex-row items-center justify-center gap-3">
+              <button
+                onClick={handleShareWhatsApp}
+                className="w-full sm:w-auto px-5 py-2.5 rounded-full bg-[#25D366] text-white hover:bg-[#20ba59] text-xs font-sans font-semibold flex items-center justify-center gap-2 shadow transition cursor-pointer"
+              >
+                <Share2 className="w-3.5 h-3.5" /> Share on WhatsApp
+              </button>
+              <button
+                onClick={handleCopyLink}
+                className="w-full sm:w-auto px-5 py-2.5 rounded-full bg-[#1a1517] text-[#edd892] hover:bg-black text-xs font-sans font-semibold flex items-center justify-center gap-2 shadow transition cursor-pointer border border-[#c5a059]/40"
+              >
+                {copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                {copiedLink ? "Link Copied!" : "Copy Invitation Link"}
+              </button>
             </div>
 
-            <p className="font-serif italic text-base sm:text-lg text-[#6b0f24] font-medium mt-3">
-              &ldquo;{t.footerBlessing}&rdquo;
-            </p>
-          </div>
-
-          {/* Social Share & Link Actions */}
-          <div className="pt-6 border-t border-[#c5a059]/30 flex flex-col sm:flex-row items-center justify-center gap-3">
-            <button
-              onClick={handleShareWhatsApp}
-              className="w-full sm:w-auto px-5 py-2.5 rounded-full bg-[#25D366] text-white hover:bg-[#20ba59] text-xs font-sans font-semibold flex items-center justify-center gap-2 shadow transition cursor-pointer"
-            >
-              <Share2 className="w-3.5 h-3.5" /> Share on WhatsApp
-            </button>
-            <button
-              onClick={handleCopyLink}
-              className="w-full sm:w-auto px-5 py-2.5 rounded-full bg-[#1a1517] text-[#edd892] hover:bg-black text-xs font-sans font-semibold flex items-center justify-center gap-2 shadow transition cursor-pointer border border-[#c5a059]/40"
-            >
-              {copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-              {copiedLink ? "Link Copied!" : "Copy Invitation Link"}
-            </button>
-          </div>
+            {/* Footer Floral Garland Flourish */}
+            <div className="flex items-center justify-center gap-2 mt-5 text-[#c5a059] text-xs select-none pointer-events-none">
+              <span>❀</span>
+              <span className="text-[#800020] text-sm animate-pulse-slow">🌸</span>
+              <span className="text-[#800020] font-serif text-sm">❦</span>
+              <span className="text-[#800020] text-sm animate-pulse-slow">🌸</span>
+              <span>❀</span>
+            </div>
+          </ScrollReveal>
 
           {/* Footer Branding */}
           <div className="text-center pt-8">

@@ -272,6 +272,36 @@
   animation: sparkle-twinkle 2.5s ease-in-out infinite;
 }
 
+@keyframes petal-flutter {
+  0% {
+    transform: translateY(-8vh) translateX(0) rotate(0deg) scale(0.85);
+    opacity: 0;
+  }
+  12% {
+    opacity: 0.9;
+    transform: translateY(6vh) translateX(14px) rotate(45deg) scale(1);
+  }
+  38% {
+    transform: translateY(38vh) translateX(-18px) rotate(135deg) scale(0.95);
+  }
+  68% {
+    transform: translateY(68vh) translateX(22px) rotate(260deg) scale(1.05);
+  }
+  90% {
+    opacity: 0.85;
+  }
+  100% {
+    transform: translateY(115vh) translateX(-10px) rotate(420deg) scale(0.9);
+    opacity: 0;
+  }
+}
+
+.animate-petal-flutter {
+  animation-name: petal-flutter;
+  animation-timing-function: cubic-bezier(0.35, 0.15, 0.3, 0.95);
+  animation-iteration-count: infinite;
+}
+
 @keyframes petal-float {
   0% {
     transform: translateY(-10vh) translateX(-15px) rotate(0deg) scale(0.8);
@@ -413,5 +443,37 @@
 .animate-heart-float {
   animation: heart-float-up 1.6s cubic-bezier(0.25, 1, 0.5, 1) forwards;
 }
+
+@keyframes gold-progress {
+  from {
+    width: 0%;
+  }
+  to {
+    width: 100%;
+  }
+}
+
+/* Floral botanical border styling */
+.floral-side-vines {
+  background-image: radial-gradient(#c5a059 1px, transparent 1px);
+  background-size: 16px 16px;
+}
+
+/* Reduced motion accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .animate-petal-flutter,
+  .animate-fall,
+  .animate-petal-float,
+  .animate-ken-burns,
+  .animate-bokeh,
+  .animate-glow-gold,
+  .animate-pulse-slow,
+  .animate-spin-slow {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+  }
+}
+
 
 
