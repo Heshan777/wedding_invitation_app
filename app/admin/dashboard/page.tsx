@@ -1306,11 +1306,12 @@ export default function AdminDashboard() {
                             </div>
                           ) : (
                             <video
-                              src={settings.heroVideoUrl}
+                              src={settings.heroVideoUrl.startsWith("/uploads/") ? `/api/media/stream?src=${encodeURIComponent(settings.heroVideoUrl)}` : settings.heroVideoUrl}
                               autoPlay
                               loop
                               muted
                               playsInline
+                              preload="metadata"
                               className="w-full h-full object-cover"
                             />
                           )

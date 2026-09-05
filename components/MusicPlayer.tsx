@@ -74,7 +74,7 @@ export default function MusicPlayer({ src }: { src: string }) {
 
   return (
     <>
-      <audio ref={audioRef} src={src} loop preload="auto" />
+      <audio ref={audioRef} src={src} loop preload="none" />
 
       {/* Floating Luxury Music Widget */}
       <div className="fixed bottom-5 right-5 z-40 flex items-center gap-2 group">
