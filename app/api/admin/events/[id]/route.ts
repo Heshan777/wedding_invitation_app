@@ -14,8 +14,9 @@ export async function GET(
     }
 
     const { id } = await params;
+    const isSuperAdmin = manager.role === "SUPER_ADMIN";
     const event = await prisma.weddingEvent.findFirst({
-      where: { id, managerId: manager.id },
+      where: isSuperAdmin ? { id } : { id, managerId: manager.id },
       include: {
         photos: { orderBy: { order: "asc" } },
         tables: { orderBy: { tableNumber: "asc" } },
@@ -51,8 +52,9 @@ export async function PUT(
     }
 
     const { id } = await params;
+    const isSuperAdmin = manager.role === "SUPER_ADMIN";
     const existing = await prisma.weddingEvent.findFirst({
-      where: { id, managerId: manager.id },
+      where: isSuperAdmin ? { id } : { id, managerId: manager.id },
     });
 
     if (!existing) {
@@ -106,15 +108,15 @@ export async function DELETE(
     }
 
     const { id } = await params;
+    const isSuperAdmin = manager.role === "SUPER_ADMIN";
     const existing = await prisma.weddingEvent.findFirst({
-      where: { id, managerId: manager.id },
+      where: isSuperAdmin ? { id } : { id, managerId: manager.id },
     });
 
     if (!existing) {
       return NextResponse.json({ error: "Event not found" }, { status: 404 });
     }
 
-    // Ensure manager has at least one event remaining, or allow delete
     await prisma.weddingEvent.delete({ where: { id } });
 
     return NextResponse.json({ success: true });

@@ -13,18 +13,38 @@ function slugify(text: string): string {
     .replace(/^-+|-+$/g, "");
 }
 
-// GET /api/admin/events - List all events for the logged-in manager
-export async function GET() {
+// GET /api/admin/events - List events (Super Admin sees all or filtered by managerId; regular managers see only their own)
+export async function GET(req: NextRequest) {
   try {
     const manager = await getAuthenticatedManager();
     if (!manager) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const { searchParams } = new URL(req.url);
+    const filterManagerId = searchParams.get("managerId");
+
+    const isSuperAdmin = manager.role === "SUPER_ADMIN";
+    const whereClause: any = {};
+
+    if (!isSuperAdmin) {
+      whereClause.managerId = manager.id;
+    } else if (filterManagerId) {
+      whereClause.managerId = filterManagerId;
+    }
+
     const events = await prisma.weddingEvent.findMany({
-      where: { managerId: manager.id },
+      where: whereClause,
       orderBy: { createdAt: "desc" },
       include: {
+        manager: {
+          select: {
+            id: true,
+            username: true,
+            name: true,
+            company: true,
+          },
+        },
         _count: {
           select: {
             guests: true,
@@ -61,7 +81,19 @@ export async function POST(req: NextRequest) {
       venueLng,
       contactPhone,
       slug: customSlug,
+      managerId: requestedManagerId,
     } = body;
+
+    // Super admin can assign wedding to any manager, else own manager ID
+    let targetManagerId = manager.id;
+    if (manager.role === "SUPER_ADMIN" && requestedManagerId) {
+      const exists = await prisma.eventManager.findUnique({
+        where: { id: requestedManagerId },
+      });
+      if (exists) {
+        targetManagerId = requestedManagerId;
+      }
+    }
 
     if (!coupleNames || !eventDate || !venueName) {
       return NextResponse.json(
@@ -84,7 +116,7 @@ export async function POST(req: NextRequest) {
     const newEvent = await prisma.weddingEvent.create({
       data: {
         slug: finalSlug,
-        managerId: manager.id,
+        managerId: targetManagerId,
         coupleNames: coupleNames.trim(),
         hostIntro: body.hostIntro || "With gratitude and joyful hearts, we cordially invite",
         invitationBody: body.invitationBody || "to join us as we celebrate this special day...",

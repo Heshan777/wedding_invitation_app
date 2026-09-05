@@ -15,7 +15,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     include: { event: true },
   });
 
-  if (!existing || (existing.event && existing.event.managerId !== manager.id)) {
+  if (!existing || (existing.event && existing.event.managerId !== manager.id && manager.role !== "SUPER_ADMIN")) {
     return NextResponse.json({ error: "Guest not found or access denied" }, { status: 404 });
   }
 
@@ -51,7 +51,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     include: { event: true },
   });
 
-  if (!existing || (existing.event && existing.event.managerId !== manager.id)) {
+  if (!existing || (existing.event && existing.event.managerId !== manager.id && manager.role !== "SUPER_ADMIN")) {
     return NextResponse.json({ error: "Guest not found or access denied" }, { status: 404 });
   }
 

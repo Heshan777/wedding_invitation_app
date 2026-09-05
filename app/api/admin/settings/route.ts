@@ -8,8 +8,9 @@ export async function GET(req: NextRequest) {
   const eventId = searchParams.get("eventId");
 
   if (manager && eventId) {
+    const isSuperAdmin = manager.role === "SUPER_ADMIN";
     const event = await prisma.weddingEvent.findFirst({
-      where: { id: eventId, managerId: manager.id },
+      where: isSuperAdmin ? { id: eventId } : { id: eventId, managerId: manager.id },
       include: {
         photos: { orderBy: { order: "asc" } },
         tables: { orderBy: { tableNumber: "asc" } },

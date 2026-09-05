@@ -17,9 +17,10 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "eventId is required" }, { status: 400 });
     }
 
-    // Verify manager owns this event
+    // Verify manager owns this event (Super Admin can access any event)
+    const isSuperAdmin = manager.role === "SUPER_ADMIN";
     const event = await prisma.weddingEvent.findFirst({
-      where: { id: eventId, managerId: manager.id },
+      where: isSuperAdmin ? { id: eventId } : { id: eventId, managerId: manager.id },
     });
 
     if (!event) {
@@ -54,8 +55,9 @@ export async function POST(req: NextRequest) {
     }
 
     // Verify ownership
+    const isSuperAdmin = manager.role === "SUPER_ADMIN";
     const event = await prisma.weddingEvent.findFirst({
-      where: { id: eventId, managerId: manager.id },
+      where: isSuperAdmin ? { id: eventId } : { id: eventId, managerId: manager.id },
     });
 
     if (!event) {
@@ -106,7 +108,7 @@ export async function DELETE(req: NextRequest) {
       include: { event: true },
     });
 
-    if (!photo || photo.event.managerId !== manager.id) {
+    if (!photo || (photo.event.managerId !== manager.id && manager.role !== "SUPER_ADMIN")) {
       return NextResponse.json({ error: "Photo not found or access denied" }, { status: 404 });
     }
 
