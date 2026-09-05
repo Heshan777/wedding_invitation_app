@@ -43,16 +43,16 @@ model EventSettings {
     venueName            String
     venueAddress         String
     venueLat             Float
-    venueLng             Float
-    heroImageUrl         String?  @default("/images/couple-portrait-1.jpg")
-    heroVideoUrl         String?
-    videoThumbnailUrl    String?
+    heroImageUrl         String?  @default("/uploads/preshoot-photo-Pragya-Siddharth-Pix-1788547160301-318.jpg")
+    heroVideoUrl         String?  @default("/uploads/preshoot-video-0903-1788547888302-520.mp4")
+    videoThumbnailUrl    String?  @default("/uploads/preshoot-photo-Pragya-Siddharth-Pix-1788547160301-318.jpg")
 
     galleryJson          String?
-    blessingImageUrl     String?  @default("/images/couple-portrait-2.jpg")
-    welcomeImageUrl      String?  @default("/images/couple-welcome.jpg")
-    placeCardImageUrl    String?  @default("/images/couple-sweet.jpg")
+    blessingImageUrl     String?  @default("/uploads/preshoot-photo-OIP2-1788547184704-193.webp")
+    welcomeImageUrl      String?  @default("/uploads/preshoot-photo-423f40cc366ebcbcb01c-1788547168710-655.jpg")
+    placeCardImageUrl    String?  @default("/uploads/preshoot-photo-e5a487a560c507085cda-1788547177206-113.jpg")
     placeCardNote        String?  @default("Thank you for sharing our joy and celebrating with us!")
+
     musicUrl             String?  @default("/audio/background.mp3")
     dressCodeTitle       String?  @default("Royal Splendor & Black Tie")
     dressCodeDescription String?  @default("Traditional Sri Lankan elegance or formal evening attire in warm tones of gold, burgundy, and ivory.")
