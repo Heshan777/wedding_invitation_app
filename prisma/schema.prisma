@@ -43,6 +43,7 @@ model EventSettings {
     venueName            String
     venueAddress         String
     venueLat             Float
+    venueLng             Float    @default(79.9426)
     heroImageUrl         String?  @default("/uploads/preshoot-photo-Pragya-Siddharth-Pix-1788547160301-318.jpg")
     heroVideoUrl         String?  @default("/uploads/preshoot-video-0903-1788547888302-520.mp4")
     videoThumbnailUrl    String?  @default("/uploads/preshoot-photo-Pragya-Siddharth-Pix-1788547160301-318.jpg")
