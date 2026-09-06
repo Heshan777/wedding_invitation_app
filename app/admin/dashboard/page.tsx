@@ -678,12 +678,6 @@ export default function AdminDashboard() {
         if (blobErr.message?.includes("Unauthorized") || blobErr.message?.includes("Only image files")) {
           throw blobErr;
         }
-        if (file.size > 4.5 * 1024 * 1024) {
-          throw new Error(
-            `This file (${(file.size / (1024 * 1024)).toFixed(1)} MB) exceeds Vercel's 4.5 MB serverless limit. ` +
-            (blobErr.message || "Please connect Vercel Blob in your Vercel Dashboard (Storage -> Create Database -> Blob) to support large file uploads.")
-          );
-        }
       }
 
       // Strategy 2: Fallback to standard Multipart/FormData Server Upload (works for local dev or files <= 4.5MB)
@@ -700,10 +694,13 @@ export default function AdminDashboard() {
         if (!res.ok) {
           if (res.status === 413) {
             throw new Error(
-              `File is too large for standard serverless upload (${(file.size / (1024 * 1024)).toFixed(1)} MB). Vercel requires Vercel Blob storage for uploads over 4.5 MB. Please enable Blob in your Vercel Dashboard.`
+              `File is too large for this upload path (${(file.size / (1024 * 1024)).toFixed(1)} MB). For Vercel deployments, connect Vercel Blob in the dashboard or use a direct external video URL.`
             );
           }
-          throw new Error(data.error || `Upload failed (${res.status})`);
+          if (data.error) {
+            throw new Error(data.error);
+          }
+          throw new Error(`Upload failed (${res.status})`);
         }
 
         finalUrl = data.url;
@@ -3949,4 +3946,4 @@ export default function AdminDashboard() {
       )}
     </div>
   );
-}
+}
