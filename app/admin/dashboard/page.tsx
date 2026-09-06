@@ -1228,12 +1228,12 @@ export default function AdminDashboard() {
             </div>
 
             {/* Action Buttons Toolbar */}
-            <div className="grid grid-cols-3 sm:flex items-center gap-2 w-full sm:w-auto">
+            <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 w-full sm:w-auto">
               {/* Super Admin: + Add Event Manager Button */}
               {manager?.role === "SUPER_ADMIN" && (
                 <button
                   onClick={() => setShowCreateManagerModal(true)}
-                  className="px-3 py-2.5 rounded-xl bg-[#800020] hover:bg-[#6b0f24] text-white text-xs font-cinzel font-bold flex items-center justify-center gap-1.5 shadow border border-[#dfba73]/60 cursor-pointer min-h-[42px] touch-manipulation"
+                  className="col-span-1 px-3 py-2.5 rounded-xl bg-[#800020] hover:bg-[#6b0f24] text-white text-xs font-cinzel font-bold flex items-center justify-center gap-1.5 shadow border border-[#dfba73]/60 cursor-pointer min-h-[42px] touch-manipulation"
                   title="Create a new Event Manager login"
                 >
                   <UserPlus className="w-3.5 h-3.5" /> <span className="truncate">+ Manager</span>
@@ -1244,7 +1244,7 @@ export default function AdminDashboard() {
               <button
                 onClick={() => setShowCreateEventModal(true)}
                 className={`btn-gold-shimmer px-3.5 py-2.5 rounded-xl text-xs font-cinzel font-bold flex items-center justify-center gap-1.5 shadow cursor-pointer min-h-[42px] touch-manipulation ${
-                  manager?.role === "SUPER_ADMIN" ? "col-span-1" : "col-span-1 sm:col-auto"
+                  manager?.role === "SUPER_ADMIN" ? "col-span-1" : "col-span-2 sm:col-auto"
                 }`}
               >
                 <Plus className="w-3.5 h-3.5" /> <span className="truncate">New Wedding</span>
@@ -1252,14 +1252,14 @@ export default function AdminDashboard() {
 
               <button
                 onClick={handleExportCSV}
-                className="px-3 py-2.5 rounded-xl bg-[#231a20] border border-[#c5a059]/40 text-[#dfba73] hover:bg-[#c5a059]/10 text-xs font-cinzel font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer min-h-[42px] touch-manipulation"
+                className="col-span-1 sm:col-auto px-3 py-2.5 rounded-xl bg-[#231a20] border border-[#c5a059]/40 text-[#dfba73] hover:bg-[#c5a059]/10 text-xs font-cinzel font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer min-h-[42px] touch-manipulation"
               >
                 <FileSpreadsheet className="w-4 h-4" /> <span>CSV</span>
               </button>
 
               <button
                 onClick={handleLogout}
-                className="px-3 py-2.5 rounded-xl bg-[#800020]/20 border border-rose-800/60 text-rose-300 hover:bg-rose-950/40 text-xs font-cinzel font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer min-h-[42px] touch-manipulation"
+                className="col-span-1 sm:col-auto px-3 py-2.5 rounded-xl bg-[#800020]/20 border border-rose-800/60 text-rose-300 hover:bg-rose-950/40 text-xs font-cinzel font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer min-h-[42px] touch-manipulation"
               >
                 <LogOut className="w-4 h-4" /> <span>Exit</span>
               </button>
@@ -1388,20 +1388,20 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* Luxury Responsive Tabs Navigation Rail */}
-        <div className="relative mb-6">
-          <div className="tab-scroll-rail scrollbar-none flex items-center gap-2 overflow-x-auto pb-2 -mx-1 px-1 snap-x">
+        {/* Luxury Responsive Tabs Navigation */}
+        <div className="mb-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 xl:flex xl:flex-wrap items-center gap-2 sm:gap-2.5">
             <button
               onClick={() => setActiveTab("guests")}
-              className={`snap-start px-3.5 sm:px-4 py-2.5 rounded-xl text-xs font-cinzel font-bold tracking-wider transition cursor-pointer flex items-center gap-2 shrink-0 touch-manipulation min-h-[42px] ${
+              className={`w-full xl:w-auto px-3.5 sm:px-4 py-2.5 rounded-xl text-xs font-cinzel font-bold tracking-wider transition cursor-pointer flex items-center justify-center sm:justify-start gap-2 touch-manipulation min-h-[44px] ${
                 activeTab === "guests"
                   ? "bg-[#800020] text-[#fdfbf7] border border-[#dfba73]/80 shadow-lg shadow-[#800020]/40 ring-1 ring-[#dfba73]/30"
                   : "bg-[#231a20] text-[#fdfbf7]/70 hover:bg-[#c5a059]/15 border border-[#c5a059]/20"
               }`}
             >
-              <Users className="w-4 h-4 text-[#dfba73]" />
-              <span>Guest Directory</span>
-              <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-mono ${
+              <Users className="w-4 h-4 text-[#dfba73] shrink-0" />
+              <span className="truncate">Guest Directory</span>
+              <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-mono shrink-0 ${
                 activeTab === "guests" ? "bg-white/20 text-white" : "bg-[#181216] text-[#dfba73]"
               }`}>
                 {guests.length}
@@ -1409,15 +1409,15 @@ export default function AdminDashboard() {
             </button>
             <button
               onClick={() => setActiveTab("photos")}
-              className={`snap-start px-3.5 sm:px-4 py-2.5 rounded-xl text-xs font-cinzel font-bold tracking-wider transition cursor-pointer flex items-center gap-2 shrink-0 touch-manipulation min-h-[42px] ${
+              className={`w-full xl:w-auto px-3.5 sm:px-4 py-2.5 rounded-xl text-xs font-cinzel font-bold tracking-wider transition cursor-pointer flex items-center justify-center sm:justify-start gap-2 touch-manipulation min-h-[44px] ${
                 activeTab === "photos"
                   ? "bg-[#800020] text-[#fdfbf7] border border-[#dfba73]/80 shadow-lg shadow-[#800020]/40 ring-1 ring-[#dfba73]/30"
                   : "bg-[#231a20] text-[#fdfbf7]/70 hover:bg-[#c5a059]/15 border border-[#c5a059]/20"
               }`}
             >
-              <Camera className="w-4 h-4 text-[#dfba73]" />
-              <span>Photos Table</span>
-              <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-mono ${
+              <Camera className="w-4 h-4 text-[#dfba73] shrink-0" />
+              <span className="truncate">Photos Table</span>
+              <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-mono shrink-0 ${
                 activeTab === "photos" ? "bg-white/20 text-white" : "bg-[#181216] text-[#dfba73]"
               }`}>
                 {eventPhotos.length}
@@ -1425,37 +1425,39 @@ export default function AdminDashboard() {
             </button>
             <button
               onClick={() => setActiveTab("settings")}
-              className={`snap-start px-3.5 sm:px-4 py-2.5 rounded-xl text-xs font-cinzel font-bold tracking-wider transition cursor-pointer flex items-center gap-2 shrink-0 touch-manipulation min-h-[42px] ${
+              className={`w-full xl:w-auto px-3.5 sm:px-4 py-2.5 rounded-xl text-xs font-cinzel font-bold tracking-wider transition cursor-pointer flex items-center justify-center sm:justify-start gap-2 touch-manipulation min-h-[44px] ${
                 activeTab === "settings"
                   ? "bg-[#800020] text-[#fdfbf7] border border-[#dfba73]/80 shadow-lg shadow-[#800020]/40 ring-1 ring-[#dfba73]/30"
                   : "bg-[#231a20] text-[#fdfbf7]/70 hover:bg-[#c5a059]/15 border border-[#c5a059]/20"
               }`}
             >
-              <Settings className="w-4 h-4 text-[#dfba73]" />
-              <span>Ceremony & Settings</span>
+              <Settings className="w-4 h-4 text-[#dfba73] shrink-0" />
+              <span className="truncate">Ceremony & Settings</span>
             </button>
             <button
               onClick={() => setActiveTab("tables")}
-              className={`snap-start px-3.5 sm:px-4 py-2.5 rounded-xl text-xs font-cinzel font-bold tracking-wider transition cursor-pointer flex items-center gap-2 shrink-0 touch-manipulation min-h-[42px] ${
+              className={`w-full xl:w-auto px-3.5 sm:px-4 py-2.5 rounded-xl text-xs font-cinzel font-bold tracking-wider transition cursor-pointer flex items-center justify-center sm:justify-start gap-2 touch-manipulation min-h-[44px] ${
                 activeTab === "tables"
                   ? "bg-[#800020] text-[#fdfbf7] border border-[#dfba73]/80 shadow-lg shadow-[#800020]/40 ring-1 ring-[#dfba73]/30"
                   : "bg-[#231a20] text-[#fdfbf7]/70 hover:bg-[#c5a059]/15 border border-[#c5a059]/20"
               }`}
             >
-              <Printer className="w-4 h-4 text-[#dfba73]" />
-              <span>Printable Place Cards</span>
+              <Printer className="w-4 h-4 text-[#dfba73] shrink-0" />
+              <span className="truncate">Printable Place Cards</span>
             </button>
             <button
               onClick={() => setActiveTab("events")}
-              className={`snap-start px-3.5 sm:px-4 py-2.5 rounded-xl text-xs font-cinzel font-bold tracking-wider transition cursor-pointer flex items-center gap-2 shrink-0 touch-manipulation min-h-[42px] ${
+              className={`w-full xl:w-auto px-3.5 sm:px-4 py-2.5 rounded-xl text-xs font-cinzel font-bold tracking-wider transition cursor-pointer flex items-center justify-center sm:justify-start gap-2 touch-manipulation min-h-[44px] ${
+                manager?.role === "SUPER_ADMIN" ? "col-span-1" : "col-span-2 sm:col-span-1 xl:col-auto"
+              } ${
                 activeTab === "events"
                   ? "bg-[#800020] text-[#fdfbf7] border border-[#dfba73]/80 shadow-lg shadow-[#800020]/40 ring-1 ring-[#dfba73]/30"
                   : "bg-[#231a20] text-[#fdfbf7]/70 hover:bg-[#c5a059]/15 border border-[#c5a059]/20"
               }`}
             >
-              <Sparkles className="w-4 h-4 text-[#dfba73]" />
-              <span>{manager?.role === "SUPER_ADMIN" ? "Platform Weddings" : "My Weddings"}</span>
-              <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-mono ${
+              <Sparkles className="w-4 h-4 text-[#dfba73] shrink-0" />
+              <span className="truncate">{manager?.role === "SUPER_ADMIN" ? "Platform Weddings" : "My Weddings"}</span>
+              <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-mono shrink-0 ${
                 activeTab === "events" ? "bg-white/20 text-white" : "bg-[#181216] text-[#dfba73]"
               }`}>
                 {events.length}
@@ -1464,15 +1466,15 @@ export default function AdminDashboard() {
             {manager?.role === "SUPER_ADMIN" && (
               <button
                 onClick={() => setActiveTab("managers")}
-                className={`snap-start px-3.5 sm:px-4 py-2.5 rounded-xl text-xs font-cinzel font-bold tracking-wider transition cursor-pointer flex items-center gap-2 shrink-0 touch-manipulation min-h-[42px] ${
+                className={`w-full xl:w-auto px-3.5 sm:px-4 py-2.5 rounded-xl text-xs font-cinzel font-bold tracking-wider transition cursor-pointer flex items-center justify-center sm:justify-start gap-2 touch-manipulation min-h-[44px] col-span-1 sm:col-span-1 xl:col-auto ${
                   activeTab === "managers"
                     ? "bg-[#800020] text-[#fdfbf7] border border-[#dfba73] shadow-lg ring-1 ring-[#dfba73]/40"
                     : "bg-[#2a1721] text-[#dfba73] hover:bg-[#c5a059]/15 border border-[#c5a059]/30"
                 }`}
               >
-                <ShieldCheck className="w-4 h-4 text-[#dfba73]" />
-                <span>Event Managers</span>
-                <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-mono ${
+                <ShieldCheck className="w-4 h-4 text-[#dfba73] shrink-0" />
+                <span className="truncate">Event Managers</span>
+                <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-mono shrink-0 ${
                   activeTab === "managers" ? "bg-white/20 text-white" : "bg-[#181216] text-[#dfba73]"
                 }`}>
                   {managers.length}
@@ -1532,7 +1534,7 @@ export default function AdminDashboard() {
               {/* Row 2: Quick RSVP Filter Pills + Secondary Dropdowns */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-1 border-t border-[#c5a059]/15">
                 {/* RSVP Status Chips (One-touch filter) */}
-                <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none pb-1 sm:pb-0">
+                <div className="flex flex-wrap items-center gap-1.5">
                   <span className="text-[10px] uppercase font-cinzel font-semibold text-[#dfba73]/70 mr-1 shrink-0">
                     RSVP:
                   </span>
