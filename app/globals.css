@@ -468,6 +468,20 @@
   background: #edd892;
 }
 
+/* Mobile-responsive scroll helpers */
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.tab-scroll-rail {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+
 /* Printable Banquet Table Place Cards */
 @media print {
   @page {

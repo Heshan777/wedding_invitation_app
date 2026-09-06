@@ -1154,7 +1154,7 @@ export default function AdminDashboard() {
   const currentEvent = events.find((e) => e.id === activeEventId) || events[0];
 
   return (
-    <div className="min-h-screen bg-[#121013] text-[#fdfbf7] selection:bg-[#c5a059]/30 selection:text-[#f7e4be] px-4 py-8">
+    <div className="min-h-screen bg-[#121013] text-[#fdfbf7] selection:bg-[#c5a059]/30 selection:text-[#f7e4be] px-3 sm:px-6 lg:px-8 py-4 sm:py-8">
       {toastMsg && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl bg-[#800020] text-[#fdfbf7] text-xs font-cinzel font-semibold shadow-2xl border border-[#dfba73] flex items-center gap-2 animate-bounce">
           <Sparkles className="w-4 h-4 text-[#edd892]" />
@@ -1164,8 +1164,8 @@ export default function AdminDashboard() {
 
       <div className="max-w-6xl mx-auto">
         {/* Top Executive Header */}
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pb-6 border-b border-[#c5a059]/30 mb-8">
-          <div>
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pb-6 border-b border-[#c5a059]/30 mb-6 sm:mb-8">
+          <div className="w-full md:w-auto">
             <div className="flex flex-wrap items-center gap-2">
               {manager?.role === "SUPER_ADMIN" ? (
                 <>
@@ -1187,15 +1187,15 @@ export default function AdminDashboard() {
                 </>
               )}
             </div>
-            <h1 className="font-cinzel text-2xl sm:text-3xl font-bold text-[#fdfbf7] mt-1">
+            <h1 className="font-cinzel text-xl sm:text-2xl md:text-3xl font-bold text-[#fdfbf7] mt-1.5 tracking-tight break-words">
               {currentEvent?.coupleNames || settings.coupleNames}
             </h1>
-            <div className="flex flex-wrap items-center gap-2 mt-1 text-xs text-[#dfba73]/80">
-              <span className="px-2 py-0.5 rounded bg-[#231a20] border border-[#c5a059]/30 font-mono text-[11px] text-[#edd892]">
+            <div className="flex flex-wrap items-center gap-2 mt-1.5 text-xs text-[#dfba73]/80">
+              <span className="px-2 py-0.5 rounded-lg bg-[#231a20] border border-[#c5a059]/30 font-mono text-[11px] text-[#edd892]">
                 Slug: /e/{currentEvent?.slug || "wedding"}
               </span>
               {currentEvent?.manager && manager?.role === "SUPER_ADMIN" && (
-                <span className="px-2 py-0.5 rounded bg-[#800020]/20 border border-[#dfba73]/30 text-[11px] text-[#dfba73] font-sans">
+                <span className="px-2 py-0.5 rounded-lg bg-[#800020]/20 border border-[#dfba73]/30 text-[11px] text-[#dfba73] font-sans">
                   Planner: {currentEvent.manager.name} ({currentEvent.manager.company || currentEvent.manager.username})
                 </span>
               )}
@@ -1203,21 +1203,21 @@ export default function AdminDashboard() {
                 href={`/e/${currentEvent?.slug || "wedding"}`}
                 target="_blank"
                 rel="noreferrer"
-                className="hover:text-white flex items-center gap-1 text-[11px] underline"
+                className="hover:text-white inline-flex items-center gap-1 text-[11px] underline bg-[#231a20]/60 px-2 py-0.5 rounded-lg border border-[#c5a059]/20"
               >
-                <ExternalLink className="w-3 h-3" /> Preview Wedding
+                <ExternalLink className="w-3 h-3 text-[#dfba73]" /> Preview Wedding
               </a>
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2.5">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full md:w-auto">
             {/* Wedding Switcher Selector */}
-            <div className="flex items-center gap-1.5 bg-[#1c161a] border border-[#c5a059]/50 rounded-xl px-2.5 py-1.5 shadow-md">
-              <Sparkles className="w-3.5 h-3.5 text-[#dfba73]" />
+            <div className="flex items-center gap-2 bg-[#1c161a] border border-[#c5a059]/60 rounded-xl px-3 py-2 shadow-md w-full sm:w-auto">
+              <Sparkles className="w-3.5 h-3.5 text-[#dfba73] shrink-0" />
               <select
                 value={activeEventId}
                 onChange={(e) => handleSelectEvent(e.target.value)}
-                className="bg-transparent text-xs font-cinzel font-semibold text-[#fdfbf7] focus:outline-none cursor-pointer max-w-[200px] sm:max-w-[260px]"
+                className="bg-transparent text-xs font-cinzel font-semibold text-[#fdfbf7] focus:outline-none cursor-pointer w-full sm:max-w-[240px] truncate"
               >
                 {events.map((ev) => (
                   <option key={ev.id} value={ev.id} className="bg-[#1c161a] text-white">
@@ -1227,125 +1227,155 @@ export default function AdminDashboard() {
               </select>
             </div>
 
-            {/* Super Admin: + Add Event Manager Button */}
-            {manager?.role === "SUPER_ADMIN" && (
+            {/* Action Buttons Toolbar */}
+            <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 w-full sm:w-auto">
+              {/* Super Admin: + Add Event Manager Button */}
+              {manager?.role === "SUPER_ADMIN" && (
+                <button
+                  onClick={() => setShowCreateManagerModal(true)}
+                  className="col-span-1 px-3 py-2.5 rounded-xl bg-[#800020] hover:bg-[#6b0f24] text-white text-xs font-cinzel font-bold flex items-center justify-center gap-1.5 shadow border border-[#dfba73]/60 cursor-pointer min-h-[42px] touch-manipulation"
+                  title="Create a new Event Manager login"
+                >
+                  <UserPlus className="w-3.5 h-3.5" /> <span className="truncate">+ Manager</span>
+                </button>
+              )}
+
+              {/* + New Wedding Button */}
               <button
-                onClick={() => setShowCreateManagerModal(true)}
-                className="px-3.5 py-2 rounded-xl bg-[#800020] hover:bg-[#6b0f24] text-white text-xs font-cinzel font-bold flex items-center gap-1.5 shadow border border-[#dfba73]/60 cursor-pointer"
-                title="Create a new Event Manager login"
+                onClick={() => setShowCreateEventModal(true)}
+                className={`btn-gold-shimmer px-3.5 py-2.5 rounded-xl text-xs font-cinzel font-bold flex items-center justify-center gap-1.5 shadow cursor-pointer min-h-[42px] touch-manipulation ${
+                  manager?.role === "SUPER_ADMIN" ? "col-span-1" : "col-span-2 sm:col-auto"
+                }`}
               >
-                <UserPlus className="w-3.5 h-3.5" /> + Manager
+                <Plus className="w-3.5 h-3.5" /> <span className="truncate">New Wedding</span>
               </button>
-            )}
 
-            {/* + New Wedding Button */}
-            <button
-              onClick={() => setShowCreateEventModal(true)}
-              className="btn-gold-shimmer px-3.5 py-2 rounded-xl text-xs font-cinzel font-bold flex items-center gap-1.5 shadow cursor-pointer"
-            >
-              <Plus className="w-3.5 h-3.5" /> New Wedding
-            </button>
+              <button
+                onClick={handleExportCSV}
+                className="col-span-1 sm:col-auto px-3 py-2.5 rounded-xl bg-[#231a20] border border-[#c5a059]/40 text-[#dfba73] hover:bg-[#c5a059]/10 text-xs font-cinzel font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer min-h-[42px] touch-manipulation"
+              >
+                <FileSpreadsheet className="w-4 h-4" /> <span>CSV</span>
+              </button>
 
-            <button
-              onClick={handleExportCSV}
-              className="px-3.5 py-2 rounded-xl bg-[#231a20] border border-[#c5a059]/40 text-[#dfba73] hover:bg-[#c5a059]/10 text-xs font-cinzel font-semibold flex items-center gap-1.5 transition cursor-pointer"
-            >
-              <FileSpreadsheet className="w-4 h-4" /> CSV
-            </button>
-            <button
-              onClick={handleLogout}
-              className="px-3.5 py-2 rounded-xl bg-[#800020]/20 border border-rose-800/60 text-rose-300 hover:bg-rose-950/40 text-xs font-cinzel font-semibold flex items-center gap-1.5 transition cursor-pointer"
-            >
-              <LogOut className="w-4 h-4" /> Exit
-            </button>
+              <button
+                onClick={handleLogout}
+                className="col-span-1 sm:col-auto px-3 py-2.5 rounded-xl bg-[#800020]/20 border border-rose-800/60 text-rose-300 hover:bg-rose-950/40 text-xs font-cinzel font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer min-h-[42px] touch-manipulation"
+              >
+                <LogOut className="w-4 h-4" /> <span>Exit</span>
+              </button>
+            </div>
           </div>
         </div>
 
         {/* Executive Stats & Live RSVP Analytics Hub */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 mb-6">
-          <div className="p-4 rounded-2xl bg-[#1c161a] border border-[#c5a059]/30 backdrop-blur-sm shadow-md">
-            <div className="flex items-center justify-between text-[#dfba73] mb-1.5">
-              <span className="text-[10px] uppercase tracking-wider font-cinzel font-semibold">
-                Total Invited
-              </span>
-              <Users className="w-3.5 h-3.5" />
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-4 mb-6">
+          {/* Card 1: Total Invited */}
+          <div className="p-3.5 sm:p-4 rounded-2xl bg-[#1c161a] border border-[#c5a059]/30 backdrop-blur-sm shadow-md flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between text-[#dfba73] mb-1">
+                <span className="text-[10px] uppercase tracking-wider font-cinzel font-semibold">
+                  Total Invited
+                </span>
+                <Users className="w-3.5 h-3.5" />
+              </div>
+              <div className="font-cinzel text-2xl sm:text-3xl font-bold text-[#fdfbf7]">
+                {rsvpStats.totalInvited}
+              </div>
             </div>
-            <div className="font-cinzel text-2xl sm:text-3xl font-bold text-[#fdfbf7]">
-              {rsvpStats.totalInvited}
-            </div>
-            <span className="text-[10px] text-[#fdfbf7]/60 font-sans mt-0.5 block">
+            <span className="text-[10px] text-[#fdfbf7]/60 font-sans mt-1 block">
               ~{stats.estimatedHeadcount} Max Potential
             </span>
           </div>
 
-          <div className="p-4 rounded-2xl bg-[#1c161a] border border-emerald-500/40 bg-gradient-to-b from-emerald-950/20 to-transparent backdrop-blur-sm shadow-md">
-            <div className="flex items-center justify-between text-emerald-400 mb-1.5">
-              <span className="text-[10px] uppercase tracking-wider font-cinzel font-semibold">
-                Confirmed Attending
-              </span>
-              <CheckCircle2 className="w-3.5 h-3.5" />
+          {/* Card 2: Confirmed Attending */}
+          <div className="p-3.5 sm:p-4 rounded-2xl bg-[#1c161a] border border-emerald-500/40 bg-gradient-to-b from-emerald-950/20 to-transparent backdrop-blur-sm shadow-md flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between text-emerald-400 mb-1">
+                <span className="text-[10px] uppercase tracking-wider font-cinzel font-semibold">
+                  Attending
+                </span>
+                <CheckCircle2 className="w-3.5 h-3.5" />
+              </div>
+              <div className="font-cinzel text-2xl sm:text-3xl font-bold text-emerald-300">
+                {rsvpStats.attendingCount}
+              </div>
             </div>
-            <div className="font-cinzel text-2xl sm:text-3xl font-bold text-emerald-300">
-              {rsvpStats.attendingCount}
-            </div>
-            <span className="text-[10px] text-emerald-400/80 font-sans mt-0.5 block font-semibold">
-              {rsvpStats.totalHeadcount} Total Seats Claimed
+            <span className="text-[10px] text-emerald-400/90 font-sans mt-1 block font-medium truncate">
+              {rsvpStats.totalHeadcount} Seats Claimed
             </span>
           </div>
 
-          <div className="p-4 rounded-2xl bg-[#1c161a] border border-rose-800/40 bg-gradient-to-b from-rose-950/20 to-transparent backdrop-blur-sm shadow-md">
-            <div className="flex items-center justify-between text-rose-400 mb-1.5">
-              <span className="text-[10px] uppercase tracking-wider font-cinzel font-semibold">
-                Declined
-              </span>
-              <XCircle className="w-3.5 h-3.5" />
+          {/* Card 3: Declined */}
+          <div className="p-3.5 sm:p-4 rounded-2xl bg-[#1c161a] border border-rose-800/40 bg-gradient-to-b from-rose-950/20 to-transparent backdrop-blur-sm shadow-md flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between text-rose-400 mb-1">
+                <span className="text-[10px] uppercase tracking-wider font-cinzel font-semibold">
+                  Declined
+                </span>
+                <XCircle className="w-3.5 h-3.5" />
+              </div>
+              <div className="font-cinzel text-2xl sm:text-3xl font-bold text-rose-300">
+                {rsvpStats.declinedCount}
+              </div>
             </div>
-            <div className="font-cinzel text-2xl sm:text-3xl font-bold text-rose-300">
-              {rsvpStats.declinedCount}
-            </div>
-            <span className="text-[10px] text-rose-400/70 font-sans mt-0.5 block">
+            <span className="text-[10px] text-rose-400/70 font-sans mt-1 block truncate">
               Regretfully cannot join
             </span>
           </div>
 
-          <div className="p-4 rounded-2xl bg-[#1c161a] border border-[#c5a059]/40 backdrop-blur-sm shadow-md">
-            <div className="flex items-center justify-between text-[#dfba73] mb-1.5">
-              <span className="text-[10px] uppercase tracking-wider font-cinzel font-semibold">
-                Pending RSVP
-              </span>
-              <HelpCircle className="w-3.5 h-3.5" />
+          {/* Card 4: Pending RSVP */}
+          <div className="p-3.5 sm:p-4 rounded-2xl bg-[#1c161a] border border-[#c5a059]/40 backdrop-blur-sm shadow-md flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between text-[#dfba73] mb-1">
+                <span className="text-[10px] uppercase tracking-wider font-cinzel font-semibold">
+                  Pending RSVP
+                </span>
+                <HelpCircle className="w-3.5 h-3.5" />
+              </div>
+              <div className="font-cinzel text-2xl sm:text-3xl font-bold text-[#dfba73]">
+                {rsvpStats.pendingCount}
+              </div>
             </div>
-            <div className="font-cinzel text-2xl sm:text-3xl font-bold text-[#dfba73]">
-              {rsvpStats.pendingCount}
-            </div>
-            <span className="text-[10px] text-[#dfba73]/70 font-sans mt-0.5 block">
+            <span className="text-[10px] text-[#dfba73]/70 font-sans mt-1 block truncate">
               Awaiting confirmation
             </span>
           </div>
 
-          <div className="p-4 rounded-2xl bg-[#1c161a] border border-[#c5a059]/30 backdrop-blur-sm shadow-md col-span-2 sm:col-span-1">
-            <div className="flex items-center justify-between text-[#dfba73] mb-1.5">
-              <span className="text-[10px] uppercase tracking-wider font-cinzel font-semibold">
-                Open Rate
-              </span>
-              <Eye className="w-3.5 h-3.5" />
+          {/* Card 5: Open Rate */}
+          <div className="p-3.5 sm:p-4 rounded-2xl bg-gradient-to-br from-[#1c161a] to-[#251821] border border-[#c5a059]/40 backdrop-blur-sm shadow-md col-span-2 sm:col-span-1 flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between text-[#dfba73] mb-1">
+                <span className="text-[10px] uppercase tracking-wider font-cinzel font-semibold flex items-center gap-1.5">
+                  <Eye className="w-3.5 h-3.5" /> Open Rate
+                </span>
+                <span className="text-[10px] font-mono text-[#edd892] font-semibold">
+                  {stats.viewedCount}/{stats.totalGuests}
+                </span>
+              </div>
+              <div className="flex items-baseline gap-2">
+                <div className="font-cinzel text-2xl sm:text-3xl font-bold text-[#fdfbf7]">
+                  {stats.openRate}%
+                </div>
+                <span className="text-[10px] text-[#fdfbf7]/60 font-sans">engagement</span>
+              </div>
             </div>
-            <div className="font-cinzel text-2xl sm:text-3xl font-bold text-[#fdfbf7]">
-              {stats.openRate}%
+            {/* Elegant mini progress track */}
+            <div className="w-full h-1.5 rounded-full bg-[#120e11] border border-[#c5a059]/20 mt-2 overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-[#c5a059] to-[#ffd700] rounded-full transition-all duration-500"
+                style={{ width: `${Math.min(100, Math.max(0, stats.openRate))}%` }}
+              />
             </div>
-            <span className="text-[10px] text-[#fdfbf7]/60 font-sans mt-0.5 block">
-              {stats.viewedCount} of {stats.totalGuests} opened
-            </span>
           </div>
         </div>
 
         {/* Dietary Preferences Overview Bar */}
         {Object.keys(rsvpStats.dietaryCounts).length > 0 && (
-          <div className="mb-6 px-4 py-3 rounded-2xl bg-[#20161c] border border-[#c5a059]/30 flex flex-wrap items-center gap-3">
-            <div className="flex items-center gap-1.5 text-xs text-[#dfba73] font-cinzel font-bold">
+          <div className="mb-6 px-3.5 sm:px-4 py-3 rounded-2xl bg-[#20161c] border border-[#c5a059]/30 flex flex-col sm:flex-row sm:items-center gap-2.5 sm:gap-3">
+            <div className="flex items-center gap-1.5 text-xs text-[#dfba73] font-cinzel font-bold shrink-0">
               <Utensils className="w-3.5 h-3.5" /> Catering & Dietary Requirements:
             </div>
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
               {Object.entries(rsvpStats.dietaryCounts).map(([diet, count]) => (
                 <span
                   key={diet}
@@ -1358,159 +1388,380 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* Tabs Bar */}
-        <div className="flex items-center gap-2 mb-6 border-b border-[#c5a059]/20 pb-3 overflow-x-auto">
-          <button
-            onClick={() => setActiveTab("guests")}
-            className={`px-4 py-2 rounded-xl text-xs font-cinzel font-bold tracking-wider transition cursor-pointer flex items-center gap-2 whitespace-nowrap ${
-              activeTab === "guests"
-                ? "bg-[#800020] text-[#fdfbf7] border border-[#dfba73]/60 shadow-lg"
-                : "bg-[#231a20] text-[#fdfbf7]/70 hover:bg-[#c5a059]/10"
-            }`}
-          >
-            <Users className="w-4 h-4" /> Guest Directory ({guests.length})
-          </button>
-          <button
-            onClick={() => setActiveTab("photos")}
-            className={`px-4 py-2 rounded-xl text-xs font-cinzel font-bold tracking-wider transition cursor-pointer flex items-center gap-2 whitespace-nowrap ${
-              activeTab === "photos"
-                ? "bg-[#800020] text-[#fdfbf7] border border-[#dfba73]/60 shadow-lg"
-                : "bg-[#231a20] text-[#fdfbf7]/70 hover:bg-[#c5a059]/10"
-            }`}
-          >
-            <Camera className="w-4 h-4" /> Photos Table ({eventPhotos.length})
-          </button>
-          <button
-            onClick={() => setActiveTab("settings")}
-            className={`px-4 py-2 rounded-xl text-xs font-cinzel font-bold tracking-wider transition cursor-pointer flex items-center gap-2 whitespace-nowrap ${
-              activeTab === "settings"
-                ? "bg-[#800020] text-[#fdfbf7] border border-[#dfba73]/60 shadow-lg"
-                : "bg-[#231a20] text-[#fdfbf7]/70 hover:bg-[#c5a059]/10"
-            }`}
-          >
-            <Settings className="w-4 h-4" /> Ceremony & Settings
-          </button>
-          <button
-            onClick={() => setActiveTab("tables")}
-            className={`px-4 py-2 rounded-xl text-xs font-cinzel font-bold tracking-wider transition cursor-pointer flex items-center gap-2 whitespace-nowrap ${
-              activeTab === "tables"
-                ? "bg-[#800020] text-[#fdfbf7] border border-[#dfba73]/60 shadow-lg"
-                : "bg-[#231a20] text-[#fdfbf7]/70 hover:bg-[#c5a059]/10"
-            }`}
-          >
-            <Printer className="w-4 h-4" /> Printable Place Cards
-          </button>
-          <button
-            onClick={() => setActiveTab("events")}
-            className={`px-4 py-2 rounded-xl text-xs font-cinzel font-bold tracking-wider transition cursor-pointer flex items-center gap-2 whitespace-nowrap ${
-              activeTab === "events"
-                ? "bg-[#800020] text-[#fdfbf7] border border-[#dfba73]/60 shadow-lg"
-                : "bg-[#231a20] text-[#fdfbf7]/70 hover:bg-[#c5a059]/10"
-            }`}
-          >
-            <Sparkles className="w-4 h-4" /> {manager?.role === "SUPER_ADMIN" ? `All Platform Weddings (${events.length})` : `My Weddings (${events.length})`}
-          </button>
-          {manager?.role === "SUPER_ADMIN" && (
+        {/* Luxury Responsive Tabs Navigation */}
+        <div className="mb-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 xl:flex xl:flex-wrap items-center gap-2 sm:gap-2.5">
             <button
-              onClick={() => setActiveTab("managers")}
-              className={`px-4 py-2 rounded-xl text-xs font-cinzel font-bold tracking-wider transition cursor-pointer flex items-center gap-2 whitespace-nowrap ${
-                activeTab === "managers"
-                  ? "bg-[#800020] text-[#fdfbf7] border border-[#dfba73] shadow-lg ring-1 ring-[#dfba73]/40"
-                  : "bg-[#2a1721] text-[#dfba73] hover:bg-[#c5a059]/15 border border-[#c5a059]/30"
+              onClick={() => setActiveTab("guests")}
+              className={`w-full xl:w-auto px-3.5 sm:px-4 py-2.5 rounded-xl text-xs font-cinzel font-bold tracking-wider transition cursor-pointer flex items-center justify-center sm:justify-start gap-2 touch-manipulation min-h-[44px] ${
+                activeTab === "guests"
+                  ? "bg-[#800020] text-[#fdfbf7] border border-[#dfba73]/80 shadow-lg shadow-[#800020]/40 ring-1 ring-[#dfba73]/30"
+                  : "bg-[#231a20] text-[#fdfbf7]/70 hover:bg-[#c5a059]/15 border border-[#c5a059]/20"
               }`}
             >
-              <ShieldCheck className="w-4 h-4 text-[#dfba73]" /> Event Managers ({managers.length})
+              <Users className="w-4 h-4 text-[#dfba73] shrink-0" />
+              <span className="truncate">Guest Directory</span>
+              <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-mono shrink-0 ${
+                activeTab === "guests" ? "bg-white/20 text-white" : "bg-[#181216] text-[#dfba73]"
+              }`}>
+                {guests.length}
+              </span>
             </button>
-          )}
+            <button
+              onClick={() => setActiveTab("photos")}
+              className={`w-full xl:w-auto px-3.5 sm:px-4 py-2.5 rounded-xl text-xs font-cinzel font-bold tracking-wider transition cursor-pointer flex items-center justify-center sm:justify-start gap-2 touch-manipulation min-h-[44px] ${
+                activeTab === "photos"
+                  ? "bg-[#800020] text-[#fdfbf7] border border-[#dfba73]/80 shadow-lg shadow-[#800020]/40 ring-1 ring-[#dfba73]/30"
+                  : "bg-[#231a20] text-[#fdfbf7]/70 hover:bg-[#c5a059]/15 border border-[#c5a059]/20"
+              }`}
+            >
+              <Camera className="w-4 h-4 text-[#dfba73] shrink-0" />
+              <span className="truncate">Photos Table</span>
+              <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-mono shrink-0 ${
+                activeTab === "photos" ? "bg-white/20 text-white" : "bg-[#181216] text-[#dfba73]"
+              }`}>
+                {eventPhotos.length}
+              </span>
+            </button>
+            <button
+              onClick={() => setActiveTab("settings")}
+              className={`w-full xl:w-auto px-3.5 sm:px-4 py-2.5 rounded-xl text-xs font-cinzel font-bold tracking-wider transition cursor-pointer flex items-center justify-center sm:justify-start gap-2 touch-manipulation min-h-[44px] ${
+                activeTab === "settings"
+                  ? "bg-[#800020] text-[#fdfbf7] border border-[#dfba73]/80 shadow-lg shadow-[#800020]/40 ring-1 ring-[#dfba73]/30"
+                  : "bg-[#231a20] text-[#fdfbf7]/70 hover:bg-[#c5a059]/15 border border-[#c5a059]/20"
+              }`}
+            >
+              <Settings className="w-4 h-4 text-[#dfba73] shrink-0" />
+              <span className="truncate">Ceremony & Settings</span>
+            </button>
+            <button
+              onClick={() => setActiveTab("tables")}
+              className={`w-full xl:w-auto px-3.5 sm:px-4 py-2.5 rounded-xl text-xs font-cinzel font-bold tracking-wider transition cursor-pointer flex items-center justify-center sm:justify-start gap-2 touch-manipulation min-h-[44px] ${
+                activeTab === "tables"
+                  ? "bg-[#800020] text-[#fdfbf7] border border-[#dfba73]/80 shadow-lg shadow-[#800020]/40 ring-1 ring-[#dfba73]/30"
+                  : "bg-[#231a20] text-[#fdfbf7]/70 hover:bg-[#c5a059]/15 border border-[#c5a059]/20"
+              }`}
+            >
+              <Printer className="w-4 h-4 text-[#dfba73] shrink-0" />
+              <span className="truncate">Printable Place Cards</span>
+            </button>
+            <button
+              onClick={() => setActiveTab("events")}
+              className={`w-full xl:w-auto px-3.5 sm:px-4 py-2.5 rounded-xl text-xs font-cinzel font-bold tracking-wider transition cursor-pointer flex items-center justify-center sm:justify-start gap-2 touch-manipulation min-h-[44px] ${
+                manager?.role === "SUPER_ADMIN" ? "col-span-1" : "col-span-2 sm:col-span-1 xl:col-auto"
+              } ${
+                activeTab === "events"
+                  ? "bg-[#800020] text-[#fdfbf7] border border-[#dfba73]/80 shadow-lg shadow-[#800020]/40 ring-1 ring-[#dfba73]/30"
+                  : "bg-[#231a20] text-[#fdfbf7]/70 hover:bg-[#c5a059]/15 border border-[#c5a059]/20"
+              }`}
+            >
+              <Sparkles className="w-4 h-4 text-[#dfba73] shrink-0" />
+              <span className="truncate">{manager?.role === "SUPER_ADMIN" ? "Platform Weddings" : "My Weddings"}</span>
+              <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-mono shrink-0 ${
+                activeTab === "events" ? "bg-white/20 text-white" : "bg-[#181216] text-[#dfba73]"
+              }`}>
+                {events.length}
+              </span>
+            </button>
+            {manager?.role === "SUPER_ADMIN" && (
+              <button
+                onClick={() => setActiveTab("managers")}
+                className={`w-full xl:w-auto px-3.5 sm:px-4 py-2.5 rounded-xl text-xs font-cinzel font-bold tracking-wider transition cursor-pointer flex items-center justify-center sm:justify-start gap-2 touch-manipulation min-h-[44px] col-span-1 sm:col-span-1 xl:col-auto ${
+                  activeTab === "managers"
+                    ? "bg-[#800020] text-[#fdfbf7] border border-[#dfba73] shadow-lg ring-1 ring-[#dfba73]/40"
+                    : "bg-[#2a1721] text-[#dfba73] hover:bg-[#c5a059]/15 border border-[#c5a059]/30"
+                }`}
+              >
+                <ShieldCheck className="w-4 h-4 text-[#dfba73] shrink-0" />
+                <span className="truncate">Event Managers</span>
+                <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-mono shrink-0 ${
+                  activeTab === "managers" ? "bg-white/20 text-white" : "bg-[#181216] text-[#dfba73]"
+                }`}>
+                  {managers.length}
+                </span>
+              </button>
+            )}
+          </div>
         </div>
 
         {/* TAB 1: GUEST DIRECTORY */}
         {activeTab === "guests" && (
-          <div>
-            <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 mb-6">
-              <div className="flex flex-wrap items-center gap-2 flex-1">
-                <div className="relative flex-1 min-w-[180px]">
-                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#c5a059]/60" />
+          <div className="space-y-4">
+            {/* Search & Filter Toolbar */}
+            <div className="p-4 sm:p-5 rounded-2xl bg-[#1c1519] border border-[#c5a059]/30 shadow-lg space-y-3">
+              {/* Row 1: Search Input & Action Buttons */}
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+                <div className="relative flex-1">
+                  <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#c5a059]/70" />
                   <input
                     type="text"
-                    placeholder="Search guests by name, phone, table..."
+                    placeholder="Search by name, phone, table number, notes..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-[#1c161a] border border-[#c5a059]/40 text-xs text-[#fdfbf7] placeholder-[#fdfbf7]/40 focus:outline-none focus:border-[#dfba73]"
+                    className="w-full pl-10 pr-9 py-2.5 rounded-xl bg-[#261c22] border border-[#c5a059]/40 text-xs text-[#fdfbf7] placeholder-[#fdfbf7]/40 focus:outline-none focus:border-[#dfba73] min-h-[42px]"
                   />
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery("")}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[#dfba73]/60 hover:text-white p-1"
+                      title="Clear search"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
                 </div>
 
-                <select
-                  value={filterRsvp}
-                  onChange={(e) => setFilterRsvp(e.target.value)}
-                  className="px-3 py-2.5 rounded-xl bg-[#1c161a] border border-[#c5a059]/40 text-xs text-[#dfba73] focus:outline-none"
-                >
-                  <option value="ALL">All RSVPs</option>
-                  <option value="ATTENDING">Attending</option>
-                  <option value="DECLINED">Declined</option>
-                  <option value="PENDING">Pending</option>
-                </select>
-
-                <select
-                  value={filterType}
-                  onChange={(e) => setFilterType(e.target.value)}
-                  className="px-3 py-2.5 rounded-xl bg-[#1c161a] border border-[#c5a059]/40 text-xs text-[#dfba73] focus:outline-none"
-                >
-                  <option value="ALL">All Categories</option>
-                  <option value="SINGLE">1 Person</option>
-                  <option value="COUPLE">Couples</option>
-                  <option value="FAMILY">Families</option>
-                </select>
-
-                <select
-                  value={filterViewed}
-                  onChange={(e) => setFilterViewed(e.target.value)}
-                  className="px-3 py-2.5 rounded-xl bg-[#1c161a] border border-[#c5a059]/40 text-xs text-[#dfba73] focus:outline-none"
-                >
-                  <option value="ALL">All Opens</option>
-                  <option value="VIEWED">Opened / Viewed</option>
-                  <option value="UNVIEWED">Unopened</option>
-                </select>
-
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value as any)}
-                  className="px-3 py-2.5 rounded-xl bg-[#1c161a] border border-[#c5a059]/40 text-xs text-[#dfba73] focus:outline-none"
-                >
-                  <option value="created">Recently Added</option>
-                  <option value="name">Name (A-Z)</option>
-                  <option value="table">Table Number</option>
-                  <option value="viewed">Recently Viewed</option>
-                </select>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setShowBulkModal(true)}
+                    className="flex-1 sm:flex-initial px-3.5 py-2.5 rounded-xl bg-[#231a20] border border-[#c5a059]/50 text-[#dfba73] hover:bg-[#c5a059]/15 text-xs font-cinzel font-semibold flex items-center justify-center gap-1.5 shadow transition cursor-pointer min-h-[42px] touch-manipulation"
+                  >
+                    <Upload className="w-3.5 h-3.5" /> <span>Bulk CSV</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setEditingId(null);
+                      setForm(emptyForm);
+                      setShowAddModal(true);
+                    }}
+                    className="flex-1 sm:flex-initial btn-gold-shimmer px-4 py-2.5 rounded-xl text-xs font-cinzel font-bold flex items-center justify-center gap-1.5 shadow-lg cursor-pointer min-h-[42px] touch-manipulation"
+                  >
+                    <Plus className="w-4 h-4" /> <span>Add Guest</span>
+                  </button>
+                </div>
               </div>
 
-              <div className="flex items-center gap-2 shrink-0">
-                <button
-                  onClick={() => setShowBulkModal(true)}
-                  className="px-3.5 py-2.5 rounded-xl bg-[#231a20] border border-[#c5a059]/50 text-[#dfba73] hover:bg-[#c5a059]/15 text-xs font-cinzel font-semibold flex items-center justify-center gap-1.5 shadow transition cursor-pointer"
-                >
-                  <Upload className="w-3.5 h-3.5" /> Bulk Import (CSV)
-                </button>
-                <button
-                  onClick={() => {
-                    setEditingId(null);
-                    setForm(emptyForm);
-                    setShowAddModal(true);
-                  }}
-                  className="btn-gold-shimmer px-4 py-2.5 rounded-xl text-xs font-cinzel font-bold flex items-center justify-center gap-1.5 shadow-lg cursor-pointer"
-                >
-                  <Plus className="w-4 h-4" /> Add Guest
-                </button>
+              {/* Row 2: Quick RSVP Filter Pills + Secondary Dropdowns */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-1 border-t border-[#c5a059]/15">
+                {/* RSVP Status Chips (One-touch filter) */}
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <span className="text-[10px] uppercase font-cinzel font-semibold text-[#dfba73]/70 mr-1 shrink-0">
+                    RSVP:
+                  </span>
+                  {[
+                    { id: "ALL", label: `All (${guests.length})` },
+                    { id: "ATTENDING", label: `Attending (${rsvpStats.attendingCount})` },
+                    { id: "PENDING", label: `Pending (${rsvpStats.pendingCount})` },
+                    { id: "DECLINED", label: `Declined (${rsvpStats.declinedCount})` },
+                  ].map((chip) => (
+                    <button
+                      key={chip.id}
+                      onClick={() => setFilterRsvp(chip.id)}
+                      className={`px-2.5 py-1 rounded-lg text-[11px] font-cinzel font-semibold whitespace-nowrap transition cursor-pointer shrink-0 border ${
+                        filterRsvp === chip.id
+                          ? chip.id === "ATTENDING"
+                            ? "bg-emerald-950 text-emerald-300 border-emerald-600"
+                            : chip.id === "DECLINED"
+                            ? "bg-rose-950 text-rose-300 border-rose-700"
+                            : chip.id === "PENDING"
+                            ? "bg-[#800020] text-[#edd892] border-[#dfba73]"
+                            : "bg-[#800020] text-white border-[#dfba73]"
+                          : "bg-[#231a20] text-[#fdfbf7]/70 border-[#c5a059]/30 hover:bg-[#c5a059]/15"
+                      }`}
+                    >
+                      {chip.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Secondary Select Dropdowns */}
+                <div className="flex flex-wrap items-center gap-2">
+                  <select
+                    value={filterType}
+                    onChange={(e) => setFilterType(e.target.value)}
+                    className="px-2.5 py-1.5 rounded-lg bg-[#261c22] border border-[#c5a059]/40 text-[11px] font-cinzel text-[#dfba73] focus:outline-none cursor-pointer"
+                  >
+                    <option value="ALL">All Categories</option>
+                    <option value="SINGLE">1 Person</option>
+                    <option value="COUPLE">Couples</option>
+                    <option value="FAMILY">Families</option>
+                  </select>
+
+                  <select
+                    value={filterViewed}
+                    onChange={(e) => setFilterViewed(e.target.value)}
+                    className="px-2.5 py-1.5 rounded-lg bg-[#261c22] border border-[#c5a059]/40 text-[11px] font-cinzel text-[#dfba73] focus:outline-none cursor-pointer"
+                  >
+                    <option value="ALL">All Opens</option>
+                    <option value="VIEWED">Opened</option>
+                    <option value="UNVIEWED">Unopened</option>
+                  </select>
+
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value as any)}
+                    className="px-2.5 py-1.5 rounded-lg bg-[#261c22] border border-[#c5a059]/40 text-[11px] font-cinzel text-[#dfba73] focus:outline-none cursor-pointer"
+                  >
+                    <option value="created">Recently Added</option>
+                    <option value="name">Name (A-Z)</option>
+                    <option value="table">Table Number</option>
+                    <option value="viewed">Recently Viewed</option>
+                  </select>
+                </div>
               </div>
             </div>
 
-            <div className="rounded-2xl bg-[#181216] border border-[#c5a059]/30 overflow-hidden shadow-2xl">
+            {/* Empty State */}
+            {!loading && filteredGuests.length === 0 && (
+              <div className="p-12 text-center rounded-2xl bg-[#181216] border border-[#c5a059]/30 space-y-3">
+                <Users className="w-10 h-10 text-[#dfba73]/40 mx-auto" />
+                <h3 className="font-cinzel text-base font-bold text-[#fdfbf7]">No Guests Found</h3>
+                <p className="text-xs text-[#fdfbf7]/60 max-w-sm mx-auto font-sans">
+                  No guest records match your search or filters. Try adjusting your query or add a new guest.
+                </p>
+                <button
+                  onClick={() => {
+                    setSearchQuery("");
+                    setFilterRsvp("ALL");
+                    setFilterType("ALL");
+                    setFilterViewed("ALL");
+                  }}
+                  className="px-4 py-2 rounded-xl bg-[#231a20] border border-[#c5a059]/40 text-xs font-cinzel text-[#dfba73] hover:bg-[#c5a059]/15"
+                >
+                  Reset All Filters
+                </button>
+              </div>
+            )}
+
+            {/* MOBILE VIEW (< md): Luxury Guest Cards */}
+            <div className="block md:hidden space-y-3">
+              {filteredGuests.map((g) => (
+                <div
+                  key={`mobile-${g.id}`}
+                  className="rounded-2xl bg-[#1c141a] border border-[#c5a059]/35 p-4 shadow-lg space-y-3 transition hover:border-[#dfba73]/60"
+                >
+                  {/* Top Row: Name + Salutation and Table Badge */}
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <div className="font-cinzel font-bold text-base text-[#fdfbf7] leading-snug">
+                        {g.salutation} {g.displayName}
+                      </div>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="px-2 py-0.5 rounded-md bg-[#c5a059]/15 text-[#dfba73] text-[10px] font-cinzel font-semibold">
+                          {inviteTypeLabels[g.inviteType]}
+                        </span>
+                        {g.viewedAt ? (
+                          <span className="text-[10px] text-emerald-400 font-sans flex items-center gap-0.5">
+                            <Eye className="w-3 h-3" /> Opened
+                          </span>
+                        ) : (
+                          <span className="text-[10px] text-[#fdfbf7]/40 font-sans flex items-center gap-0.5">
+                            <Clock className="w-3 h-3" /> Unopened
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <span className="inline-block px-2.5 py-1 rounded-xl bg-[#281822] border border-[#c5a059]/40 font-cinzel font-bold text-xs text-[#dfba73] shadow-inner">
+                        Table #{String(g.tableNumber).padStart(2, "0")}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Middle Row: RSVP Status & Dietary */}
+                  <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-[#c5a059]/15">
+                    {g.rsvpStatus === "ATTENDING" ? (
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-950/70 border border-emerald-600/70 text-emerald-300 text-xs font-cinzel font-semibold">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> Attending ({g.attendeeCount || 1} {g.attendeeCount === 1 ? "seat" : "seats"})
+                      </span>
+                    ) : g.rsvpStatus === "DECLINED" ? (
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-rose-950/70 border border-rose-700/70 text-rose-300 text-xs font-cinzel font-semibold">
+                        <XCircle className="w-3.5 h-3.5 text-rose-400" /> Declined
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#2a1d25] border border-[#c5a059]/30 text-[#dfba73] text-xs font-cinzel">
+                        <Clock className="w-3.5 h-3.5" /> Pending RSVP
+                      </span>
+                    )}
+
+                    {g.dietary && g.dietary !== "NONE" && (
+                      <span className="px-2.5 py-1 rounded-lg bg-[#2b1e17] border border-amber-500/40 text-amber-300 text-[11px] font-sans">
+                        🥗 {g.dietary}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Contact & Notes */}
+                  {(g.phone || g.notes) && (
+                    <div className="space-y-1 text-xs text-[#fdfbf7]/70 font-sans pt-1">
+                      {g.phone && (
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[#dfba73]">📞</span>
+                          <a href={`tel:${g.phone}`} className="font-mono text-[#dfba73] hover:underline">
+                            {g.phone}
+                          </a>
+                        </div>
+                      )}
+                      {g.notes && (
+                        <div className="text-[11px] text-[#edd892]/80 italic bg-[#231a20]/60 px-2.5 py-1 rounded-lg border border-[#c5a059]/20">
+                          &quot;{g.notes}&quot;
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Touch Action Bar (Min 44px tap targets) */}
+                  <div className="pt-2 border-t border-[#c5a059]/20 flex items-center gap-1.5">
+                    {/* Primary WhatsApp Action */}
+                    <button
+                      onClick={() => handleSendWhatsApp(g)}
+                      className="flex-1 py-2.5 px-3 rounded-xl bg-[#25D366]/20 hover:bg-[#25D366]/30 border border-[#25D366]/50 text-emerald-400 text-xs font-cinzel font-bold flex items-center justify-center gap-1.5 touch-manipulation cursor-pointer min-h-[42px]"
+                      title="Send WhatsApp Invitation"
+                    >
+                      <Send className="w-3.5 h-3.5" /> <span>WhatsApp</span>
+                    </button>
+
+                    {/* Secondary Action Icons */}
+                    <button
+                      onClick={() => openQrModal(g)}
+                      title="View VIP QR Pass"
+                      className="w-10 h-10 rounded-xl bg-[#231a20] border border-[#c5a059]/40 text-[#dfba73] hover:bg-[#c5a059]/20 flex items-center justify-center transition cursor-pointer touch-manipulation shrink-0"
+                    >
+                      <QrCode className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => copyLink(g)}
+                      title="Copy Personalized Invite Link"
+                      className="w-10 h-10 rounded-xl bg-[#231a20] border border-[#c5a059]/40 text-[#dfba73] hover:bg-[#c5a059]/20 flex items-center justify-center transition cursor-pointer touch-manipulation shrink-0"
+                    >
+                      {copiedId === g.id ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+                    </button>
+                    <a
+                      href={inviteLink(g.token)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title="Open and Preview Guest Invite"
+                      className="w-10 h-10 rounded-xl bg-[#231a20] border border-[#c5a059]/40 text-[#edd892] hover:bg-[#c5a059]/20 flex items-center justify-center transition shrink-0"
+                    >
+                      <ExternalLink className="w-4 h-4" />
+                    </a>
+                    <button
+                      onClick={() => startEdit(g)}
+                      title="Edit Guest Details"
+                      className="w-10 h-10 rounded-xl bg-[#231a20] border border-[#c5a059]/40 text-[#dfba73] hover:bg-[#c5a059]/20 flex items-center justify-center transition cursor-pointer touch-manipulation shrink-0"
+                    >
+                      <Edit className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(g.id)}
+                      title="Delete Guest"
+                      className="w-10 h-10 rounded-xl bg-rose-950/40 border border-rose-800/60 text-rose-400 hover:bg-rose-900/60 flex items-center justify-center transition cursor-pointer touch-manipulation shrink-0"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* DESKTOP VIEW (≥ md): Full Data Table */}
+            <div className="hidden md:block rounded-2xl bg-[#181216] border border-[#c5a059]/30 overflow-hidden shadow-2xl">
               <div className="grid grid-cols-12 gap-2 px-4 py-3.5 bg-[#261820] text-xs font-cinzel font-semibold text-[#dfba73] border-b border-[#c5a059]/30">
-                <div className="col-span-4 sm:col-span-4">Guest & Contact</div>
-                <div className="col-span-2 sm:col-span-2">Category</div>
-                <div className="col-span-2 sm:col-span-1">Table</div>
-                <div className="col-span-2 sm:col-span-2 hidden sm:block">RSVP & Dietary</div>
-                <div className="col-span-4 sm:col-span-3 text-right">Actions</div>
+                <div className="col-span-4">Guest & Contact</div>
+                <div className="col-span-2">Category</div>
+                <div className="col-span-1 text-center">Table</div>
+                <div className="col-span-2">RSVP & Dietary</div>
+                <div className="col-span-3 text-right">Actions</div>
               </div>
 
               {loading && (
@@ -1519,19 +1770,13 @@ export default function AdminDashboard() {
                 </div>
               )}
 
-              {!loading && filteredGuests.length === 0 && (
-                <div className="p-12 text-center text-xs text-[#fdfbf7]/50 font-sans">
-                  No guest records found matching your filters.
-                </div>
-              )}
-
               <div className="divide-y divide-[#c5a059]/15">
                 {filteredGuests.map((g) => (
                   <div
-                    key={g.id}
+                    key={`desktop-${g.id}`}
                     className="grid grid-cols-12 gap-2 px-4 py-3.5 items-center text-xs hover:bg-[#c5a059]/5 transition"
                   >
-                    <div className="col-span-4 sm:col-span-4">
+                    <div className="col-span-4">
                       <div className="font-cinzel font-bold text-[#fdfbf7] text-sm">
                         {g.salutation} {g.displayName}
                       </div>
@@ -1549,19 +1794,19 @@ export default function AdminDashboard() {
                       </div>
                     </div>
 
-                    <div className="col-span-2 sm:col-span-2">
+                    <div className="col-span-2">
                       <span className="inline-block px-2 py-0.5 rounded-md bg-[#c5a059]/15 text-[#dfba73] text-[10px] font-cinzel font-semibold">
                         {inviteTypeLabels[g.inviteType]}
                       </span>
                     </div>
 
-                    <div className="col-span-2 sm:col-span-1">
+                    <div className="col-span-1 text-center">
                       <span className="font-cinzel font-bold text-sm text-[#dfba73]">
                         #{String(g.tableNumber).padStart(2, "0")}
                       </span>
                     </div>
 
-                    <div className="col-span-2 sm:col-span-2 hidden sm:block">
+                    <div className="col-span-2">
                       <div className="space-y-1">
                         {g.rsvpStatus === "ATTENDING" ? (
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-950/60 border border-emerald-700/60 text-emerald-300 text-[10px] font-cinzel font-semibold">
@@ -1584,7 +1829,7 @@ export default function AdminDashboard() {
                       </div>
                     </div>
 
-                    <div className="col-span-4 sm:col-span-3 flex items-center justify-end gap-1.5">
+                    <div className="col-span-3 flex items-center justify-end gap-1.5">
                       <button
                         onClick={() => handleSendWhatsApp(g)}
                         title="Send Royal WhatsApp Invitation Blast"
@@ -2447,17 +2692,17 @@ export default function AdminDashboard() {
 
 
               {/* SAVE BUTTON */}
-              <div className="pt-2 flex items-center gap-3">
+              <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
                 <button
                   type="submit"
                   disabled={savingSettings}
-                  className="btn-gold-shimmer px-8 py-3.5 rounded-xl text-xs font-cinzel font-bold flex items-center gap-2 shadow-xl cursor-pointer"
+                  className="btn-gold-shimmer px-8 py-3.5 rounded-xl text-xs font-cinzel font-bold flex items-center justify-center gap-2 shadow-xl cursor-pointer min-h-[44px] touch-manipulation"
                 >
                   <Save className="w-4 h-4" />
                   {savingSettings ? "Saving All Settings..." : "Save All Couple & Event Settings"}
                 </button>
                 {settingsSuccess && (
-                  <span className="text-xs text-emerald-400 font-cinzel flex items-center gap-1 bg-emerald-950/40 px-3 py-2 rounded-xl border border-emerald-800/50">
+                  <span className="text-xs text-emerald-400 font-cinzel flex items-center justify-center gap-1 bg-emerald-950/40 px-3 py-2.5 rounded-xl border border-emerald-800/50">
                     <Check className="w-4 h-4" /> Changes saved and active immediately across invitations!
                   </span>
                 )}
@@ -2706,7 +2951,7 @@ export default function AdminDashboard() {
         {/* TAB: PHOTOS TABLE (Dedicated EventPhoto Database Records) */}
         {activeTab === "photos" && (
           <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 rounded-3xl bg-[#1c161a] border border-[#c5a059]/40 shadow-xl">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-[#1c161a] border border-[#c5a059]/40 shadow-xl">
               <div>
                 <div className="flex items-center gap-2">
                   <span className="px-2.5 py-0.5 rounded-full bg-[#c5a059]/20 text-[#edd892] text-[10px] font-mono border border-[#c5a059]/40">
@@ -2724,10 +2969,10 @@ export default function AdminDashboard() {
                 </p>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 w-full sm:w-auto">
                 <button
                   onClick={() => setShowAddPhotoModal(true)}
-                  className="btn-gold-shimmer px-5 py-2.5 rounded-xl text-xs font-cinzel font-bold flex items-center gap-2 shadow-lg cursor-pointer"
+                  className="btn-gold-shimmer px-5 py-2.5 rounded-xl text-xs font-cinzel font-bold flex items-center justify-center gap-2 shadow-lg cursor-pointer w-full sm:w-auto min-h-[42px] touch-manipulation"
                 >
                   <Plus className="w-4 h-4" /> Add Photo to Table
                 </button>
@@ -2736,7 +2981,7 @@ export default function AdminDashboard() {
 
             {/* Table Display */}
             {eventPhotos.length === 0 ? (
-              <div className="text-center py-16 px-4 rounded-3xl bg-[#181216] border border-[#c5a059]/30">
+              <div className="text-center py-16 px-4 rounded-2xl sm:rounded-3xl bg-[#181216] border border-[#c5a059]/30">
                 <Camera className="w-12 h-12 text-[#dfba73]/40 mx-auto mb-3" />
                 <h3 className="font-cinzel text-lg font-bold text-[#fdfbf7]">No Photos in Table Yet</h3>
                 <p className="text-xs text-[#fdfbf7]/60 max-w-md mx-auto mt-1 mb-5">
@@ -2744,14 +2989,70 @@ export default function AdminDashboard() {
                 </p>
                 <button
                   onClick={() => setShowAddPhotoModal(true)}
-                  className="btn-gold-shimmer px-6 py-2.5 rounded-xl text-xs font-cinzel font-bold inline-flex items-center gap-2 cursor-pointer"
+                  className="btn-gold-shimmer px-6 py-2.5 rounded-xl text-xs font-cinzel font-bold inline-flex items-center gap-2 cursor-pointer min-h-[42px] touch-manipulation"
                 >
                   <Plus className="w-4 h-4" /> Add First Photo
                 </button>
               </div>
             ) : (
               <div className="space-y-6">
-                <div className="rounded-3xl bg-[#181216] border border-[#c5a059]/40 overflow-hidden shadow-2xl">
+                {/* MOBILE VIEW (< md): Responsive Photo Cards */}
+                <div className="block md:hidden space-y-3">
+                  {eventPhotos.map((photo, idx) => (
+                    <div
+                      key={`mobile-photo-${photo.id}`}
+                      className="rounded-2xl bg-[#1c141a] border border-[#c5a059]/35 p-3.5 shadow-lg flex items-center gap-3.5"
+                    >
+                      <div className="relative w-20 h-20 rounded-xl overflow-hidden border border-[#c5a059]/50 bg-black/40 shrink-0">
+                        <img
+                          src={photo.url}
+                          alt={photo.title || "Wedding Photo"}
+                          className="w-full h-full object-cover"
+                        />
+                        <span className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded bg-black/70 text-[9px] font-mono text-[#edd892]">
+                          #{photo.order !== undefined ? photo.order + 1 : idx + 1}
+                        </span>
+                      </div>
+
+                      <div className="flex-1 min-w-0 space-y-1">
+                        <div className="font-cinzel font-bold text-[#fdfbf7] text-sm truncate">
+                          {photo.title || "Untitled Portrait"}
+                        </div>
+                        {photo.subtitle && (
+                          <div className="text-[11px] text-[#fdfbf7]/60 italic truncate">
+                            {photo.subtitle}
+                          </div>
+                        )}
+                        <div className="flex items-center gap-2 pt-0.5">
+                          <span className="px-2 py-0.5 rounded-full bg-[#800020]/30 text-[#edd892] text-[9px] font-cinzel font-semibold border border-[#c5a059]/30">
+                            {photo.tag || "Pre-Wedding"}
+                          </span>
+                          <a
+                            href={photo.url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-[#c5a059] hover:text-white inline-flex items-center gap-1 text-[10px]"
+                          >
+                            <ExternalLink className="w-3 h-3" /> View
+                          </a>
+                        </div>
+                      </div>
+
+                      <div className="shrink-0">
+                        <button
+                          onClick={() => handleDeletePhoto(photo.id)}
+                          className="w-10 h-10 rounded-xl bg-rose-950/40 hover:bg-rose-900/60 border border-rose-800/40 text-rose-300 flex items-center justify-center transition cursor-pointer touch-manipulation"
+                          title="Delete photo"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* DESKTOP VIEW (≥ md): Full Relational Data Table */}
+                <div className="hidden md:block rounded-3xl bg-[#181216] border border-[#c5a059]/40 overflow-hidden shadow-2xl">
                   <div className="overflow-x-auto">
                     <table className="w-full text-left text-xs">
                       <thead className="bg-[#241a21] text-[#dfba73] font-cinzel font-bold border-b border-[#c5a059]/30">
@@ -2869,7 +3170,7 @@ export default function AdminDashboard() {
         {/* TAB: ALL WEDDINGS PORTFOLIO */}
         {activeTab === "events" && (
           <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 rounded-3xl bg-[#1c161a] border border-[#c5a059]/40 shadow-xl">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-[#1c161a] border border-[#c5a059]/40 shadow-xl">
               <div>
                 <div className="flex items-center gap-2">
                   <span className="px-2.5 py-0.5 rounded-full bg-[#800020]/40 text-[#dfba73] text-[10px] font-cinzel font-semibold border border-[#dfba73]/40">
@@ -2889,19 +3190,19 @@ export default function AdminDashboard() {
 
               <button
                 onClick={() => setShowCreateEventModal(true)}
-                className="btn-gold-shimmer px-5 py-2.5 rounded-xl text-xs font-cinzel font-bold flex items-center gap-2 shadow-lg cursor-pointer"
+                className="btn-gold-shimmer px-5 py-2.5 rounded-xl text-xs font-cinzel font-bold flex items-center justify-center gap-2 shadow-lg cursor-pointer w-full sm:w-auto min-h-[42px] touch-manipulation"
               >
                 <Plus className="w-4 h-4" /> Create New Wedding
               </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
               {events.map((ev) => {
                 const isCurrent = ev.id === activeEventId;
                 return (
                   <div
                     key={ev.id}
-                    className={`rounded-3xl p-5 border transition flex flex-col justify-between ${
+                    className={`rounded-2xl sm:rounded-3xl p-4 sm:p-5 border transition flex flex-col justify-between ${
                       isCurrent
                         ? "bg-[#23171f] border-[#dfba73] shadow-2xl ring-1 ring-[#dfba73]/40"
                         : "bg-[#181216] border-[#c5a059]/30 hover:border-[#c5a059]/70 shadow-lg"
@@ -2909,11 +3210,11 @@ export default function AdminDashboard() {
                   >
                     <div>
                       <div className="flex items-center justify-between gap-2 mb-3">
-                        <span className="font-mono text-[10px] text-[#dfba73] px-2 py-0.5 rounded bg-[#120e11] border border-[#c5a059]/30">
+                        <span className="font-mono text-[10px] text-[#dfba73] px-2 py-0.5 rounded bg-[#120e11] border border-[#c5a059]/30 truncate">
                           /e/{ev.slug}
                         </span>
                         {isCurrent && (
-                          <span className="px-2.5 py-0.5 rounded-full bg-emerald-950/60 border border-emerald-500/50 text-emerald-300 text-[10px] font-cinzel font-bold">
+                          <span className="px-2.5 py-0.5 rounded-full bg-emerald-950/60 border border-emerald-500/50 text-emerald-300 text-[10px] font-cinzel font-bold shrink-0">
                             Active
                           </span>
                         )}
@@ -2940,7 +3241,7 @@ export default function AdminDashboard() {
                         </div>
                         <div className="flex items-center gap-1.5 text-[#fdfbf7]/60">
                           <Users className="w-3.5 h-3.5 text-[#dfba73]" />
-                          <span>Venue: {ev.venueName}</span>
+                          <span className="truncate">Venue: {ev.venueName}</span>
                         </div>
                       </div>
                     </div>
@@ -2949,7 +3250,7 @@ export default function AdminDashboard() {
                       {isCurrent ? (
                         <button
                           onClick={() => setActiveTab("guests")}
-                          className="btn-gold-shimmer flex-1 py-2 rounded-xl text-xs font-cinzel font-bold text-center cursor-pointer"
+                          className="btn-gold-shimmer flex-1 py-2.5 rounded-xl text-xs font-cinzel font-bold text-center cursor-pointer min-h-[40px] touch-manipulation"
                         >
                           Manage Guests & Portal
                         </button>
@@ -2959,7 +3260,7 @@ export default function AdminDashboard() {
                             handleSelectEvent(ev.id);
                             setActiveTab("guests");
                           }}
-                          className="flex-1 py-2 rounded-xl bg-[#2a1c24] border border-[#c5a059]/40 text-[#dfba73] hover:bg-[#800020] hover:text-white text-xs font-cinzel font-bold transition cursor-pointer"
+                          className="flex-1 py-2.5 rounded-xl bg-[#2a1c24] border border-[#c5a059]/40 text-[#dfba73] hover:bg-[#800020] hover:text-white text-xs font-cinzel font-bold transition cursor-pointer min-h-[40px] touch-manipulation"
                         >
                           Switch & Manage
                         </button>
@@ -2969,7 +3270,7 @@ export default function AdminDashboard() {
                         href={`/e/${ev.slug}`}
                         target="_blank"
                         rel="noreferrer"
-                        className="px-3 py-2 rounded-xl bg-[#1c1519] border border-[#c5a059]/30 text-[#dfba73] hover:text-white transition"
+                        className="w-10 h-10 rounded-xl bg-[#1c1519] border border-[#c5a059]/30 text-[#dfba73] hover:text-white flex items-center justify-center transition shrink-0"
                         title="Preview Public Wedding"
                       >
                         <ExternalLink className="w-4 h-4" />
@@ -2985,7 +3286,7 @@ export default function AdminDashboard() {
         {/* TAB: EVENT MANAGERS DIRECTORY (Super Admin Exclusive) */}
         {activeTab === "managers" && manager?.role === "SUPER_ADMIN" && (
           <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 rounded-3xl bg-[#1c161a] border border-[#dfba73]/50 shadow-2xl">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-[#1c161a] border border-[#dfba73]/50 shadow-2xl">
               <div>
                 <div className="flex items-center gap-2">
                   <span className="px-2.5 py-0.5 rounded-full bg-[#800020]/40 text-[#dfba73] text-[10px] font-cinzel font-bold border border-[#dfba73]/40 flex items-center gap-1">
@@ -3005,14 +3306,14 @@ export default function AdminDashboard() {
 
               <button
                 onClick={() => setShowCreateManagerModal(true)}
-                className="btn-gold-shimmer px-5 py-2.5 rounded-xl text-xs font-cinzel font-bold flex items-center gap-2 shadow-lg cursor-pointer"
+                className="btn-gold-shimmer px-5 py-2.5 rounded-xl text-xs font-cinzel font-bold flex items-center justify-center gap-2 shadow-lg cursor-pointer w-full sm:w-auto min-h-[42px] touch-manipulation"
               >
                 <UserPlus className="w-4 h-4" /> Add Event Manager
               </button>
             </div>
 
             {/* Quick Metrics */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
               <div className="p-4 rounded-2xl bg-[#1c161a] border border-[#c5a059]/30">
                 <span className="text-[10px] uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold">Total Event Managers</span>
                 <div className="font-cinzel text-2xl font-bold text-[#fdfbf7] mt-1">{managers.length}</div>
@@ -3041,13 +3342,87 @@ export default function AdminDashboard() {
                   placeholder="Search managers by name, username, agency, or email..."
                   value={managerSearchQuery}
                   onChange={(e) => setManagerSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-[#1c161a] border border-[#c5a059]/40 text-xs text-[#fdfbf7] placeholder-[#fdfbf7]/40 focus:outline-none focus:border-[#dfba73]"
+                  className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-[#1c161a] border border-[#c5a059]/40 text-xs text-[#fdfbf7] placeholder-[#fdfbf7]/40 focus:outline-none focus:border-[#dfba73] min-h-[42px]"
                 />
               </div>
             </div>
 
-            {/* Table of Event Managers */}
-            <div className="rounded-3xl bg-[#181216] border border-[#c5a059]/40 overflow-hidden shadow-2xl">
+            {/* MOBILE VIEW (< md): Responsive Manager Cards */}
+            <div className="block md:hidden space-y-3">
+              {filteredManagers.map((mgr) => {
+                const isSelf = mgr.id === manager.id;
+                const weddingCount = mgr._count?.events || mgr.events?.length || 0;
+                return (
+                  <div
+                    key={`mobile-mgr-${mgr.id}`}
+                    className="rounded-2xl bg-[#1c141a] border border-[#c5a059]/35 p-4 shadow-lg space-y-3"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <div className="font-cinzel font-bold text-[#fdfbf7] text-base flex items-center gap-1.5">
+                          {mgr.name}
+                          {isSelf && (
+                            <span className="px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 text-[9px] font-mono border border-amber-500/40">
+                              You
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-[11px] text-[#edd892]/80 flex items-center gap-1 mt-0.5">
+                          <Building2 className="w-3 h-3 text-[#dfba73]" />
+                          {mgr.company || "Independent Planner"}
+                        </div>
+                      </div>
+                      <div>
+                        {mgr.role === "SUPER_ADMIN" ? (
+                          <span className="px-2 py-0.5 rounded-full bg-[#800020]/40 text-[#dfba73] text-[10px] font-cinzel font-bold border border-[#dfba73]/40 inline-flex items-center gap-1">
+                            <Crown className="w-2.5 h-2.5" /> Super Admin
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 rounded-full bg-emerald-950/50 text-emerald-300 text-[10px] font-cinzel font-semibold border border-emerald-600/40">
+                            Event Manager
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-3 text-xs text-[#fdfbf7]/70 font-sans pt-1 border-t border-[#c5a059]/15">
+                      <span className="font-mono text-[#dfba73]">@{mgr.username}</span>
+                      {mgr.email && <span className="truncate max-w-[160px]">{mgr.email}</span>}
+                      {mgr.phone && <span className="font-mono">{mgr.phone}</span>}
+                      <span className="px-2 py-0.5 rounded bg-[#2a1c24] border border-[#c5a059]/30 text-[#edd892] font-mono text-[11px]">
+                        {weddingCount} {weddingCount === 1 ? "Wedding" : "Weddings"}
+                      </span>
+                    </div>
+
+                    <div className="pt-2 border-t border-[#c5a059]/20 flex items-center gap-2">
+                      {mgr.events && mgr.events.length > 0 && (
+                        <button
+                          onClick={() => {
+                            handleSelectEvent(mgr.events![0].id);
+                            setActiveTab("guests");
+                          }}
+                          className="flex-1 py-2 rounded-xl bg-[#2a1c24] hover:bg-[#800020] text-[#dfba73] hover:text-white border border-[#c5a059]/40 text-xs font-cinzel font-bold transition cursor-pointer min-h-[40px] touch-manipulation"
+                        >
+                          View Wedding
+                        </button>
+                      )}
+                      {!isSelf && mgr.username !== "admin" && (
+                        <button
+                          onClick={() => handleDeleteManager(mgr.id, mgr.username)}
+                          className="w-10 h-10 rounded-xl bg-rose-950/40 hover:bg-rose-900/60 border border-rose-800/40 text-rose-300 flex items-center justify-center transition cursor-pointer touch-manipulation shrink-0"
+                          title="Delete Event Manager Account"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* DESKTOP VIEW (≥ md): Table of Event Managers */}
+            <div className="hidden md:block rounded-3xl bg-[#181216] border border-[#c5a059]/40 overflow-hidden shadow-2xl">
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
                   <thead className="bg-[#241a21] text-[#dfba73] font-cinzel font-bold border-b border-[#c5a059]/30">
@@ -3151,14 +3526,15 @@ export default function AdminDashboard() {
 
       {/* ADD / EDIT GUEST MODAL */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 overflow-y-auto">
-          <div className="relative w-full max-w-lg rounded-3xl bg-[#1c1519] border border-[#c5a059]/60 p-6 sm:p-8 shadow-2xl my-8">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-3 sm:p-4 overflow-y-auto overscroll-contain">
+          <div className="relative w-full max-w-lg rounded-2xl sm:rounded-3xl bg-[#1c1519] border border-[#c5a059]/60 p-5 sm:p-8 shadow-2xl my-auto max-h-[92dvh] overflow-y-auto overscroll-contain">
             <button
               onClick={() => {
                 setShowAddModal(false);
                 setEditingId(null);
               }}
-              className="absolute top-5 right-5 text-[#fdfbf7]/60 hover:text-[#dfba73] cursor-pointer"
+              className="absolute top-4 right-4 text-[#fdfbf7]/60 hover:text-[#dfba73] p-1.5 rounded-lg hover:bg-white/5 cursor-pointer touch-manipulation"
+              title="Close modal"
             >
               <X className="w-5 h-5" />
             </button>
@@ -3166,7 +3542,7 @@ export default function AdminDashboard() {
             <h2 className="font-cinzel text-xl font-bold text-[#dfba73] mb-1">
               {editingId ? "Edit Guest Details" : "Add New Guest"}
             </h2>
-            <p className="text-xs text-[#fdfbf7]/60 mb-6">
+            <p className="text-xs text-[#fdfbf7]/60 mb-5">
               Generate a unique luxury invite link and assign table seating & catering preferences.
             </p>
 
@@ -3184,7 +3560,7 @@ export default function AdminDashboard() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold mb-1">
                     Invite Category
@@ -3192,7 +3568,7 @@ export default function AdminDashboard() {
                   <select
                     value={form.inviteType}
                     onChange={(e) => handleCategoryChange(e.target.value as Guest["inviteType"])}
-                    className="w-full px-3 py-2.5 rounded-xl bg-[#261c22] border border-[#c5a059]/40 text-xs text-[#dfba73] focus:outline-none"
+                    className="w-full px-3 py-2.5 rounded-xl bg-[#261c22] border border-[#c5a059]/40 text-xs text-[#dfba73] focus:outline-none cursor-pointer"
                   >
                     <option value="SINGLE">1 Person (Single)</option>
                     <option value="COUPLE">2 Persons (Couple)</option>
@@ -3214,7 +3590,7 @@ export default function AdminDashboard() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold mb-1">
                     Table Number
@@ -3243,7 +3619,7 @@ export default function AdminDashboard() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                   <label className="block text-xs uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold mb-1">
                     RSVP Status
@@ -3251,7 +3627,7 @@ export default function AdminDashboard() {
                   <select
                     value={form.rsvpStatus}
                     onChange={(e) => setForm({ ...form, rsvpStatus: e.target.value as any })}
-                    className="w-full px-3 py-2.5 rounded-xl bg-[#261c22] border border-[#c5a059]/40 text-xs text-[#dfba73] focus:outline-none"
+                    className="w-full px-3 py-2.5 rounded-xl bg-[#261c22] border border-[#c5a059]/40 text-xs text-[#dfba73] focus:outline-none cursor-pointer"
                   >
                     <option value="PENDING">Pending</option>
                     <option value="ATTENDING">Attending</option>
@@ -3280,7 +3656,7 @@ export default function AdminDashboard() {
                   <select
                     value={form.dietary}
                     onChange={(e) => setForm({ ...form, dietary: e.target.value })}
-                    className="w-full px-3 py-2.5 rounded-xl bg-[#261c22] border border-[#c5a059]/40 text-xs text-[#dfba73] focus:outline-none"
+                    className="w-full px-3 py-2.5 rounded-xl bg-[#261c22] border border-[#c5a059]/40 text-xs text-[#dfba73] focus:outline-none cursor-pointer"
                   >
                     <option value="NONE">Standard</option>
                     <option value="VEGETARIAN">Vegetarian</option>
@@ -3304,17 +3680,17 @@ export default function AdminDashboard() {
                 />
               </div>
 
-              <div className="pt-2 flex items-center justify-end gap-2">
+              <div className="pt-3 border-t border-[#c5a059]/20 flex items-center justify-end gap-2.5">
                 <button
                   type="button"
                   onClick={() => setShowAddModal(false)}
-                  className="px-4 py-2.5 rounded-xl bg-[#261c22] text-[#fdfbf7]/70 text-xs font-cinzel font-semibold hover:bg-[#c5a059]/10 cursor-pointer"
+                  className="px-4 py-2.5 rounded-xl bg-[#261c22] text-[#fdfbf7]/70 text-xs font-cinzel font-semibold hover:bg-[#c5a059]/10 cursor-pointer min-h-[42px] touch-manipulation"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="btn-gold-shimmer px-6 py-2.5 rounded-xl text-xs font-cinzel font-bold shadow-lg cursor-pointer"
+                  className="btn-gold-shimmer px-6 py-2.5 rounded-xl text-xs font-cinzel font-bold shadow-lg cursor-pointer min-h-[42px] touch-manipulation"
                 >
                   {editingId ? "Save Changes" : "Create Guest & Link"}
                 </button>
@@ -3326,11 +3702,12 @@ export default function AdminDashboard() {
 
       {/* BULK CSV GUEST IMPORTER MODAL */}
       {showBulkModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
-          <div className="relative w-full max-w-2xl rounded-3xl bg-[#1c1519] border border-[#c5a059]/60 p-6 sm:p-8 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-3 sm:p-4 overflow-y-auto overscroll-contain">
+          <div className="relative w-full max-w-2xl rounded-2xl sm:rounded-3xl bg-[#1c1519] border border-[#c5a059]/60 p-5 sm:p-8 shadow-2xl my-auto max-h-[92dvh] overflow-y-auto overscroll-contain">
             <button
               onClick={() => setShowBulkModal(false)}
-              className="absolute top-5 right-5 text-[#fdfbf7]/60 hover:text-[#dfba73] cursor-pointer"
+              className="absolute top-4 right-4 text-[#fdfbf7]/60 hover:text-[#dfba73] p-1.5 rounded-lg hover:bg-white/5 cursor-pointer touch-manipulation"
+              title="Close modal"
             >
               <X className="w-5 h-5" />
             </button>
@@ -3361,8 +3738,8 @@ export default function AdminDashboard() {
                   <label className="text-xs uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold">
                     CSV Data (Paste or Upload)
                   </label>
-                  <label className="px-3 py-1 rounded-lg bg-[#800020] hover:bg-[#6b0f24] text-[10px] font-cinzel font-bold text-[#edd892] cursor-pointer border border-[#c5a059]/40 flex items-center gap-1">
-                    <FolderUp className="w-3 h-3" /> Select .CSV File
+                  <label className="px-3 py-1.5 rounded-lg bg-[#800020] hover:bg-[#6b0f24] text-[10px] font-cinzel font-bold text-[#edd892] cursor-pointer border border-[#c5a059]/40 flex items-center gap-1">
+                    <FolderUp className="w-3.5 h-3.5" /> Select .CSV File
                     <input
                       type="file"
                       accept=".csv,text/csv"
@@ -3381,7 +3758,7 @@ export default function AdminDashboard() {
                   </label>
                 </div>
                 <textarea
-                  rows={8}
+                  rows={7}
                   required
                   placeholder={`Mr & Mrs, Roshan & Anoma Perera, COUPLE, 1, +94771234567\nDr, Sunimal Jayasinghe, SINGLE, 2, +94779876543\nMr & Mrs, Gamini De Silva & Family, FAMILY, 3, +94711112233`}
                   value={bulkCsvText}
@@ -3390,7 +3767,7 @@ export default function AdminDashboard() {
                 />
               </div>
 
-              <div className="flex items-center justify-between pt-2">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-2">
                 <button
                   type="button"
                   onClick={() =>
@@ -3398,7 +3775,7 @@ export default function AdminDashboard() {
                       `Mr & Mrs, Roshan & Anoma Perera, COUPLE, 1, +94771234567\nDr, Sunimal Jayasinghe, SINGLE, 2, +94779876543\nMr & Mrs, Gamini De Silva & Family, FAMILY, 3, +94711112233\nMrs, Nirmala Wickramasinghe, SINGLE, 4, +94773334455`
                     )
                   }
-                  className="text-xs text-[#dfba73] hover:underline font-cinzel font-semibold cursor-pointer"
+                  className="text-xs text-[#dfba73] hover:underline font-cinzel font-semibold cursor-pointer text-center sm:text-left"
                 >
                   Load Sample Template
                 </button>
@@ -3407,17 +3784,17 @@ export default function AdminDashboard() {
                   <button
                     type="button"
                     onClick={() => setShowBulkModal(false)}
-                    className="px-4 py-2.5 rounded-xl bg-[#261c22] text-[#fdfbf7]/70 text-xs font-cinzel font-semibold hover:bg-[#c5a059]/10 cursor-pointer"
+                    className="flex-1 sm:flex-initial px-4 py-2.5 rounded-xl bg-[#261c22] text-[#fdfbf7]/70 text-xs font-cinzel font-semibold hover:bg-[#c5a059]/10 cursor-pointer min-h-[42px] touch-manipulation"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={bulkImporting || !bulkCsvText.trim()}
-                    className="btn-gold-shimmer px-6 py-2.5 rounded-xl text-xs font-cinzel font-bold shadow-lg disabled:opacity-50 cursor-pointer flex items-center gap-1.5"
+                    className="flex-1 sm:flex-initial btn-gold-shimmer px-6 py-2.5 rounded-xl text-xs font-cinzel font-bold shadow-lg disabled:opacity-50 cursor-pointer flex items-center justify-center gap-1.5 min-h-[42px] touch-manipulation"
                   >
                     {bulkImporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
-                    {bulkImporting ? "Importing Guests..." : "Import All Guests"}
+                    {bulkImporting ? "Importing..." : "Import All Guests"}
                   </button>
                 </div>
               </div>
@@ -3429,11 +3806,12 @@ export default function AdminDashboard() {
 
       {/* QR CODE PREVIEW MODAL */}
       {qrModalGuest && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4">
-          <div className="relative w-full max-w-sm rounded-3xl bg-[#1c1519] border border-[#c5a059]/60 p-6 text-center shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-3 sm:p-4 overflow-y-auto overscroll-contain">
+          <div className="relative w-full max-w-sm max-h-[92dvh] overflow-y-auto overscroll-contain rounded-3xl bg-[#1c1519] border border-[#c5a059]/60 p-5 sm:p-6 text-center shadow-2xl my-auto">
             <button
               onClick={() => setQrModalGuest(null)}
-              className="absolute top-4 right-4 text-[#fdfbf7]/60 hover:text-[#dfba73] cursor-pointer"
+              className="absolute top-4 right-4 text-[#fdfbf7]/60 hover:text-[#dfba73] cursor-pointer min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg hover:bg-[#c5a059]/10 transition-colors"
+              aria-label="Close QR Modal"
             >
               <X className="w-5 h-5" />
             </button>
@@ -3451,7 +3829,7 @@ export default function AdminDashboard() {
 
             {qrModalUrl && (
               <div className="my-5 p-3 bg-white rounded-2xl inline-block border border-[#c5a059]">
-                <img src={qrModalUrl} alt="Guest QR" className="w-48 h-48 mx-auto" />
+                <img src={qrModalUrl} alt="Guest QR" className="w-44 h-44 sm:w-48 sm:h-48 mx-auto object-contain" />
               </div>
             )}
 
@@ -3461,7 +3839,7 @@ export default function AdminDashboard() {
 
             <button
               onClick={() => copyLink(qrModalGuest)}
-              className="w-full py-2.5 rounded-xl btn-gold-shimmer text-xs font-cinzel font-bold flex items-center justify-center gap-1.5 cursor-pointer"
+              className="w-full py-2.5 rounded-xl btn-gold-shimmer text-xs font-cinzel font-bold flex items-center justify-center gap-1.5 cursor-pointer min-h-[44px] touch-manipulation"
             >
               <Copy className="w-3.5 h-3.5" /> Copy Invite URL
             </button>
@@ -3471,11 +3849,12 @@ export default function AdminDashboard() {
 
       {/* CREATE NEW WEDDING MODAL */}
       {showCreateEventModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 overflow-y-auto">
-          <div className="relative w-full max-w-lg rounded-3xl bg-[#1c1519] border border-[#c5a059]/60 p-6 sm:p-8 shadow-2xl my-8">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-3 sm:p-4 overflow-y-auto overscroll-contain">
+          <div className="relative w-full max-w-lg max-h-[92dvh] overflow-y-auto overscroll-contain rounded-3xl bg-[#1c1519] border border-[#c5a059]/60 p-5 sm:p-8 shadow-2xl my-auto">
             <button
               onClick={() => setShowCreateEventModal(false)}
-              className="absolute top-5 right-5 text-[#fdfbf7]/60 hover:text-[#dfba73] cursor-pointer"
+              className="absolute top-4 right-4 sm:top-5 sm:right-5 text-[#fdfbf7]/60 hover:text-[#dfba73] cursor-pointer min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg hover:bg-[#c5a059]/10 transition-colors"
+              aria-label="Close modal"
             >
               <X className="w-5 h-5" />
             </button>
@@ -3483,7 +3862,7 @@ export default function AdminDashboard() {
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#800020]/20 text-[#dfba73] text-xs font-cinzel font-semibold mb-2">
               <Sparkles className="w-3.5 h-3.5" /> Commercial Multi-Tenancy
             </div>
-            <h2 className="font-cinzel text-xl font-bold text-[#dfba73] mb-1">
+            <h2 className="font-cinzel text-lg sm:text-xl font-bold text-[#dfba73] mb-1">
               Create New Wedding Event
             </h2>
             <p className="text-xs text-[#fdfbf7]/60 mb-5">
@@ -3607,18 +3986,18 @@ export default function AdminDashboard() {
                 </div>
               )}
 
-              <div className="pt-3 flex items-center justify-end gap-2">
+              <div className="pt-3 flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => setShowCreateEventModal(false)}
-                  className="px-4 py-2.5 rounded-xl bg-[#261c22] text-[#fdfbf7]/70 text-xs font-cinzel font-semibold hover:bg-[#c5a059]/10 cursor-pointer"
+                  className="flex-1 sm:flex-initial px-4 py-2.5 rounded-xl bg-[#261c22] text-[#fdfbf7]/70 text-xs font-cinzel font-semibold hover:bg-[#c5a059]/10 cursor-pointer min-h-[42px] touch-manipulation text-center"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={creatingEvent}
-                  className="btn-gold-shimmer px-6 py-2.5 rounded-xl text-xs font-cinzel font-bold shadow-lg disabled:opacity-50 cursor-pointer flex items-center gap-1.5"
+                  className="flex-1 sm:flex-initial btn-gold-shimmer px-6 py-2.5 rounded-xl text-xs font-cinzel font-bold shadow-lg disabled:opacity-50 cursor-pointer flex items-center justify-center gap-1.5 min-h-[42px] touch-manipulation"
                 >
                   {creatingEvent ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
                   {creatingEvent ? "Creating Wedding..." : "Create Wedding Event"}
@@ -3631,11 +4010,12 @@ export default function AdminDashboard() {
 
       {/* ADD PHOTO TO TABLE MODAL */}
       {showAddPhotoModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 overflow-y-auto">
-          <div className="relative w-full max-w-lg rounded-3xl bg-[#1c1519] border border-[#c5a059]/60 p-6 sm:p-8 shadow-2xl my-8">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-3 sm:p-4 overflow-y-auto overscroll-contain">
+          <div className="relative w-full max-w-lg max-h-[92dvh] overflow-y-auto overscroll-contain rounded-3xl bg-[#1c1519] border border-[#c5a059]/60 p-5 sm:p-8 shadow-2xl my-auto">
             <button
               onClick={() => setShowAddPhotoModal(false)}
-              className="absolute top-5 right-5 text-[#fdfbf7]/60 hover:text-[#dfba73] cursor-pointer"
+              className="absolute top-4 right-4 sm:top-5 sm:right-5 text-[#fdfbf7]/60 hover:text-[#dfba73] cursor-pointer min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg hover:bg-[#c5a059]/10 transition-colors"
+              aria-label="Close modal"
             >
               <X className="w-5 h-5" />
             </button>
@@ -3643,7 +4023,7 @@ export default function AdminDashboard() {
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#800020]/20 text-[#dfba73] text-xs font-cinzel font-semibold mb-2">
               <Camera className="w-3.5 h-3.5" /> Dedicated EventPhoto Table
             </div>
-            <h2 className="font-cinzel text-xl font-bold text-[#dfba73] mb-1">
+            <h2 className="font-cinzel text-lg sm:text-xl font-bold text-[#dfba73] mb-1">
               Add Photo to Wedding Table
             </h2>
             <p className="text-xs text-[#fdfbf7]/60 mb-5">
@@ -3656,7 +4036,7 @@ export default function AdminDashboard() {
                   Upload Photo File or Enter URL *
                 </label>
                 <div className="flex gap-2 mb-2">
-                  <label className="flex-1 btn-gold-shimmer px-3.5 py-2.5 rounded-xl text-xs font-cinzel font-bold flex items-center justify-center gap-1.5 cursor-pointer shadow">
+                  <label className="flex-1 btn-gold-shimmer px-3.5 py-2.5 rounded-xl text-xs font-cinzel font-bold flex items-center justify-center gap-1.5 cursor-pointer shadow min-h-[42px] touch-manipulation">
                     {uploadingField === "addPhotoModal" ? (
                       <>
                         <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -3745,18 +4125,18 @@ export default function AdminDashboard() {
                 </div>
               </div>
 
-              <div className="pt-3 flex items-center justify-end gap-2">
+              <div className="pt-3 flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => setShowAddPhotoModal(false)}
-                  className="px-4 py-2.5 rounded-xl bg-[#261c22] text-[#fdfbf7]/70 text-xs font-cinzel font-semibold hover:bg-[#c5a059]/10 cursor-pointer"
+                  className="flex-1 sm:flex-initial px-4 py-2.5 rounded-xl bg-[#261c22] text-[#fdfbf7]/70 text-xs font-cinzel font-semibold hover:bg-[#c5a059]/10 cursor-pointer min-h-[42px] touch-manipulation text-center"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={addingPhoto || !newPhotoForm.url}
-                  className="btn-gold-shimmer px-6 py-2.5 rounded-xl text-xs font-cinzel font-bold shadow-lg disabled:opacity-50 cursor-pointer flex items-center gap-1.5"
+                  className="flex-1 sm:flex-initial btn-gold-shimmer px-6 py-2.5 rounded-xl text-xs font-cinzel font-bold shadow-lg disabled:opacity-50 cursor-pointer flex items-center justify-center gap-1.5 min-h-[42px] touch-manipulation"
                 >
                   {addingPhoto ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
                   {addingPhoto ? "Saving Photo..." : "Save Photo to Table"}
@@ -3769,11 +4149,12 @@ export default function AdminDashboard() {
 
       {/* CREATE EVENT MANAGER MODAL (Super Admin) */}
       {showCreateManagerModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4 overflow-y-auto">
-          <div className="relative w-full max-w-lg rounded-3xl bg-[#1c1519] border border-[#dfba73]/60 p-6 sm:p-8 shadow-2xl my-8">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-3 sm:p-4 overflow-y-auto overscroll-contain">
+          <div className="relative w-full max-w-lg max-h-[92dvh] overflow-y-auto overscroll-contain rounded-3xl bg-[#1c1519] border border-[#dfba73]/60 p-5 sm:p-8 shadow-2xl my-auto">
             <button
               onClick={() => setShowCreateManagerModal(false)}
-              className="absolute top-5 right-5 text-[#fdfbf7]/60 hover:text-[#dfba73] cursor-pointer"
+              className="absolute top-4 right-4 sm:top-5 sm:right-5 text-[#fdfbf7]/60 hover:text-[#dfba73] cursor-pointer min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg hover:bg-[#c5a059]/10 transition-colors"
+              aria-label="Close modal"
             >
               <X className="w-5 h-5" />
             </button>
@@ -3781,7 +4162,7 @@ export default function AdminDashboard() {
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#800020]/20 text-[#dfba73] text-xs font-cinzel font-semibold mb-2">
               <ShieldCheck className="w-3.5 h-3.5 text-[#edd892]" /> Super Admin Provisioning
             </div>
-            <h2 className="font-cinzel text-xl font-bold text-[#dfba73] mb-1">
+            <h2 className="font-cinzel text-lg sm:text-xl font-bold text-[#dfba73] mb-1">
               Add New Event Manager
             </h2>
             <p className="text-xs text-[#fdfbf7]/60 mb-5">
@@ -3923,18 +4304,18 @@ export default function AdminDashboard() {
                 )}
               </div>
 
-              <div className="pt-3 flex items-center justify-end gap-2">
+              <div className="pt-3 flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => setShowCreateManagerModal(false)}
-                  className="px-4 py-2.5 rounded-xl bg-[#261c22] text-[#fdfbf7]/70 text-xs font-cinzel font-semibold hover:bg-[#c5a059]/10 cursor-pointer"
+                  className="flex-1 sm:flex-initial px-4 py-2.5 rounded-xl bg-[#261c22] text-[#fdfbf7]/70 text-xs font-cinzel font-semibold hover:bg-[#c5a059]/10 cursor-pointer min-h-[42px] touch-manipulation text-center"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={creatingManager}
-                  className="btn-gold-shimmer px-6 py-2.5 rounded-xl text-xs font-cinzel font-bold shadow-lg disabled:opacity-50 cursor-pointer flex items-center gap-1.5"
+                  className="flex-1 sm:flex-initial btn-gold-shimmer px-6 py-2.5 rounded-xl text-xs font-cinzel font-bold shadow-lg disabled:opacity-50 cursor-pointer flex items-center justify-center gap-1.5 min-h-[42px] touch-manipulation"
                 >
                   {creatingManager ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <UserPlus className="w-3.5 h-3.5" />}
                   {creatingManager ? "Creating Planner Account..." : "Create Event Manager"}

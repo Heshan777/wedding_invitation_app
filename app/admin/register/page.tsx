@@ -73,13 +73,13 @@ export default function AdminRegisterPage() {
   }
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center bg-[#121013] text-[#fdfbf7] px-4 py-12 overflow-hidden">
+    <div className="relative min-h-screen flex items-center justify-center bg-[#121013] text-[#fdfbf7] px-3 sm:px-4 py-8 sm:py-12 overflow-hidden">
       {/* Ambient background glows */}
       <div className="absolute top-1/4 -left-32 w-96 h-96 bg-[#800020]/25 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-1/4 -right-32 w-96 h-96 bg-[#c5a059]/15 rounded-full blur-3xl pointer-events-none" />
 
       <div className="relative z-10 w-full max-w-lg">
-        <div className="rounded-3xl bg-[#1a1519]/95 border border-[#c5a059]/40 p-8 sm:p-10 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.8),0_0_30px_rgba(197,160,89,0.15)] backdrop-blur-xl">
+        <div className="rounded-3xl bg-[#1a1519]/95 border border-[#c5a059]/40 p-6 sm:p-10 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.8),0_0_30px_rgba(197,160,89,0.15)] backdrop-blur-xl">
           {/* Header */}
           <div className="text-center mb-6">
             <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-[#800020] to-[#4a0013] border border-[#dfba73]/50 shadow-lg mb-3">
@@ -249,7 +249,7 @@ export default function AdminRegisterPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full mt-4 py-3.5 rounded-xl btn-gold-shimmer text-xs uppercase tracking-[0.15em] font-cinzel font-bold flex items-center justify-center gap-2 shadow-xl disabled:opacity-50 cursor-pointer"
+              className="w-full mt-4 py-3.5 rounded-xl btn-gold-shimmer text-xs uppercase tracking-[0.15em] font-cinzel font-bold flex items-center justify-center gap-2 shadow-xl disabled:opacity-50 cursor-pointer min-h-[44px] touch-manipulation"
             >
               {loading ? (
                 <>
@@ -270,7 +270,7 @@ export default function AdminRegisterPage() {
               Already have an Event Manager account?{" "}
               <Link
                 href="/admin/login"
-                className="text-[#ffd700] font-cinzel font-bold hover:underline ml-1"
+                className="text-[#ffd700] font-cinzel font-bold hover:underline ml-1 inline-block py-1 touch-manipulation"
               >
                 Sign In
               </Link>
