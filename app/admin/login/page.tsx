@@ -47,14 +47,14 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center bg-[#121013] text-[#fdfbf7] px-4 overflow-hidden">
+    <div className="relative min-h-screen flex items-center justify-center bg-[#121013] text-[#fdfbf7] px-3 sm:px-4 py-8 sm:py-12 overflow-hidden">
       {/* Background ambient lighting */}
       <div className="absolute top-1/4 -left-32 w-96 h-96 bg-[#800020]/25 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-1/4 -right-32 w-96 h-96 bg-[#c5a059]/15 rounded-full blur-3xl pointer-events-none" />
 
       <div className="relative z-10 w-full max-w-md">
         {/* Luxury Glassmorphism Login Card */}
-        <div className="rounded-3xl bg-[#1a1519]/90 border border-[#c5a059]/40 p-8 sm:p-10 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.7),0_0_30px_rgba(197,160,89,0.15)] backdrop-blur-xl">
+        <div className="rounded-3xl bg-[#1a1519]/90 border border-[#c5a059]/40 p-6 sm:p-10 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.7),0_0_30px_rgba(197,160,89,0.15)] backdrop-blur-xl">
           {/* Header Monogram / Icon */}
           <div className="text-center mb-6">
             <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-[#800020] to-[#4a0013] border border-[#dfba73]/50 shadow-lg mb-3">
@@ -69,11 +69,11 @@ export default function AdminLoginPage() {
           </div>
 
           {/* Quick Default Fill Helper Banner */}
-          <div className="mb-6 p-3 rounded-2xl bg-[#c5a059]/10 border border-[#c5a059]/30 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <KeyRound className="w-4 h-4 text-[#dfba73]" />
-              <div className="text-left">
-                <span className="text-[11px] font-cinzel font-bold text-[#dfba73] block">
+          <div className="mb-6 p-3 rounded-2xl bg-[#c5a059]/10 border border-[#c5a059]/30 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <KeyRound className="w-4 h-4 text-[#dfba73] shrink-0" />
+              <div className="text-left min-w-0">
+                <span className="text-[11px] font-cinzel font-bold text-[#dfba73] block truncate">
                   Default Credentials
                 </span>
                 <span className="text-[10px] text-[#fdfbf7]/70 font-mono">
@@ -84,7 +84,7 @@ export default function AdminLoginPage() {
             <button
               type="button"
               onClick={handleFillDefaults}
-              className="px-3 py-1.5 rounded-lg bg-[#c5a059]/20 hover:bg-[#c5a059]/30 text-[#edd892] text-xs font-cinzel font-semibold border border-[#c5a059]/50 transition cursor-pointer flex items-center gap-1"
+              className="px-3 py-1.5 rounded-lg bg-[#c5a059]/20 hover:bg-[#c5a059]/30 text-[#edd892] text-xs font-cinzel font-semibold border border-[#c5a059]/50 transition cursor-pointer flex items-center gap-1 shrink-0 min-h-[36px] touch-manipulation"
             >
               <Sparkles className="w-3 h-3" /> Auto-Fill
             </button>
@@ -138,7 +138,7 @@ export default function AdminLoginPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-[#c5a059]/70 hover:text-[#dfba73] cursor-pointer"
+                  className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-[#c5a059]/70 hover:text-[#dfba73] cursor-pointer min-w-[40px] min-h-[40px] justify-center"
                   aria-label={showPassword ? "Hide password" : "Show password"}
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -149,7 +149,7 @@ export default function AdminLoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full mt-2 py-3.5 rounded-xl btn-gold-shimmer text-xs uppercase tracking-[0.15em] font-cinzel font-bold flex items-center justify-center gap-2 shadow-xl disabled:opacity-50 cursor-pointer"
+              className="w-full mt-2 py-3.5 rounded-xl btn-gold-shimmer text-xs uppercase tracking-[0.15em] font-cinzel font-bold flex items-center justify-center gap-2 shadow-xl disabled:opacity-50 cursor-pointer min-h-[44px] touch-manipulation"
             >
               {loading ? (
                 <>
@@ -171,7 +171,7 @@ export default function AdminLoginPage() {
             </p>
             <a
               href="/admin/register"
-              className="inline-flex items-center gap-1.5 text-xs font-cinzel font-bold text-[#ffd700] hover:underline"
+              className="inline-flex items-center justify-center gap-1.5 text-xs font-cinzel font-bold text-[#ffd700] hover:underline min-h-[38px] touch-manipulation"
             >
               <Sparkles className="w-3.5 h-3.5 text-[#ffd700]" />
               Create Event Manager Account

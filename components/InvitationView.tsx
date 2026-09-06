@@ -686,15 +686,15 @@ export default function InvitationView({
       <MusicPlayer src={settings.musicUrl || "/audio/background.mp3"} />
 
       {/* Main Luxury Invitation Container */}
-      <div className="relative z-10 max-w-xl mx-auto px-4 sm:px-6 py-10 sm:py-16">
+      <div className="relative z-10 max-w-xl mx-auto px-3 sm:px-6 py-6 sm:py-16">
         {/* Parchment Invitation Card Frame */}
-        <div className="parchment-card rounded-3xl p-6 sm:p-10 text-[#1a1517] relative overflow-hidden">
+        <div className="parchment-card rounded-2xl sm:rounded-3xl p-4 sm:p-10 text-[#1a1517] relative overflow-hidden">
           {/* Ornate Gold Border Lining */}
-          <div className="absolute inset-2 sm:inset-3 rounded-2xl border-2 border-[#c5a059]/40 pointer-events-none" />
-          <div className="absolute inset-3 sm:inset-4 rounded-2xl border border-[#c5a059]/20 pointer-events-none" />
+          <div className="absolute inset-1.5 sm:inset-3 rounded-xl sm:rounded-2xl border-2 border-[#c5a059]/40 pointer-events-none" />
+          <div className="absolute inset-2.5 sm:inset-4 rounded-xl sm:rounded-2xl border border-[#c5a059]/20 pointer-events-none" />
 
-          {/* Top-to-Bottom Royal Floral Botanical Borders (Left & Right) */}
-          <div className="absolute top-10 bottom-10 left-1 sm:left-2.5 w-4 pointer-events-none select-none flex flex-col justify-around items-center opacity-40 text-[#800020] text-xs z-10">
+          {/* Top-to-Bottom Royal Floral Botanical Borders (Left & Right - Desktop / Tablet) */}
+          <div className="hidden sm:flex absolute top-10 bottom-10 left-2.5 w-4 pointer-events-none select-none flex-col justify-around items-center opacity-40 text-[#800020] text-xs z-10">
             <span className="animate-pulse-slow">🌸</span>
             <span className="text-[#c5a059] text-[10px]">🌿</span>
             <span className="text-sm">🌹</span>
@@ -714,7 +714,7 @@ export default function InvitationView({
             <span className="text-xs">🌸</span>
           </div>
 
-          <div className="absolute top-10 bottom-10 right-1 sm:right-2.5 w-4 pointer-events-none select-none flex flex-col justify-around items-center opacity-40 text-[#800020] text-xs z-10">
+          <div className="hidden sm:flex absolute top-10 bottom-10 right-2.5 w-4 pointer-events-none select-none flex-col justify-around items-center opacity-40 text-[#800020] text-xs z-10">
             <span className="animate-pulse-slow">🌸</span>
             <span className="text-[#c5a059] text-[10px]">🌿</span>
             <span className="text-sm">🌹</span>
@@ -735,10 +735,10 @@ export default function InvitationView({
           </div>
 
           {/* Corner Vintage Filigree Accents */}
-          <div className="absolute top-4 left-4 text-[#c5a059] text-base select-none">⚜</div>
-          <div className="absolute top-4 right-4 text-[#c5a059] text-base select-none">⚜</div>
-          <div className="absolute bottom-4 left-4 text-[#c5a059] text-base select-none">⚜</div>
-          <div className="absolute bottom-4 right-4 text-[#c5a059] text-base select-none">⚜</div>
+          <div className="absolute top-3 left-3 sm:top-4 sm:left-4 text-[#c5a059] text-sm sm:text-base select-none">⚜</div>
+          <div className="absolute top-3 right-3 sm:top-4 sm:right-4 text-[#c5a059] text-sm sm:text-base select-none">⚜</div>
+          <div className="absolute bottom-3 left-3 sm:bottom-4 sm:left-4 text-[#c5a059] text-sm sm:text-base select-none">⚜</div>
+          <div className="absolute bottom-3 right-3 sm:bottom-4 sm:right-4 text-[#c5a059] text-sm sm:text-base select-none">⚜</div>
 
           {/* Header Crown / Monogram with Scroll Reveal */}
           <ScrollReveal variant="fade-up" duration={750}>
@@ -1078,9 +1078,9 @@ export default function InvitationView({
                 {date.weekday}
               </p>
               <p className="font-serif italic text-base text-[#8c6a2b]">{date.month}</p>
-              <p className="font-cinzel text-6xl sm:text-7xl text-[#1a1517] font-black my-1">
+              <p className="font-cinzel text-5xl sm:text-7xl text-[#1a1517] font-black my-1">
                 {String(date.day).padStart(2, "0")}
-                <sup className="text-2xl sm:text-3xl text-[#800020] font-serif italic ml-1">
+                <sup className="text-xl sm:text-3xl text-[#800020] font-serif italic ml-1">
                   {date.ordinal}
                 </sup>
               </p>
@@ -1519,7 +1519,7 @@ export default function InvitationView({
                   href={googleMapsUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="btn-gold-shimmer py-2.5 px-3 rounded-xl text-center text-xs font-cinzel font-semibold flex items-center justify-center gap-1.5 shadow-md hover:scale-[1.02] transition"
+                  className="btn-gold-shimmer py-2.5 px-3 rounded-xl text-center text-xs font-cinzel font-semibold flex items-center justify-center gap-1.5 shadow-md hover:scale-[1.02] transition min-h-[42px] touch-manipulation"
                 >
                   <Compass className="w-3.5 h-3.5" /> {t.googleMaps}
                 </a>
@@ -1527,7 +1527,7 @@ export default function InvitationView({
                   href={appleMapsUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="bg-[#1a1517] text-[#fdfbf7] hover:bg-black py-2.5 px-3 rounded-xl text-center text-xs font-cinzel font-semibold flex items-center justify-center gap-1.5 shadow-md hover:scale-[1.02] transition"
+                  className="bg-[#1a1517] text-[#fdfbf7] hover:bg-black py-2.5 px-3 rounded-xl text-center text-xs font-cinzel font-semibold flex items-center justify-center gap-1.5 shadow-md hover:scale-[1.02] transition min-h-[42px] touch-manipulation"
                 >
                   <Navigation className="w-3.5 h-3.5 text-[#dfba73]" /> {t.appleMaps}
                 </a>
@@ -1535,7 +1535,7 @@ export default function InvitationView({
                   href={wazeUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="bg-[#2a1a20] text-[#edd892] hover:bg-[#800020] py-2.5 px-3 rounded-xl text-center text-xs font-cinzel font-semibold flex items-center justify-center gap-1.5 shadow-md hover:scale-[1.02] transition"
+                  className="bg-[#2a1a20] text-[#edd892] hover:bg-[#800020] py-2.5 px-3 rounded-xl text-center text-xs font-cinzel font-semibold flex items-center justify-center gap-1.5 shadow-md hover:scale-[1.02] transition min-h-[42px] touch-manipulation"
                 >
                   <MapPin className="w-3.5 h-3.5" /> {t.waze}
                 </a>
@@ -1543,7 +1543,7 @@ export default function InvitationView({
                   href={uberUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="bg-black text-white hover:bg-neutral-900 py-2.5 px-3 rounded-xl text-center text-xs font-cinzel font-semibold flex items-center justify-center gap-1.5 shadow-md hover:scale-[1.02] transition border border-[#c5a059]/40"
+                  className="bg-black text-white hover:bg-neutral-900 py-2.5 px-3 rounded-xl text-center text-xs font-cinzel font-semibold flex items-center justify-center gap-1.5 shadow-md hover:scale-[1.02] transition border border-[#c5a059]/40 min-h-[42px] touch-manipulation"
                 >
                   <Navigation className="w-3.5 h-3.5 text-emerald-400" /> {t.uberRide}
                 </a>
@@ -1552,7 +1552,7 @@ export default function InvitationView({
               {/* Copy Address Button */}
               <button
                 onClick={handleCopyAddress}
-                className="mt-2.5 w-full py-2.5 px-4 rounded-xl bg-[#800020]/10 hover:bg-[#800020]/20 text-[#800020] text-xs font-cinzel font-semibold flex items-center justify-center gap-2 transition cursor-pointer border border-[#c5a059]/30"
+                className="mt-2.5 w-full py-2.5 px-4 rounded-xl bg-[#800020]/10 hover:bg-[#800020]/20 text-[#800020] text-xs font-cinzel font-semibold flex items-center justify-center gap-2 transition cursor-pointer border border-[#c5a059]/30 min-h-[42px] touch-manipulation"
               >
                 {copiedAddress ? (
                   <>
@@ -1587,13 +1587,13 @@ export default function InvitationView({
                   href={googleCalendarWebUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="py-2 px-2.5 rounded-xl bg-[#800020] text-[#fdfbf7] hover:bg-[#5c0017] text-[11px] font-cinzel font-semibold flex items-center justify-center gap-1.5 shadow transition"
+                  className="py-2.5 px-2.5 rounded-xl bg-[#800020] text-[#fdfbf7] hover:bg-[#5c0017] text-[11px] font-cinzel font-semibold flex items-center justify-center gap-1.5 shadow transition min-h-[42px] touch-manipulation"
                 >
                   <Calendar className="w-3.5 h-3.5 text-[#edd892]" /> {t.googleCalendar}
                 </a>
                 <button
                   onClick={handleDownloadICS}
-                  className="py-2 px-2.5 rounded-xl bg-[#1a1517] text-[#fdfbf7] hover:bg-black text-[11px] font-cinzel font-semibold flex items-center justify-center gap-1.5 shadow transition cursor-pointer"
+                  className="py-2.5 px-2.5 rounded-xl bg-[#1a1517] text-[#fdfbf7] hover:bg-black text-[11px] font-cinzel font-semibold flex items-center justify-center gap-1.5 shadow transition cursor-pointer min-h-[42px] touch-manipulation"
                 >
                   <Calendar className="w-3.5 h-3.5 text-[#dfba73]" /> {t.appleCalendar}
                 </button>
@@ -1601,7 +1601,7 @@ export default function InvitationView({
                   href={outlookCalendarWebUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="py-2 px-2.5 rounded-xl bg-[#0078d4] text-white hover:bg-[#005a9e] text-[11px] font-cinzel font-semibold flex items-center justify-center gap-1.5 shadow transition"
+                  className="py-2.5 px-2.5 rounded-xl bg-[#0078d4] text-white hover:bg-[#005a9e] text-[11px] font-cinzel font-semibold flex items-center justify-center gap-1.5 shadow transition min-h-[42px] touch-manipulation"
                 >
                   <Calendar className="w-3.5 h-3.5" /> {t.outlookCalendar}
                 </a>
@@ -1609,7 +1609,7 @@ export default function InvitationView({
                   href={yahooCalendarWebUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="py-2 px-2.5 rounded-xl bg-[#5f01d1] text-white hover:bg-[#4900a3] text-[11px] font-cinzel font-semibold flex items-center justify-center gap-1.5 shadow transition"
+                  className="py-2.5 px-2.5 rounded-xl bg-[#5f01d1] text-white hover:bg-[#4900a3] text-[11px] font-cinzel font-semibold flex items-center justify-center gap-1.5 shadow transition min-h-[42px] touch-manipulation"
                 >
                   <Calendar className="w-3.5 h-3.5" /> {t.yahooCalendar}
                 </a>
@@ -1622,7 +1622,7 @@ export default function InvitationView({
 
           {/* Interactive Production RSVP Suite with Scroll Reveal */}
           <ScrollReveal variant="scale-up" duration={850}>
-            <div className="my-10 p-6 sm:p-7 rounded-3xl bg-gradient-to-b from-[#fffdfa] to-[#f7f2e7] border-2 border-[#c5a059]/60 shadow-2xl">
+            <div className="my-10 p-5 sm:p-7 rounded-3xl bg-gradient-to-b from-[#fffdfa] to-[#f7f2e7] border-2 border-[#c5a059]/60 shadow-2xl">
               <div className="text-center mb-5">
                 <div className="inline-flex items-center gap-1.5 text-[#800020] text-xs font-cinzel font-semibold mb-1">
                   <MessageSquareHeart className="w-4 h-4 text-[#c5a059]" /> {t.rsvpTitle}
@@ -1649,7 +1649,7 @@ export default function InvitationView({
                   <button
                     type="button"
                     onClick={() => setRsvpSubmitted(false)}
-                    className="text-xs text-[#800020] hover:underline font-cinzel font-semibold cursor-pointer pt-2"
+                    className="text-xs text-[#800020] hover:underline font-cinzel font-semibold cursor-pointer pt-2 min-h-[36px] touch-manipulation"
                   >
                     {t.modifyRsvp}
                   </button>
@@ -1661,7 +1661,7 @@ export default function InvitationView({
                     <button
                       type="button"
                       onClick={() => setRsvpStatus("attending")}
-                      className={`py-3.5 px-3 rounded-2xl font-cinzel text-xs font-bold border transition cursor-pointer flex flex-col items-center gap-1 ${
+                      className={`py-3.5 px-3 rounded-2xl font-cinzel text-xs font-bold border transition cursor-pointer flex flex-col items-center justify-center gap-1 min-h-[52px] touch-manipulation ${
                         rsvpStatus === "attending"
                           ? "bg-[#800020] text-[#fdfbf7] border-[#dfba73] shadow-md scale-[1.02]"
                           : "bg-white text-[#1a1517] border-[#c5a059]/40 hover:bg-[#800020]/5"
@@ -1673,7 +1673,7 @@ export default function InvitationView({
                     <button
                       type="button"
                       onClick={() => setRsvpStatus("declined")}
-                      className={`py-3.5 px-3 rounded-2xl font-cinzel text-xs font-bold border transition cursor-pointer flex flex-col items-center gap-1 ${
+                      className={`py-3.5 px-3 rounded-2xl font-cinzel text-xs font-bold border transition cursor-pointer flex flex-col items-center justify-center gap-1 min-h-[52px] touch-manipulation ${
                         rsvpStatus === "declined"
                           ? "bg-[#4a3b32] text-[#fdfbf7] border-[#dfba73] shadow-md scale-[1.02]"
                           : "bg-white text-[#1a1517] border-[#c5a059]/40 hover:bg-[#800020]/5"
@@ -1693,7 +1693,7 @@ export default function InvitationView({
                         <select
                           value={rsvpCount}
                           onChange={(e) => setRsvpCount(Number(e.target.value))}
-                          className="w-full px-3 py-2.5 rounded-xl bg-white border border-[#c5a059]/60 text-xs text-[#1a1517] focus:outline-none focus:ring-2 focus:ring-[#800020]"
+                          className="w-full px-3 py-2.5 rounded-xl bg-white border border-[#c5a059]/60 text-xs text-[#1a1517] focus:outline-none focus:ring-2 focus:ring-[#800020] min-h-[42px]"
                         >
                           {Array.from({ length: maxAttendees }, (_, i) => i + 1).map((num) => (
                             <option key={num} value={num}>
@@ -1710,7 +1710,7 @@ export default function InvitationView({
                         <select
                           value={dietary}
                           onChange={(e) => setDietary(e.target.value)}
-                          className="w-full px-3 py-2.5 rounded-xl bg-white border border-[#c5a059]/60 text-xs text-[#1a1517] focus:outline-none focus:ring-2 focus:ring-[#800020]"
+                          className="w-full px-3 py-2.5 rounded-xl bg-white border border-[#c5a059]/60 text-xs text-[#1a1517] focus:outline-none focus:ring-2 focus:ring-[#800020] min-h-[42px]"
                         >
                           {t.dietaryOptions.map((opt) => (
                             <option key={opt.key} value={opt.key}>
@@ -1739,7 +1739,7 @@ export default function InvitationView({
                   <button
                     type="submit"
                     disabled={!rsvpStatus || submittingRsvp}
-                    className="w-full py-3.5 rounded-xl btn-gold-shimmer text-xs font-cinzel font-bold uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg disabled:opacity-50 cursor-pointer"
+                    className="w-full py-3.5 rounded-xl btn-gold-shimmer text-xs font-cinzel font-bold uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg disabled:opacity-50 cursor-pointer min-h-[46px] touch-manipulation"
                   >
                     <Send className="w-3.5 h-3.5" />
                     {submittingRsvp ? t.submittingRsvp : t.submitRsvp}
@@ -1847,13 +1847,13 @@ export default function InvitationView({
             <div className="pt-6 border-t border-[#c5a059]/30 flex flex-col sm:flex-row items-center justify-center gap-3">
               <button
                 onClick={handleShareWhatsApp}
-                className="w-full sm:w-auto px-5 py-2.5 rounded-full bg-[#25D366] text-white hover:bg-[#20ba59] text-xs font-sans font-semibold flex items-center justify-center gap-2 shadow transition cursor-pointer"
+                className="w-full sm:w-auto px-5 py-2.5 rounded-full bg-[#25D366] text-white hover:bg-[#20ba59] text-xs font-sans font-semibold flex items-center justify-center gap-2 shadow transition cursor-pointer min-h-[44px] touch-manipulation"
               >
                 <Share2 className="w-3.5 h-3.5" /> Share on WhatsApp
               </button>
               <button
                 onClick={handleCopyLink}
-                className="w-full sm:w-auto px-5 py-2.5 rounded-full bg-[#1a1517] text-[#edd892] hover:bg-black text-xs font-sans font-semibold flex items-center justify-center gap-2 shadow transition cursor-pointer border border-[#c5a059]/40"
+                className="w-full sm:w-auto px-5 py-2.5 rounded-full bg-[#1a1517] text-[#edd892] hover:bg-black text-xs font-sans font-semibold flex items-center justify-center gap-2 shadow transition cursor-pointer border border-[#c5a059]/40 min-h-[44px] touch-manipulation"
               >
                 {copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
                 {copiedLink ? "Link Copied!" : "Copy Invitation Link"}

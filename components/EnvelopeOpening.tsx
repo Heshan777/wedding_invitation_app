@@ -245,11 +245,11 @@ export default function EnvelopeOpening({
             <span>{t.selectLanguage}</span>
           </div>
 
-          <div className="flex items-center gap-2 p-1 rounded-2xl bg-[#1a0f15]/90 border border-[#dfba73]/50 shadow-2xl backdrop-blur-md">
+          <div className="flex items-center gap-1 sm:gap-2 p-1 rounded-2xl bg-[#1a0f15]/90 border border-[#dfba73]/50 shadow-2xl backdrop-blur-md max-w-full overflow-x-auto scrollbar-none">
             <button
               type="button"
               onClick={(e) => handleSelectLanguage(e, "en")}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-cinzel font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+              className={`px-2.5 sm:px-3.5 py-1.5 rounded-xl text-[11px] sm:text-xs font-cinzel font-bold flex items-center gap-1 sm:gap-1.5 transition-all cursor-pointer touch-manipulation whitespace-nowrap ${
                 selectedLocale === "en"
                   ? "bg-gradient-to-r from-[#800020] to-[#6b0f24] text-[#ffd700] border border-[#ffd700] shadow-[0_0_15px_rgba(223,186,115,0.5)] scale-105"
                   : "text-[#edd892]/70 hover:text-[#ffd700] hover:bg-white/5"
@@ -262,7 +262,7 @@ export default function EnvelopeOpening({
             <button
               type="button"
               onClick={(e) => handleSelectLanguage(e, "si")}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-cinzel font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+              className={`px-2.5 sm:px-3.5 py-1.5 rounded-xl text-[11px] sm:text-xs font-cinzel font-bold flex items-center gap-1 sm:gap-1.5 transition-all cursor-pointer touch-manipulation whitespace-nowrap ${
                 selectedLocale === "si"
                   ? "bg-gradient-to-r from-[#800020] to-[#6b0f24] text-[#ffd700] border border-[#ffd700] shadow-[0_0_15px_rgba(223,186,115,0.5)] scale-105"
                   : "text-[#edd892]/70 hover:text-[#ffd700] hover:bg-white/5"
@@ -275,7 +275,7 @@ export default function EnvelopeOpening({
             <button
               type="button"
               onClick={(e) => handleSelectLanguage(e, "ta")}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-cinzel font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+              className={`px-2.5 sm:px-3.5 py-1.5 rounded-xl text-[11px] sm:text-xs font-cinzel font-bold flex items-center gap-1 sm:gap-1.5 transition-all cursor-pointer touch-manipulation whitespace-nowrap ${
                 selectedLocale === "ta"
                   ? "bg-gradient-to-r from-[#800020] to-[#6b0f24] text-[#ffd700] border border-[#ffd700] shadow-[0_0_15px_rgba(223,186,115,0.5)] scale-105"
                   : "text-[#edd892]/70 hover:text-[#ffd700] hover:bg-white/5"
@@ -386,7 +386,7 @@ export default function EnvelopeOpening({
             {/* 3D WAX SEAL MEDALLION (Anchored at triangle tip) */}
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/4 z-30 flex flex-col items-center">
               <div
-                className={`relative wax-seal w-22 h-22 sm:w-24 sm:h-24 rounded-full flex flex-col items-center justify-center text-center cursor-pointer border-2 border-[#ffd700]/70 shadow-[0_12px_28px_rgba(0,0,0,0.7),0_0_20px_rgba(223,186,115,0.4)] transition-transform duration-300 group-hover:scale-110 active:scale-95 ${
+                className={`relative wax-seal w-20 h-20 sm:w-24 sm:h-24 rounded-full flex flex-col items-center justify-center text-center cursor-pointer border-2 border-[#ffd700]/70 shadow-[0_12px_28px_rgba(0,0,0,0.7),0_0_20px_rgba(223,186,115,0.4)] transition-transform duration-300 group-hover:scale-110 active:scale-95 touch-manipulation ${
                   isOpening ? "animate-seal-break" : ""
                 }`}
               >
@@ -394,12 +394,12 @@ export default function EnvelopeOpening({
                 <div className="absolute top-1.5 left-3 w-7 h-4 rounded-full bg-white/25 blur-[1px] -rotate-30 pointer-events-none" />
 
                 {/* Monogram Text */}
-                <span className="font-cinzel text-xl sm:text-2xl font-bold text-[#fffdfa] drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] tracking-wider">
+                <span className="font-cinzel text-lg sm:text-2xl font-bold text-[#fffdfa] drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] tracking-wider">
                   {monogram}
                 </span>
 
                 {/* Gold Heart Crest */}
-                <Heart className="w-4 h-4 text-[#ffd700] fill-[#ffd700] mt-0.5 filter drop-shadow" />
+                <Heart className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#ffd700] fill-[#ffd700] mt-0.5 filter drop-shadow" />
 
                 {/* Pulsing Aura Rings */}
                 {!isOpening && (
@@ -422,7 +422,7 @@ export default function EnvelopeOpening({
         <button
           onClick={handleOpenEnvelope}
           disabled={isOpening}
-          className="mt-6 btn-gold-shimmer px-8 sm:px-9 py-3.5 rounded-full font-cinzel text-xs sm:text-sm tracking-[0.15em] uppercase font-bold flex items-center justify-center gap-2.5 shadow-[0_10px_25px_rgba(197,160,89,0.35)] hover:scale-105 active:scale-95 transition cursor-pointer border border-[#fff2cf]/50"
+          className="mt-6 btn-gold-shimmer px-8 sm:px-9 py-3.5 rounded-full font-cinzel text-xs sm:text-sm tracking-[0.15em] uppercase font-bold flex items-center justify-center gap-2.5 shadow-[0_10px_25px_rgba(197,160,89,0.35)] hover:scale-105 active:scale-95 transition cursor-pointer border border-[#fff2cf]/50 min-h-[48px] touch-manipulation"
         >
           <Sparkles className="w-4 h-4 text-[#1a1517] flex-shrink-0" />
           <span className="text-center">{isOpening ? t.openingInvitation : t.tapToOpen}</span>

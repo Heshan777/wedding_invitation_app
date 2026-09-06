@@ -101,7 +101,7 @@ export default function MusicPlayer({ src }: { src: string }) {
         {/* Vinyl Disc Button */}
         <button
           onClick={togglePlay}
-          className={`relative w-12 h-12 sm:w-13 sm:h-13 rounded-full flex items-center justify-center shadow-2xl border-2 transition-all duration-500 cursor-pointer ${
+          className={`relative w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center shadow-2xl border-2 transition-all duration-500 cursor-pointer touch-manipulation ${
             playing
               ? "bg-[#6b0f24] border-[#dfba73] shadow-[0_0_20px_rgba(223,186,115,0.4)] animate-spin-slow"
               : "bg-[#1f1519] border-[#c5a059]/50 hover:border-[#dfba73] hover:scale-105"
@@ -126,7 +126,7 @@ export default function MusicPlayer({ src }: { src: string }) {
         {playing && (
           <button
             onClick={toggleMute}
-            className="w-7 h-7 rounded-full bg-[#181114]/80 border border-[#c5a059]/40 text-[#dfba73] flex items-center justify-center hover:bg-[#800020] transition shadow-md"
+            className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#181114]/80 border border-[#c5a059]/40 text-[#dfba73] flex items-center justify-center hover:bg-[#800020] transition shadow-md touch-manipulation cursor-pointer"
             aria-label={muted ? "Unmute audio" : "Mute audio"}
           >
             {muted ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
