@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo } from "react";
 import Image from "next/image";
 import QRCode from "qrcode";
+import { upload } from "@vercel/blob/client";
 
 import {
   Users,
@@ -320,6 +321,13 @@ export default function AdminDashboard() {
     tag: "Pre-Wedding",
   });
   const [addingPhoto, setAddingPhoto] = useState(false);
+  const [storageStatus, setStorageStatus] = useState<{
+    configured: boolean;
+    provider: string;
+    isVercel: boolean;
+    hasBlobToken: boolean;
+    message: string;
+  } | null>(null);
 
   const [guests, setGuests] = useState<Guest[]>([]);
   const [loading, setLoading] = useState(true);
@@ -640,32 +648,82 @@ export default function AdminDashboard() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    const isVid = file.type.startsWith("video/") || Boolean(file.name.match(/\.(mp4|mov|webm|m4v|mkv|avi)$/i));
+    const isAudio = file.type.startsWith("audio/") || Boolean(file.name.match(/\.(mp3|wav|ogg|m4a)$/i));
+    const mediaLabel = isVid ? "Pre-shoot video" : isAudio ? "Audio track" : "Photo";
+
     setUploadingField(fieldKey);
+    showToast(`Uploading ${mediaLabel.toLowerCase()}... Please wait.`);
+
     try {
-      const formData = new FormData();
-      formData.append("file", file);
+      let finalUrl: string | null = null;
 
-      const res = await fetch("/api/admin/upload", {
-        method: "POST",
-        body: formData,
-      });
+      // Clean filename for direct blob upload
+      const ext = file.name.split(".").pop() || (isVid ? "mp4" : isAudio ? "mp3" : "jpg");
+      const baseClean = file.name.replace(/\.[^/.]+$/, "").replace(/[^a-zA-Z0-9-_]/g, "").slice(0, 20) || "media";
+      const prefix = isVid ? "preshoot-video" : isAudio ? "audio" : "preshoot-photo";
+      const uniqueName = `${prefix}-${baseClean}-${Date.now()}.${ext}`;
 
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || "Upload failed");
+      // Strategy 1: Direct Client Upload to Vercel Blob (bypasses 4.5MB Serverless Limit!)
+      try {
+        const newBlob = await upload(uniqueName, file, {
+          access: "public",
+          handleUploadUrl: "/api/admin/upload",
+        });
+        if (newBlob && newBlob.url) {
+          finalUrl = newBlob.url;
+        }
+      } catch (blobErr: any) {
+        console.warn("Direct blob upload failed or not configured, trying standard upload:", blobErr);
+        if (blobErr.message?.includes("Unauthorized") || blobErr.message?.includes("Only image files")) {
+          throw blobErr;
+        }
+        if (file.size > 4.5 * 1024 * 1024) {
+          throw new Error(
+            `This file (${(file.size / (1024 * 1024)).toFixed(1)} MB) exceeds Vercel's 4.5 MB serverless limit. ` +
+            (blobErr.message || "Please connect Vercel Blob in your Vercel Dashboard (Storage -> Create Database -> Blob) to support large file uploads.")
+          );
+        }
       }
 
-      const data = await res.json();
-      onSuccess(data.url);
-      const isVid = file.type.startsWith("video/") || file.name.match(/\.(mp4|mov|webm)$/i);
-      showToast(isVid ? "Pre-shoot video uploaded successfully!" : "Pre-shoot photo uploaded successfully!");
+      // Strategy 2: Fallback to standard Multipart/FormData Server Upload (works for local dev or files <= 4.5MB)
+      if (!finalUrl) {
+        const formData = new FormData();
+        formData.append("file", file);
+
+        const res = await fetch("/api/admin/upload", {
+          method: "POST",
+          body: formData,
+        });
+
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          if (res.status === 413) {
+            throw new Error(
+              `File is too large for standard serverless upload (${(file.size / (1024 * 1024)).toFixed(1)} MB). Vercel requires Vercel Blob storage for uploads over 4.5 MB. Please enable Blob in your Vercel Dashboard.`
+            );
+          }
+          throw new Error(data.error || `Upload failed (${res.status})`);
+        }
+
+        finalUrl = data.url;
+      }
+
+      if (!finalUrl) {
+        throw new Error("Failed to receive valid uploaded media URL");
+      }
+
+      onSuccess(finalUrl);
+      showToast(`${mediaLabel} uploaded successfully!`);
     } catch (err: any) {
-      alert(err.message || "Failed to upload media file");
+      console.error("Upload error:", err);
+      const errMsg = err.message || "Failed to upload media file";
+      showToast(`Upload failed: ${errMsg}`);
+      alert(errMsg);
     } finally {
       setUploadingField(null);
       e.target.value = "";
     }
-
   }
 
 
@@ -695,11 +753,17 @@ export default function AdminDashboard() {
 
         // 2. Fetch scoped guests, settings, and photos for selected event
         if (selectedId) {
-          const [resGuests, resSettings, resPhotos] = await Promise.all([
+          const [resGuests, resSettings, resPhotos, resStorage] = await Promise.all([
             fetch(`/api/admin/guests?eventId=${selectedId}`),
             fetch(`/api/admin/settings?eventId=${selectedId}`),
             fetch(`/api/admin/photos?eventId=${selectedId}`),
+            fetch("/api/admin/upload"),
           ]);
+
+          if (resStorage && resStorage.ok) {
+            const storageData = await resStorage.json().catch(() => null);
+            if (storageData) setStorageStatus(storageData);
+          }
 
           if (resGuests.ok) {
             const guestData = await resGuests.json();
@@ -1672,12 +1736,47 @@ export default function AdminDashboard() {
                   <div className="flex items-center gap-2 text-[#dfba73] font-cinzel text-sm font-bold uppercase tracking-wider">
                     <Film className="w-4 h-4 text-[#dfba73]" /> 2. Couple Pre-Shoot Video & Media Suite
                   </div>
-                  {settings.heroVideoUrl && (
-                    <span className="px-2.5 py-0.5 rounded-full bg-[#800020] text-[#edd892] text-[10px] font-cinzel font-semibold border border-[#dfba73]/40">
-                      🎬 Video Mode Active
-                    </span>
-                  )}
+                  <div className="flex items-center gap-2">
+                    {storageStatus?.hasBlobToken ? (
+                      <span className="px-2.5 py-0.5 rounded-full bg-emerald-950/70 text-emerald-300 text-[10px] font-cinzel font-semibold border border-emerald-500/40 inline-flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                        Cloud Blob Active
+                      </span>
+                    ) : storageStatus?.isVercel ? (
+                      <span className="px-2.5 py-0.5 rounded-full bg-amber-950/70 text-amber-300 text-[10px] font-cinzel font-semibold border border-amber-500/40 inline-flex items-center gap-1.5">
+                        ⚠️ Blob Setup Required
+                      </span>
+                    ) : (
+                      <span className="px-2.5 py-0.5 rounded-full bg-zinc-800 text-zinc-300 text-[10px] font-cinzel border border-zinc-600">
+                        Local Disk Storage
+                      </span>
+                    )}
+                    {settings.heroVideoUrl && (
+                      <span className="px-2.5 py-0.5 rounded-full bg-[#800020] text-[#edd892] text-[10px] font-cinzel font-semibold border border-[#dfba73]/40">
+                        🎬 Video Mode Active
+                      </span>
+                    )}
+                  </div>
                 </div>
+
+                {/* Storage Notification Banner if deployed on Vercel without Blob Store */}
+                {storageStatus && storageStatus.isVercel && !storageStatus.hasBlobToken && (
+                  <div className="p-3.5 rounded-xl bg-gradient-to-r from-amber-950/50 to-orange-950/30 border border-amber-500/40 text-amber-200 text-xs flex items-start gap-3 shadow-md">
+                    <Sparkles className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+                    <div className="space-y-1">
+                      <div className="font-cinzel font-bold text-amber-300 text-[12px]">
+                        Notice: Enable Vercel Blob Cloud Storage for Direct Photo & Video Uploads
+                      </div>
+                      <p className="text-[11px] text-amber-100/90 font-sans leading-relaxed">
+                        On Vercel, the local server filesystem is read-only. To upload high-resolution wedding photos and large pre-shoot videos (up to 500MB):
+                        Open your project in the <a href="https://vercel.com/dashboard" target="_blank" rel="noreferrer" className="underline font-semibold text-amber-300 hover:text-white">Vercel Dashboard</a> &rarr; <strong>Storage</strong> tab &rarr; <strong>Create Database</strong> &rarr; choose <strong>Blob</strong>.
+                      </p>
+                      <p className="text-[10px] text-amber-300/80 font-sans italic">
+                        💡 You can also paste any direct image or video URL (from Dropbox, Google Drive, Imgur, YouTube, etc.) directly into the URL fields below.
+                      </p>
+                    </div>
+                  </div>
+                )}
 
                 {/* CINEMATIC PRE-SHOOT VIDEO SECTION */}
                 <div className="p-4 rounded-2xl bg-gradient-to-r from-[#2c131d] via-[#1f0d14] to-[#14060b] border-2 border-[#dfba73]/60 shadow-lg space-y-3">

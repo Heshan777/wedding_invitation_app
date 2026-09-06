@@ -29,6 +29,11 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Missing 'src' parameter" }, { status: 400 });
   }
 
+  // If src is an absolute HTTP/HTTPS URL (e.g. Vercel Blob or external CDN), redirect directly
+  if (src.startsWith("http://") || src.startsWith("https://")) {
+    return NextResponse.redirect(src, { status: 307 });
+  }
+
   // Clean relative path and prevent directory traversal
   const cleanPath = src.replace(/^\/+/, "").replace(/\.\./g, "");
   const publicDir = path.resolve(process.cwd(), "public");
@@ -44,7 +49,10 @@ export async function GET(request: NextRequest) {
   }
 
   if (!fs.existsSync(filePath)) {
-    return NextResponse.json({ error: "File not found" }, { status: 404 });
+    return NextResponse.json(
+      { error: "File not found", file: cleanPath },
+      { status: 404, headers: { "Cache-Control": "no-store" } }
+    );
   }
 
   const stat = fs.statSync(filePath);
