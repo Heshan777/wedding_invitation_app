@@ -323,6 +323,131 @@
   animation: petal-float 9s cubic-bezier(0.35, 0.1, 0.25, 1) infinite;
 }
 
+/* GPU-Accelerated 3D Falling Decor (Hearts, Wedding Symbols, Floating Sparkles) */
+@keyframes fall-sway-left {
+  0% {
+    transform: translate3d(0, -10vh, 0) rotate(0deg) scale(0.9);
+    opacity: 0;
+  }
+  12% {
+    opacity: 0.92;
+  }
+  38% {
+    transform: translate3d(-24px, 36vh, 0) rotate(22deg) scale(1);
+  }
+  72% {
+    transform: translate3d(18px, 74vh, 0) rotate(-18deg) scale(0.96);
+  }
+  88% {
+    opacity: 0.92;
+  }
+  100% {
+    transform: translate3d(-10px, 114vh, 0) rotate(42deg) scale(0.9);
+    opacity: 0;
+  }
+}
+
+@keyframes fall-sway-right {
+  0% {
+    transform: translate3d(0, -10vh, 0) rotate(0deg) scale(0.9);
+    opacity: 0;
+  }
+  12% {
+    opacity: 0.92;
+  }
+  42% {
+    transform: translate3d(26px, 42vh, 0) rotate(-26deg) scale(1.04);
+  }
+  74% {
+    transform: translate3d(-16px, 78vh, 0) rotate(16deg) scale(0.96);
+  }
+  88% {
+    opacity: 0.92;
+  }
+  100% {
+    transform: translate3d(12px, 114vh, 0) rotate(-38deg) scale(0.9);
+    opacity: 0;
+  }
+}
+
+@keyframes fall-drift-center {
+  0% {
+    transform: translate3d(0, -10vh, 0) rotate(0deg) scale(0.85);
+    opacity: 0;
+  }
+  14% {
+    opacity: 0.88;
+  }
+  50% {
+    transform: translate3d(12px, 52vh, 0) rotate(14deg) scale(1);
+  }
+  86% {
+    opacity: 0.88;
+  }
+  100% {
+    transform: translate3d(-8px, 114vh, 0) rotate(-16deg) scale(0.85);
+    opacity: 0;
+  }
+}
+
+.animate-fall-sway-left {
+  animation-name: fall-sway-left;
+  animation-timing-function: cubic-bezier(0.33, 0.1, 0.35, 0.95);
+  animation-iteration-count: infinite;
+  will-change: transform, opacity;
+}
+
+.animate-fall-sway-right {
+  animation-name: fall-sway-right;
+  animation-timing-function: cubic-bezier(0.33, 0.1, 0.35, 0.95);
+  animation-iteration-count: infinite;
+  will-change: transform, opacity;
+}
+
+.animate-fall-drift-center {
+  animation-name: fall-drift-center;
+  animation-timing-function: cubic-bezier(0.33, 0.1, 0.35, 0.95);
+  animation-iteration-count: infinite;
+  will-change: transform, opacity;
+}
+
+/* Subtle breathing pulse and glowing shimmer for floating hearts */
+@keyframes heart-fade-pulse {
+  0%, 100% {
+    transform: scale(0.95);
+    opacity: 0.88;
+    filter: drop-shadow(0 2px 6px rgba(223, 186, 115, 0.4));
+  }
+  50% {
+    transform: scale(1.08);
+    opacity: 1;
+    filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.75));
+  }
+}
+
+@keyframes ruby-fade-pulse {
+  0%, 100% {
+    transform: scale(0.95);
+    opacity: 0.88;
+    filter: drop-shadow(0 2px 6px rgba(128, 0, 32, 0.4));
+  }
+  50% {
+    transform: scale(1.08);
+    opacity: 1;
+    filter: drop-shadow(0 0 10px rgba(255, 77, 109, 0.75));
+  }
+}
+
+.animate-heart-pulse {
+  animation: heart-fade-pulse 3s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+.animate-ruby-pulse {
+  animation: ruby-fade-pulse 3.2s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
 /* Custom Luxury Scrollbar */
 
 ::-webkit-scrollbar {
@@ -464,6 +589,11 @@
   .animate-petal-flutter,
   .animate-fall,
   .animate-petal-float,
+  .animate-fall-sway-left,
+  .animate-fall-sway-right,
+  .animate-fall-drift-center,
+  .animate-heart-pulse,
+  .animate-ruby-pulse,
   .animate-ken-burns,
   .animate-bokeh,
   .animate-glow-gold,
