@@ -8,7 +8,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || "https://wedding-invitation-app-silk.vercel.app"),
   title: "Royal Wedding & Homecoming Invitation | Sandharu & Sanduni",
   description: "Join us with joy and love as we celebrate the sacred union and homecoming of Sandharu & Sanduni.",
   keywords: ["Wedding Invitation", "Homecoming", "Sandharu & Sanduni", "Sri Lanka Wedding", "Royal Invitation"],

@@ -411,7 +411,7 @@ export const translations: Record<Locale, Translations> = {
 
   ta: {
     langName: "தமிழ்",
-    langFlag: "🌺",
+    langFlag: "🇮🇳",
 
     royalInvitation: "அரச திருமண அழைப்பிதழ்",
     homecomingCelebration: "மறுவீட்டு வரவேற்பு விழா",

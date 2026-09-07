@@ -103,7 +103,7 @@ function getYouTubeEmbedUrl(url: string) {
   if (!url) return null;
   const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/))([\w-]{11})/);
   if (match && match[1]) {
-    return `https://www.youtube.com/embed/${match[1]}?autoplay=1&rel=0&modestbranding=1`;
+    return `https://www.youtube.com/embed/${match[1]}?autoplay=1&mute=1&playsinline=1&rel=0&modestbranding=1&enablejsapi=1`;
   }
   return null;
 }
@@ -112,7 +112,7 @@ function getVimeoEmbedUrl(url: string) {
   if (!url) return null;
   const match = url.match(/vimeo\.com\/(?:video\/)?([0-9]+)/);
   if (match && match[1]) {
-    return `https://player.vimeo.com/video/${match[1]}?autoplay=1&title=0&byline=0&portrait=0`;
+    return `https://player.vimeo.com/video/${match[1]}?autoplay=1&muted=1&playsinline=1&title=0&byline=0&portrait=0`;
   }
   return null;
 }
@@ -212,6 +212,20 @@ export default function InvitationView({
     return settings.heroVideoUrl;
   }, [settings.heroVideoUrl]);
 
+  // Helper to reliably configure and play hero video across mobile and desktop browsers
+  const playHeroVideoSafely = () => {
+    const v = heroVideoRef.current;
+    if (!v) return;
+    v.defaultMuted = true;
+    v.muted = true;
+    v.playsInline = true;
+    v.setAttribute("playsinline", "true");
+    v.setAttribute("webkit-playsinline", "true");
+    if (isVideoPlaying) {
+      v.play().catch(() => {});
+    }
+  };
+
   // Viewport-aware video observer: pause when scrolled out of view to save bandwidth & GPU
   useEffect(() => {
     if (!envelopeOpened || !heroVideoContainerRef.current) return;
@@ -222,7 +236,7 @@ export default function InvitationView({
           if (!heroVideoRef.current) return;
           if (entry.isIntersecting) {
             if (isVideoPlaying && heroVideoRef.current.paused) {
-              heroVideoRef.current.play().catch(() => {});
+              playHeroVideoSafely();
             }
           } else {
             if (!heroVideoRef.current.paused) {
@@ -238,12 +252,31 @@ export default function InvitationView({
     return () => observer.disconnect();
   }, [envelopeOpened, isVideoPlaying]);
 
-  // Auto-play hero video when envelope opens
+  // Auto-play hero video when envelope opens or video changes
   useEffect(() => {
-    if (envelopeOpened && heroVideoRef.current && isVideoPlaying) {
-      heroVideoRef.current.play().catch(() => {});
+    if (envelopeOpened) {
+      playHeroVideoSafely();
     }
-  }, [envelopeOpened, isVideoPlaying]);
+  }, [envelopeOpened, isVideoPlaying, videoStreamUrl]);
+
+  // User interaction listener to trigger video autoplay if initially deferred by browser policy
+  useEffect(() => {
+    const handleGesturePlay = () => {
+      if (heroVideoRef.current && heroVideoRef.current.paused && isVideoPlaying) {
+        playHeroVideoSafely();
+      }
+    };
+
+    window.addEventListener("start_wedding_music", handleGesturePlay);
+    window.addEventListener("click", handleGesturePlay, { once: true });
+    window.addEventListener("touchstart", handleGesturePlay, { once: true });
+
+    return () => {
+      window.removeEventListener("start_wedding_music", handleGesturePlay);
+      window.removeEventListener("click", handleGesturePlay);
+      window.removeEventListener("touchstart", handleGesturePlay);
+    };
+  }, [isVideoPlaying]);
 
   // Read saved locale on mount
   useEffect(() => {
@@ -574,6 +607,16 @@ export default function InvitationView({
     setLocale(selectedLocale);
     setEnvelopeOpened(true);
     setIsVideoPlaying(true);
+    setIsVideoMuted(true);
+
+    // Direct synchronous play call within user touch/click gesture
+    if (heroVideoRef.current) {
+      heroVideoRef.current.defaultMuted = true;
+      heroVideoRef.current.muted = true;
+      heroVideoRef.current.playsInline = true;
+      heroVideoRef.current.play().catch(() => {});
+    }
+
     // Broadcast event to start music player
     if (typeof window !== "undefined") {
       window.dispatchEvent(new Event("start_wedding_music"));
@@ -785,7 +828,13 @@ export default function InvitationView({
             <div className="flex items-center justify-center gap-2 mb-4">
               <button
                 type="button"
-                onClick={() => setMediaMode("video")}
+                onClick={() => {
+                  setMediaMode("video");
+                  setIsVideoPlaying(true);
+                  setTimeout(() => {
+                    playHeroVideoSafely();
+                  }, 50);
+                }}
                 className={`px-4 py-1.5 rounded-full text-xs font-cinzel font-bold flex items-center gap-1.5 transition cursor-pointer shadow-md ${
                   mediaMode === "video"
                     ? "bg-[#800020] text-[#ffd700] border-2 border-[#ffd700] shadow-[0_0_15px_rgba(223,186,115,0.4)]"
@@ -842,13 +891,23 @@ export default function InvitationView({
                     <div ref={heroVideoContainerRef} className="relative h-80 sm:h-96 w-full overflow-hidden flex items-center justify-center">
                       <video
                         ref={heroVideoRef}
-                        src={envelopeOpened ? videoStreamUrl : undefined}
+                        src={videoStreamUrl || undefined}
                         poster={settings.videoThumbnailUrl || heroImageSrc}
-                        autoPlay={envelopeOpened}
+                        autoPlay
                         loop
                         muted={isVideoMuted}
                         playsInline
-                        preload={envelopeOpened ? "metadata" : "none"}
+                        preload="auto"
+                        onLoadedData={() => {
+                          if (heroVideoRef.current && isVideoPlaying) {
+                            playHeroVideoSafely();
+                          }
+                        }}
+                        onCanPlay={() => {
+                          if (heroVideoRef.current && isVideoPlaying && heroVideoRef.current.paused) {
+                            playHeroVideoSafely();
+                          }
+                        }}
                         className="w-full h-full object-cover object-center transition duration-700 group-hover:scale-105"
                       />
 

@@ -255,7 +255,7 @@ export default function EnvelopeOpening({
                   : "text-[#edd892]/70 hover:text-[#ffd700] hover:bg-white/5"
               }`}
             >
-              <span>🇬🇧</span>
+              <span>En</span>
               <span>English</span>
             </button>
 
@@ -268,7 +268,7 @@ export default function EnvelopeOpening({
                   : "text-[#edd892]/70 hover:text-[#ffd700] hover:bg-white/5"
               }`}
             >
-              <span>🇱🇰</span>
+              <span>Si</span>
               <span>සිංහල</span>
             </button>
 
@@ -281,7 +281,7 @@ export default function EnvelopeOpening({
                   : "text-[#edd892]/70 hover:text-[#ffd700] hover:bg-white/5"
               }`}
             >
-              <span>🌺</span>
+              <span>Ta</span>
               <span>தமிழ்</span>
             </button>
           </div>
