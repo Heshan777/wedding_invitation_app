@@ -271,6 +271,33 @@ const emptyForm: FormState = {
   notes: "",
 };
 
+export const DEFAULT_PRODUCTION_URL = "https://wedding-invitation-app-silk.vercel.app";
+
+export function getAppBaseUrl(): string {
+  if (typeof window !== "undefined") {
+    const custom = localStorage.getItem("wedding_invitation_base_url");
+    if (custom && custom.trim()) {
+      return custom.trim().replace(/\/+$/, "");
+    }
+  }
+
+  if (process.env.NEXT_PUBLIC_APP_URL) {
+    return process.env.NEXT_PUBLIC_APP_URL.trim().replace(/\/+$/, "");
+  }
+  if (process.env.NEXT_PUBLIC_SITE_URL) {
+    return process.env.NEXT_PUBLIC_SITE_URL.trim().replace(/\/+$/, "");
+  }
+
+  if (typeof window !== "undefined") {
+    const origin = window.location.origin;
+    if (origin && !origin.includes("localhost") && !origin.includes("127.0.0.1") && !origin.includes("0.0.0.0")) {
+      return origin.replace(/\/+$/, "");
+    }
+  }
+
+  return DEFAULT_PRODUCTION_URL;
+}
+
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<
     "guests" | "photos" | "settings" | "tables" | "events" | "managers"
@@ -330,6 +357,7 @@ export default function AdminDashboard() {
     cloudName?: string | null;
     message: string;
   } | null>(null);
+  const [appBaseUrl, setAppBaseUrl] = useState<string>(DEFAULT_PRODUCTION_URL);
 
   const [guests, setGuests] = useState<Guest[]>([]);
   const [loading, setLoading] = useState(true);
@@ -490,7 +518,7 @@ export default function AdminDashboard() {
 
   // Export to CSV
   function handleExportCSV() {
-    const origin = typeof window !== "undefined" ? window.location.origin : "";
+    const base = getAppBaseUrl();
     const headers = [
       "Salutation",
       "Full Name",
@@ -514,7 +542,7 @@ export default function AdminDashboard() {
       g.rsvpStatus === "ATTENDING" ? g.attendeeCount || 1 : 0,
       `"${g.dietary || "NONE"}"`,
       `"${(g.rsvpMessage || "").replace(/"/g, '""')}"`,
-      `"${origin}/invite/${g.token}"`,
+      `"${base}/invite/${g.token}"`,
     ]);
 
     const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
@@ -530,8 +558,7 @@ export default function AdminDashboard() {
 
   // 1-Click WhatsApp Invitation Dispatcher
   function handleSendWhatsApp(g: Guest) {
-    const origin = typeof window !== "undefined" ? window.location.origin : "";
-    const link = `${origin}/invite/${g.token}`;
+    const link = inviteLink(g.token);
     const salutationName = `${g.salutation} ${g.displayName}`.trim();
     const formattedDate = new Date(settings.eventDate).toLocaleDateString("en-US", {
       weekday: "long",
@@ -728,6 +755,7 @@ export default function AdminDashboard() {
 
   async function loadData(targetEventId?: string) {
     setLoading(true);
+    setAppBaseUrl(getAppBaseUrl());
     try {
       // 1. Fetch manager profile & events list
       const resEvents = await fetch("/api/admin/events");
@@ -1039,7 +1067,7 @@ export default function AdminDashboard() {
   }
 
   function inviteLink(token: string) {
-    const base = typeof window !== "undefined" ? window.location.origin : "";
+    const base = getAppBaseUrl();
     return `${base}/invite/${token}`;
   }
 
@@ -1257,6 +1285,27 @@ export default function AdminDashboard() {
                 className="col-span-1 sm:col-auto px-3 py-2.5 rounded-xl bg-[#231a20] border border-[#c5a059]/40 text-[#dfba73] hover:bg-[#c5a059]/10 text-xs font-cinzel font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer min-h-[42px] touch-manipulation"
               >
                 <FileSpreadsheet className="w-4 h-4" /> <span>CSV</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  const current = getAppBaseUrl();
+                  const custom = prompt(
+                    "Public Domain for WhatsApp Invites & QR Codes:\n\nDefault: https://wedding-invitation-app-silk.vercel.app\nEnter your custom or production URL:",
+                    current
+                  );
+                  if (custom !== null && custom.trim()) {
+                    const clean = custom.trim().replace(/\/+$/, "");
+                    localStorage.setItem("wedding_invitation_base_url", clean);
+                    setAppBaseUrl(clean);
+                    showToast(`Active invite domain set to: ${clean}`);
+                  }
+                }}
+                className="col-span-1 sm:col-auto px-3 py-2.5 rounded-xl bg-[#231a20] border border-[#c5a059]/40 text-[#dfba73] hover:bg-[#c5a059]/10 text-xs font-cinzel font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer min-h-[42px] touch-manipulation"
+                title={`Active Public Domain: ${appBaseUrl} (Click to change)`}
+              >
+                <Link2 className="w-3.5 h-3.5 text-[#ffd700]" /> <span>Domain</span>
               </button>
 
               <button
