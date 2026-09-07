@@ -448,6 +448,31 @@
   will-change: transform, opacity;
 }
 
+/* Romantic Floating Waltz Animation for coupleshare.png */
+@keyframes couple-float-sway {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg) scale(1);
+    filter: drop-shadow(0 10px 20px rgba(128, 0, 32, 0.25)) drop-shadow(0 0 12px rgba(223, 186, 115, 0.35));
+  }
+  25% {
+    transform: translateY(-6px) rotate(-1.2deg) scale(1.015);
+    filter: drop-shadow(0 16px 26px rgba(128, 0, 32, 0.35)) drop-shadow(0 0 18px rgba(255, 215, 0, 0.5));
+  }
+  50% {
+    transform: translateY(-10px) rotate(0.8deg) scale(1.025);
+    filter: drop-shadow(0 20px 30px rgba(128, 0, 32, 0.4)) drop-shadow(0 0 24px rgba(255, 215, 0, 0.6));
+  }
+  75% {
+    transform: translateY(-5px) rotate(1.4deg) scale(1.015);
+    filter: drop-shadow(0 15px 24px rgba(128, 0, 32, 0.3)) drop-shadow(0 0 16px rgba(223, 186, 115, 0.45));
+  }
+}
+
+.animate-couple-float {
+  animation: couple-float-sway 5s ease-in-out infinite;
+  will-change: transform, filter;
+}
+
 /* Custom Luxury Scrollbar */
 
 ::-webkit-scrollbar {

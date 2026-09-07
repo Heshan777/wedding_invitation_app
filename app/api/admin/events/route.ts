@@ -84,15 +84,39 @@ export async function POST(req: NextRequest) {
       managerId: requestedManagerId,
     } = body;
 
-    // Super admin can assign wedding to any manager, else own manager ID
+    // 1-to-1 Architecture: Each Event Manager is dedicated to only ONE wedding event
     let targetManagerId = manager.id;
-    if (manager.role === "SUPER_ADMIN" && requestedManagerId) {
-      const exists = await prisma.eventManager.findUnique({
-        where: { id: requestedManagerId },
+    if (manager.role !== "SUPER_ADMIN") {
+      const existingCount = await prisma.weddingEvent.count({
+        where: { managerId: manager.id },
       });
-      if (exists) {
-        targetManagerId = requestedManagerId;
+      if (existingCount >= 1) {
+        return NextResponse.json(
+          {
+            error:
+              "Architecture Restriction: Each Event Manager can only manage one wedding event. To manage another wedding, please register or create a new Event Manager account.",
+          },
+          { status: 403 }
+        );
       }
+    } else if (requestedManagerId) {
+      // Super Admin assigning to an Event Manager
+      const targetManager = await prisma.eventManager.findUnique({
+        where: { id: requestedManagerId },
+        include: { _count: { select: { events: true } } },
+      });
+      if (!targetManager) {
+        return NextResponse.json({ error: "Target Event Manager not found" }, { status: 404 });
+      }
+      if (targetManager.role !== "SUPER_ADMIN" && (targetManager._count?.events || 0) >= 1) {
+        return NextResponse.json(
+          {
+            error: `Architecture Restriction: Event Manager "${targetManager.name}" already has an assigned wedding. Under the 1-to-1 architecture, each Event Manager can only manage one wedding.`,
+          },
+          { status: 400 }
+        );
+      }
+      targetManagerId = requestedManagerId;
     }
 
     if (!coupleNames || !eventDate || !venueName) {

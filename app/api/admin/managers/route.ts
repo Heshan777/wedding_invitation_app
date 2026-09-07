@@ -175,10 +175,11 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // Optionally provision initial starter wedding event
+    // 1-to-1 Architecture: Provision initial dedicated wedding event for the new Event Manager
     let starterEvent: any = null;
-    if (createStarterWedding && starterCoupleNames && starterCoupleNames.trim()) {
-      const baseSlug = slugify(starterCoupleNames);
+    if (newManager.role === "MANAGER" || (createStarterWedding && starterCoupleNames && starterCoupleNames.trim())) {
+      const couple = (starterCoupleNames && starterCoupleNames.trim()) || "Couple Names (E.g. Rowan & Maya)";
+      const baseSlug = slugify(couple) || `${cleanUsername}-wedding`;
       let uniqueSlug = `${baseSlug}-2026`;
       let counter = 1;
       while (await prisma.weddingEvent.findUnique({ where: { slug: uniqueSlug } })) {
@@ -189,9 +190,9 @@ export async function POST(req: NextRequest) {
         data: {
           managerId: newManager.id,
           slug: uniqueSlug,
-          coupleNames: starterCoupleNames.trim(),
+          coupleNames: couple,
           eventDate: new Date(Date.now() + 60 * 24 * 3600 * 1000), // ~60 days ahead
-          venueName: starterVenueName ? starterVenueName.trim() : "Luxury Ballroom",
+          venueName: starterVenueName ? starterVenueName.trim() : "Grand Ballroom & Royal Garden",
           venueAddress: "Colombo, Sri Lanka",
           venueLat: 6.9271,
           venueLng: 79.8447,

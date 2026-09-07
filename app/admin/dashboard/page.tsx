@@ -768,17 +768,26 @@ export default function AdminDashboard() {
         setEvents(evList);
 
         // Determine which event is active
-        let selectedId = targetEventId || activeEventId;
-        if (!selectedId && typeof window !== "undefined") {
-          selectedId = localStorage.getItem("active_wedding_event_id") || "";
-        }
-        if (!selectedId || !evList.some((e) => e.id === selectedId)) {
+        let selectedId = "";
+        if (data.manager?.role === "SUPER_ADMIN") {
+          selectedId = targetEventId || activeEventId;
+          if (!selectedId && typeof window !== "undefined") {
+            selectedId = localStorage.getItem("active_wedding_event_id") || "";
+          }
+          if (!selectedId || !evList.some((e) => e.id === selectedId)) {
+            selectedId = evList[0]?.id || "";
+          }
+          if (typeof window !== "undefined" && selectedId) {
+            localStorage.setItem("active_wedding_event_id", selectedId);
+          }
+        } else {
+          // Regular Event Manager: Strictly locked 1-to-1 to their single dedicated wedding
           selectedId = evList[0]?.id || "";
+          if (typeof window !== "undefined" && selectedId) {
+            localStorage.setItem("active_wedding_event_id", selectedId);
+          }
         }
         setActiveEventId(selectedId);
-        if (typeof window !== "undefined" && selectedId) {
-          localStorage.setItem("active_wedding_event_id", selectedId);
-        }
 
         // 2. Fetch scoped guests, settings, and photos for selected event
         if (selectedId) {
@@ -819,6 +828,8 @@ export default function AdminDashboard() {
 
         if (data.manager?.role === "SUPER_ADMIN") {
           loadManagers();
+        } else {
+          setActiveTab((prev) => (prev === "events" || prev === "managers" ? "guests" : prev));
         }
       }
     } catch (err) {
@@ -1112,9 +1123,14 @@ export default function AdminDashboard() {
         setSettingsSuccess(true);
         showToast("Event settings updated for this wedding!");
         setTimeout(() => setSettingsSuccess(false), 3000);
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        const msg = errData.error || "Failed to update event settings";
+        showToast(msg);
+        alert(msg);
       }
     } catch {
-      showToast("Error updating settings");
+      showToast("Network error updating settings");
     } finally {
       setSavingSettings(false);
     }
@@ -1273,21 +1289,33 @@ export default function AdminDashboard() {
 
           {/* Right Column: Event Selector & Action Buttons */}
           <div className="flex flex-col sm:flex-row lg:flex-row items-stretch lg:items-center gap-3 w-full lg:w-auto">
-            {/* Wedding Switcher Selector */}
-            <div className="flex items-center gap-2 bg-[#1c161a] border border-[#c5a059]/60 rounded-xl px-3.5 py-2.5 shadow-md w-full sm:w-auto min-h-[44px]">
-              <Sparkles className="w-4 h-4 text-[#dfba73] shrink-0" />
-              <select
-                value={activeEventId}
-                onChange={(e) => handleSelectEvent(e.target.value)}
-                className="bg-transparent text-xs font-cinzel font-semibold text-[#fdfbf7] focus:outline-none cursor-pointer w-full sm:max-w-[220px] md:max-w-[260px] truncate"
-              >
-                {events.map((ev) => (
-                  <option key={ev.id} value={ev.id} className="bg-[#1c161a] text-white">
-                    {ev.coupleNames} {manager?.role === "SUPER_ADMIN" && ev.manager ? `(${ev.manager.company || ev.manager.name})` : ""}
-                  </option>
-                ))}
-              </select>
-            </div>
+            {/* Wedding Switcher Selector: Dropdown for Super Admin, Dedicated Badge for Event Manager */}
+            {manager?.role === "SUPER_ADMIN" ? (
+              <div className="flex items-center gap-2 bg-[#1c161a] border border-[#c5a059]/60 rounded-xl px-3.5 py-2.5 shadow-md w-full sm:w-auto min-h-[44px]">
+                <Sparkles className="w-4 h-4 text-[#dfba73] shrink-0" />
+                <select
+                  value={activeEventId}
+                  onChange={(e) => handleSelectEvent(e.target.value)}
+                  className="bg-transparent text-xs font-cinzel font-semibold text-[#fdfbf7] focus:outline-none cursor-pointer w-full sm:max-w-[220px] md:max-w-[260px] truncate"
+                >
+                  {events.map((ev) => (
+                    <option key={ev.id} value={ev.id} className="bg-[#1c161a] text-white">
+                      {ev.coupleNames} {ev.manager ? `(${ev.manager.company || ev.manager.name})` : ""}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 bg-[#1c161a] border border-[#c5a059]/40 rounded-xl px-3.5 py-2.5 shadow-md w-full sm:w-auto min-h-[44px]">
+                <Sparkles className="w-4 h-4 text-[#dfba73] shrink-0" />
+                <span className="text-xs font-cinzel font-semibold text-[#fdfbf7] truncate max-w-[220px]">
+                  {currentEvent?.coupleNames || settings.coupleNames}
+                </span>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-950/70 border border-emerald-500/40 text-emerald-300 font-mono shrink-0">
+                  Dedicated
+                </span>
+              </div>
+            )}
 
             {/* Action Buttons Toolbar */}
             <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 w-full sm:w-auto">
@@ -1302,15 +1330,15 @@ export default function AdminDashboard() {
                 </button>
               )}
 
-              {/* + New Wedding Button */}
-              <button
-                onClick={() => setShowCreateEventModal(true)}
-                className={`btn-gold-shimmer px-3.5 py-2.5 rounded-xl text-xs font-cinzel font-bold flex items-center justify-center gap-1.5 shadow cursor-pointer min-h-[44px] touch-manipulation ${
-                  manager?.role === "SUPER_ADMIN" ? "col-span-1" : "col-span-2 sm:col-auto"
-                }`}
-              >
-                <Plus className="w-3.5 h-3.5" /> <span className="truncate">New Wedding</span>
-              </button>
+              {/* Super Admin: + New Wedding Button (Architecture: 1 Manager = 1 Wedding) */}
+              {manager?.role === "SUPER_ADMIN" && (
+                <button
+                  onClick={() => setShowCreateEventModal(true)}
+                  className="col-span-1 btn-gold-shimmer px-3.5 py-2.5 rounded-xl text-xs font-cinzel font-bold flex items-center justify-center gap-1.5 shadow cursor-pointer min-h-[44px] touch-manipulation"
+                >
+                  <Plus className="w-3.5 h-3.5" /> <span className="truncate">New Wedding</span>
+                </button>
+              )}
 
               <button
                 onClick={handleExportCSV}
@@ -1528,24 +1556,24 @@ export default function AdminDashboard() {
               <Printer className="w-4 h-4 text-[#dfba73] shrink-0" />
               <span className="truncate">Printable Place Cards</span>
             </button>
-            <button
-              onClick={() => setActiveTab("events")}
-              className={`w-full xl:w-auto px-3.5 sm:px-4 py-2.5 rounded-xl text-xs font-cinzel font-bold tracking-wider transition cursor-pointer flex items-center justify-center sm:justify-start gap-2 touch-manipulation min-h-[44px] ${
-                manager?.role === "SUPER_ADMIN" ? "col-span-1" : "col-span-2 sm:col-span-1 xl:col-auto"
-              } ${
-                activeTab === "events"
-                  ? "bg-[#800020] text-[#fdfbf7] border border-[#dfba73]/80 shadow-lg shadow-[#800020]/40 ring-1 ring-[#dfba73]/30"
-                  : "bg-[#231a20] text-[#fdfbf7]/70 hover:bg-[#c5a059]/15 border border-[#c5a059]/20"
-              }`}
-            >
-              <Sparkles className="w-4 h-4 text-[#dfba73] shrink-0" />
-              <span className="truncate">{manager?.role === "SUPER_ADMIN" ? "Platform Weddings" : "My Weddings"}</span>
-              <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-mono shrink-0 ${
-                activeTab === "events" ? "bg-white/20 text-white" : "bg-[#181216] text-[#dfba73]"
-              }`}>
-                {events.length}
-              </span>
-            </button>
+            {manager?.role === "SUPER_ADMIN" && (
+              <button
+                onClick={() => setActiveTab("events")}
+                className={`w-full xl:w-auto px-3.5 sm:px-4 py-2.5 rounded-xl text-xs font-cinzel font-bold tracking-wider transition cursor-pointer flex items-center justify-center sm:justify-start gap-2 touch-manipulation min-h-[44px] col-span-1 sm:col-span-1 xl:col-auto ${
+                  activeTab === "events"
+                    ? "bg-[#800020] text-[#fdfbf7] border border-[#dfba73]/80 shadow-lg shadow-[#800020]/40 ring-1 ring-[#dfba73]/30"
+                    : "bg-[#231a20] text-[#fdfbf7]/70 hover:bg-[#c5a059]/15 border border-[#c5a059]/20"
+                }`}
+              >
+                <Sparkles className="w-4 h-4 text-[#dfba73] shrink-0" />
+                <span className="truncate">Platform Weddings</span>
+                <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-mono shrink-0 ${
+                  activeTab === "events" ? "bg-white/20 text-white" : "bg-[#181216] text-[#dfba73]"
+                }`}>
+                  {events.length}
+                </span>
+              </button>
+            )}
             {manager?.role === "SUPER_ADMIN" && (
               <button
                 onClick={() => setActiveTab("managers")}
@@ -3308,8 +3336,8 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* TAB: ALL WEDDINGS PORTFOLIO */}
-        {activeTab === "events" && (
+        {/* TAB: ALL WEDDINGS PORTFOLIO (Super Admin Exclusive) */}
+        {activeTab === "events" && manager?.role === "SUPER_ADMIN" && (
           <div className="space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-[#1c161a] border border-[#c5a059]/40 shadow-xl">
               <div>
@@ -3988,8 +4016,8 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {/* CREATE NEW WEDDING MODAL */}
-      {showCreateEventModal && (
+      {/* CREATE NEW WEDDING MODAL (Super Admin Exclusive) */}
+      {showCreateEventModal && manager?.role === "SUPER_ADMIN" && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-3 sm:p-4 overflow-y-auto overscroll-contain">
           <div className="relative w-full max-w-lg max-h-[92dvh] overflow-y-auto overscroll-contain rounded-3xl bg-[#1c1519] border border-[#c5a059]/60 p-5 sm:p-8 shadow-2xl my-auto">
             <button
@@ -4118,11 +4146,14 @@ export default function AdminDashboard() {
                     <option value={manager.id}>Assign to Myself (Super Admin)</option>
                     {managers
                       .filter((m) => m.id !== manager.id)
-                      .map((m) => (
-                        <option key={m.id} value={m.id}>
-                          {m.name} (@{m.username}) {m.company ? `— ${m.company}` : ""}
-                        </option>
-                      ))}
+                      .map((m) => {
+                        const hasWedding = (m._count?.events || m.events?.length || 0) > 0;
+                        return (
+                          <option key={m.id} value={m.id} disabled={hasWedding}>
+                            {m.name} (@{m.username}) {m.company ? `— ${m.company}` : ""} {hasWedding ? "— (1-Wedding Limit Reached)" : "— (Available)"}
+                          </option>
+                        );
+                      })}
                   </select>
                 </div>
               )}
@@ -4399,50 +4430,44 @@ export default function AdminDashboard() {
                 </div>
               </div>
 
-              {/* Starter Wedding option */}
-              <div className="p-4 rounded-2xl bg-[#261c22] border border-[#c5a059]/30 space-y-3">
-                <label className="flex items-center gap-2 cursor-pointer text-xs font-cinzel font-semibold text-[#dfba73]">
-                  <input
-                    type="checkbox"
-                    checked={newManagerForm.createStarterWedding}
-                    onChange={(e) =>
-                      setNewManagerForm({ ...newManagerForm, createStarterWedding: e.target.checked })
-                    }
-                    className="rounded accent-[#800020]"
-                  />
-                  <span>Create initial client wedding for this manager</span>
-                </label>
+              {/* Dedicated Wedding Provisioning */}
+              <div className="p-4 rounded-2xl bg-[#261c22] border border-[#c5a059]/30 space-y-2.5">
+                <div className="flex items-center gap-2 text-xs font-cinzel font-semibold text-[#dfba73]">
+                  <Sparkles className="w-3.5 h-3.5 text-[#edd892]" />
+                  <span>Dedicated Wedding Portal (1-to-1 Architecture)</span>
+                </div>
+                <p className="text-[11px] text-[#fdfbf7]/60">
+                  Each Event Manager is dedicated to exactly one wedding event. A starter wedding will be automatically provisioned for this manager.
+                </p>
 
-                {newManagerForm.createStarterWedding && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
-                    <div>
-                      <label className="block text-[10px] uppercase tracking-wider text-[#edd892] font-cinzel font-semibold mb-1">
-                        Couple Names *
-                      </label>
-                      <input
-                        placeholder="e.g. Kasun & Shenali"
-                        value={newManagerForm.starterCoupleNames}
-                        onChange={(e) =>
-                          setNewManagerForm({ ...newManagerForm, starterCoupleNames: e.target.value })
-                        }
-                        className="w-full px-3 py-2 rounded-lg bg-[#1a1217] border border-[#c5a059]/30 text-xs text-[#fdfbf7] focus:outline-none"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[10px] uppercase tracking-wider text-[#edd892] font-cinzel font-semibold mb-1">
-                        Venue Name
-                      </label>
-                      <input
-                        placeholder="e.g. Shangri-La Ballroom"
-                        value={newManagerForm.starterVenueName}
-                        onChange={(e) =>
-                          setNewManagerForm({ ...newManagerForm, starterVenueName: e.target.value })
-                        }
-                        className="w-full px-3 py-2 rounded-lg bg-[#1a1217] border border-[#c5a059]/30 text-xs text-[#fdfbf7] focus:outline-none"
-                      />
-                    </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-wider text-[#edd892] font-cinzel font-semibold mb-1">
+                      Couple Names (Optional)
+                    </label>
+                    <input
+                      placeholder="e.g. Kasun & Shenali"
+                      value={newManagerForm.starterCoupleNames}
+                      onChange={(e) =>
+                        setNewManagerForm({ ...newManagerForm, starterCoupleNames: e.target.value })
+                      }
+                      className="w-full px-3 py-2 rounded-lg bg-[#1a1217] border border-[#c5a059]/30 text-xs text-[#fdfbf7] focus:outline-none"
+                    />
                   </div>
-                )}
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-wider text-[#edd892] font-cinzel font-semibold mb-1">
+                      Venue Name
+                    </label>
+                    <input
+                      placeholder="e.g. Shangri-La Ballroom"
+                      value={newManagerForm.starterVenueName}
+                      onChange={(e) =>
+                        setNewManagerForm({ ...newManagerForm, starterVenueName: e.target.value })
+                      }
+                      className="w-full px-3 py-2 rounded-lg bg-[#1a1217] border border-[#c5a059]/30 text-xs text-[#fdfbf7] focus:outline-none"
+                    />
+                  </div>
+                </div>
               </div>
 
               <div className="pt-3 flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2">

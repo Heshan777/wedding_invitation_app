@@ -144,7 +144,7 @@ export interface Translations {
 export const translations: Record<Locale, Translations> = {
   en: {
     langName: "English",
-    langFlag: "🇬🇧",
+    langFlag: "En",
 
     royalInvitation: "Royal Wedding Invitation",
     homecomingCelebration: "Homecoming Celebration",
@@ -277,7 +277,7 @@ export const translations: Record<Locale, Translations> = {
 
   si: {
     langName: "සිංහල",
-    langFlag: "🇱🇰",
+    langFlag: "Si",
 
     royalInvitation: "රාජකීය මංගල ආරාධනය",
     homecomingCelebration: "දෙවැනි ගමන මංගල උත්සවය",
@@ -411,7 +411,7 @@ export const translations: Record<Locale, Translations> = {
 
   ta: {
     langName: "தமிழ்",
-    langFlag: "🇮🇳",
+    langFlag: "Ta",
 
     royalInvitation: "அரச திருமண அழைப்பிதழ்",
     homecomingCelebration: "மறுவீட்டு வரவேற்பு விழா",
