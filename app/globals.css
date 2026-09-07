@@ -507,11 +507,11 @@
   scroll-behavior: smooth;
 }
 
-/* Printable Banquet Table Place Cards */
+/* Printable Banquet Table Place Cards & Luxury Wedding Invitation Cards */
 @media print {
   @page {
     size: A4 portrait;
-    margin: 12mm;
+    margin: 10mm;
   }
   body {
     background: #ffffff !important;
@@ -532,7 +532,12 @@
   .printable-cards-grid {
     display: grid !important;
     grid-template-columns: repeat(2, 1fr) !important;
-    gap: 12mm !important;
+    gap: 8mm !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  .printable-wedding-cards-grid {
+    display: block !important;
     padding: 0 !important;
     margin: 0 !important;
   }
@@ -545,6 +550,34 @@
     color: #1a1517 !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
+  }
+  .printable-wedding-card {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    page-break-after: always !important;
+    break-after: page !important;
+    box-shadow: none !important;
+    border: 2px solid #c5a059 !important;
+    background: #fffdfa !important;
+    color: #1a1517 !important;
+    width: 100% !important;
+    max-width: 180mm !important;
+    margin: 0 auto 15mm auto !important;
+    padding: 10mm !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  /* Single Card Isolated Print Mode */
+  .single-print-active .single-card-hide {
+    display: none !important;
+  }
+  .single-print-active .single-card-target {
+    display: flex !important;
+    page-break-after: avoid !important;
+    break-after: avoid !important;
+    margin: 15mm auto !important;
+    max-width: 180mm !important;
+    box-shadow: none !important;
   }
 }
 
