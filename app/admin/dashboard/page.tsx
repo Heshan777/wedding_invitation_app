@@ -53,6 +53,8 @@ import {
   UserPlus,
   Building2,
   Briefcase,
+  Music,
+  User,
 } from "lucide-react";
 
 export type WeddingEventItem = {
@@ -1194,60 +1196,90 @@ export default function AdminDashboard() {
 
       <div className="max-w-6xl mx-auto">
         {/* Top Executive Header */}
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pb-6 border-b border-[#c5a059]/30 mb-6 sm:mb-8">
-          <div className="w-full md:w-auto">
-            <div className="flex flex-wrap items-center gap-2">
-              {manager?.role === "SUPER_ADMIN" ? (
-                <>
-                  <span className="text-xs uppercase tracking-[0.3em] text-[#dfba73] font-cinzel font-bold flex items-center gap-1.5">
-                    <Crown className="w-3.5 h-3.5 text-[#dfba73]" /> Super Admin Portal
-                  </span>
-                  <span className="px-2.5 py-0.5 rounded-full bg-[#800020]/40 text-[#dfba73] text-[10px] font-mono border border-[#dfba73]/40">
-                    Platform Owner (@{manager.username})
-                  </span>
-                </>
-              ) : (
-                <>
-                  <span className="text-xs uppercase tracking-[0.3em] text-emerald-400 font-cinzel font-bold flex items-center gap-1.5">
-                    <Briefcase className="w-3.5 h-3.5 text-emerald-400" /> Event Manager Portal
-                  </span>
-                  <span className="px-2.5 py-0.5 rounded-full bg-emerald-950/40 text-emerald-300 text-[10px] font-mono border border-emerald-500/40">
-                    {manager?.company ? `${manager.company} (@${manager?.username})` : `@${manager?.username}`}
-                  </span>
-                </>
-              )}
-            </div>
-            <h1 className="font-cinzel text-xl sm:text-2xl md:text-3xl font-bold text-[#fdfbf7] mt-1.5 tracking-tight break-words">
-              {currentEvent?.coupleNames || settings.coupleNames}
-            </h1>
-            <div className="flex flex-wrap items-center gap-2 mt-1.5 text-xs text-[#dfba73]/80">
-              <span className="px-2 py-0.5 rounded-lg bg-[#231a20] border border-[#c5a059]/30 font-mono text-[11px] text-[#edd892]">
-                Slug: /e/{currentEvent?.slug || "wedding"}
-              </span>
-              {currentEvent?.manager && manager?.role === "SUPER_ADMIN" && (
-                <span className="px-2 py-0.5 rounded-lg bg-[#800020]/20 border border-[#dfba73]/30 text-[11px] text-[#dfba73] font-sans">
-                  Planner: {currentEvent.manager.name} ({currentEvent.manager.company || currentEvent.manager.username})
+        <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-5 pb-6 border-b border-[#c5a059]/30 mb-6 sm:mb-8">
+          {/* Left Column: Manager Profile & Active Event Info */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            {/* Event Manager Profile Avatar & Badge */}
+            <div className="flex items-center gap-3 p-2.5 sm:p-3 rounded-2xl bg-[#1c161a] border border-[#c5a059]/40 shadow-md w-full sm:w-auto">
+              <div className="relative shrink-0">
+                <div
+                  className={`w-11 h-11 sm:w-12 sm:h-12 rounded-full flex items-center justify-center font-cinzel font-bold text-base sm:text-lg shadow-md border ${
+                    manager?.role === "SUPER_ADMIN"
+                      ? "bg-gradient-to-br from-[#800020] via-[#5c0e1e] to-[#25040b] text-[#ffd700] border-[#dfba73]"
+                      : "bg-gradient-to-br from-emerald-950 via-[#18261e] to-[#121013] text-emerald-300 border-emerald-500/50"
+                  }`}
+                >
+                  {manager?.role === "SUPER_ADMIN" ? (
+                    <Crown className="w-5 h-5 text-[#ffd700]" />
+                  ) : (
+                    (manager?.company?.[0] || manager?.name?.[0] || manager?.username?.[0] || "M").toUpperCase()
+                  )}
+                </div>
+                {/* Active Session Online Pulse Dot */}
+                <span
+                  className="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-[#1c161a] shadow-sm flex items-center justify-center"
+                  title="Active Session"
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
                 </span>
-              )}
-              <a
-                href={`/e/${currentEvent?.slug || "wedding"}`}
-                target="_blank"
-                rel="noreferrer"
-                className="hover:text-white inline-flex items-center gap-1 text-[11px] underline bg-[#231a20]/60 px-2 py-0.5 rounded-lg border border-[#c5a059]/20"
-              >
-                <ExternalLink className="w-3 h-3 text-[#dfba73]" /> Preview Wedding
-              </a>
+              </div>
+
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1.5">
+                  {manager?.role === "SUPER_ADMIN" ? (
+                    <span className="px-2 py-0.5 rounded-full bg-[#800020]/50 text-[#ffd700] text-[10px] font-cinzel font-bold tracking-wider border border-[#dfba73]/40 flex items-center gap-1">
+                      <Crown className="w-3 h-3 text-[#ffd700]" /> Super Admin
+                    </span>
+                  ) : (
+                    <span className="px-2 py-0.5 rounded-full bg-emerald-950/60 text-emerald-300 text-[10px] font-cinzel font-bold tracking-wider border border-emerald-500/40 flex items-center gap-1">
+                      <Briefcase className="w-3 h-3 text-emerald-400" /> Event Planner
+                    </span>
+                  )}
+                  <span className="text-[10px] font-mono text-[#edd892]/70 truncate">
+                    @{manager?.username || "admin"}
+                  </span>
+                </div>
+                <div className="font-cinzel font-bold text-sm sm:text-base text-[#fdfbf7] truncate mt-0.5">
+                  {manager?.company || manager?.name || (manager?.role === "SUPER_ADMIN" ? "Platform Owner" : "Event Manager")}
+                </div>
+              </div>
+            </div>
+
+            {/* Wedding Title & Quick Details */}
+            <div className="space-y-1">
+              <h1 className="font-cinzel text-xl sm:text-2xl md:text-3xl font-bold text-[#fdfbf7] tracking-tight break-words">
+                {currentEvent?.coupleNames || settings.coupleNames}
+              </h1>
+              <div className="flex flex-wrap items-center gap-2 text-xs text-[#dfba73]/80">
+                <span className="px-2 py-0.5 rounded-lg bg-[#231a20] border border-[#c5a059]/30 font-mono text-[11px] text-[#edd892]">
+                  Slug: /e/{currentEvent?.slug || "wedding"}
+                </span>
+                {currentEvent?.manager && manager?.role === "SUPER_ADMIN" && (
+                  <span className="px-2 py-0.5 rounded-lg bg-[#800020]/20 border border-[#dfba73]/30 text-[11px] text-[#dfba73] font-sans">
+                    Planner: {currentEvent.manager.name} ({currentEvent.manager.company || currentEvent.manager.username})
+                  </span>
+                )}
+                <a
+                  href={`/e/${currentEvent?.slug || "wedding"}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="hover:text-white inline-flex items-center gap-1 text-[11px] underline bg-[#231a20]/60 px-2.5 py-1 rounded-lg border border-[#c5a059]/20 transition touch-manipulation min-h-[28px]"
+                >
+                  <ExternalLink className="w-3 h-3 text-[#dfba73]" /> Preview Wedding
+                </a>
+              </div>
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full md:w-auto">
+          {/* Right Column: Event Selector & Action Buttons */}
+          <div className="flex flex-col sm:flex-row lg:flex-row items-stretch lg:items-center gap-3 w-full lg:w-auto">
             {/* Wedding Switcher Selector */}
-            <div className="flex items-center gap-2 bg-[#1c161a] border border-[#c5a059]/60 rounded-xl px-3 py-2 shadow-md w-full sm:w-auto">
-              <Sparkles className="w-3.5 h-3.5 text-[#dfba73] shrink-0" />
+            <div className="flex items-center gap-2 bg-[#1c161a] border border-[#c5a059]/60 rounded-xl px-3.5 py-2.5 shadow-md w-full sm:w-auto min-h-[44px]">
+              <Sparkles className="w-4 h-4 text-[#dfba73] shrink-0" />
               <select
                 value={activeEventId}
                 onChange={(e) => handleSelectEvent(e.target.value)}
-                className="bg-transparent text-xs font-cinzel font-semibold text-[#fdfbf7] focus:outline-none cursor-pointer w-full sm:max-w-[240px] truncate"
+                className="bg-transparent text-xs font-cinzel font-semibold text-[#fdfbf7] focus:outline-none cursor-pointer w-full sm:max-w-[220px] md:max-w-[260px] truncate"
               >
                 {events.map((ev) => (
                   <option key={ev.id} value={ev.id} className="bg-[#1c161a] text-white">
@@ -1258,12 +1290,12 @@ export default function AdminDashboard() {
             </div>
 
             {/* Action Buttons Toolbar */}
-            <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 w-full sm:w-auto">
+            <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 w-full sm:w-auto">
               {/* Super Admin: + Add Event Manager Button */}
               {manager?.role === "SUPER_ADMIN" && (
                 <button
                   onClick={() => setShowCreateManagerModal(true)}
-                  className="col-span-1 px-3 py-2.5 rounded-xl bg-[#800020] hover:bg-[#6b0f24] text-white text-xs font-cinzel font-bold flex items-center justify-center gap-1.5 shadow border border-[#dfba73]/60 cursor-pointer min-h-[42px] touch-manipulation"
+                  className="col-span-1 px-3.5 py-2.5 rounded-xl bg-[#800020] hover:bg-[#6b0f24] text-white text-xs font-cinzel font-bold flex items-center justify-center gap-1.5 shadow border border-[#dfba73]/60 cursor-pointer min-h-[44px] touch-manipulation transition"
                   title="Create a new Event Manager login"
                 >
                   <UserPlus className="w-3.5 h-3.5" /> <span className="truncate">+ Manager</span>
@@ -1273,7 +1305,7 @@ export default function AdminDashboard() {
               {/* + New Wedding Button */}
               <button
                 onClick={() => setShowCreateEventModal(true)}
-                className={`btn-gold-shimmer px-3.5 py-2.5 rounded-xl text-xs font-cinzel font-bold flex items-center justify-center gap-1.5 shadow cursor-pointer min-h-[42px] touch-manipulation ${
+                className={`btn-gold-shimmer px-3.5 py-2.5 rounded-xl text-xs font-cinzel font-bold flex items-center justify-center gap-1.5 shadow cursor-pointer min-h-[44px] touch-manipulation ${
                   manager?.role === "SUPER_ADMIN" ? "col-span-1" : "col-span-2 sm:col-auto"
                 }`}
               >
@@ -1282,7 +1314,7 @@ export default function AdminDashboard() {
 
               <button
                 onClick={handleExportCSV}
-                className="col-span-1 sm:col-auto px-3 py-2.5 rounded-xl bg-[#231a20] border border-[#c5a059]/40 text-[#dfba73] hover:bg-[#c5a059]/10 text-xs font-cinzel font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer min-h-[42px] touch-manipulation"
+                className="col-span-1 sm:col-auto px-3.5 py-2.5 rounded-xl bg-[#231a20] border border-[#c5a059]/40 text-[#dfba73] hover:bg-[#c5a059]/10 text-xs font-cinzel font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer min-h-[44px] touch-manipulation"
               >
                 <FileSpreadsheet className="w-4 h-4" /> <span>CSV</span>
               </button>
@@ -1302,7 +1334,7 @@ export default function AdminDashboard() {
                     showToast(`Active invite domain set to: ${clean}`);
                   }
                 }}
-                className="col-span-1 sm:col-auto px-3 py-2.5 rounded-xl bg-[#231a20] border border-[#c5a059]/40 text-[#dfba73] hover:bg-[#c5a059]/10 text-xs font-cinzel font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer min-h-[42px] touch-manipulation"
+                className="col-span-1 sm:col-auto px-3.5 py-2.5 rounded-xl bg-[#231a20] border border-[#c5a059]/40 text-[#dfba73] hover:bg-[#c5a059]/10 text-xs font-cinzel font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer min-h-[44px] touch-manipulation"
                 title={`Active Public Domain: ${appBaseUrl} (Click to change)`}
               >
                 <Link2 className="w-3.5 h-3.5 text-[#ffd700]" /> <span>Domain</span>
@@ -1310,7 +1342,7 @@ export default function AdminDashboard() {
 
               <button
                 onClick={handleLogout}
-                className="col-span-1 sm:col-auto px-3 py-2.5 rounded-xl bg-[#800020]/20 border border-rose-800/60 text-rose-300 hover:bg-rose-950/40 text-xs font-cinzel font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer min-h-[42px] touch-manipulation"
+                className="col-span-2 sm:col-auto px-3.5 py-2.5 rounded-xl bg-[#800020]/20 border border-rose-800/60 text-rose-300 hover:bg-rose-950/40 text-xs font-cinzel font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer min-h-[44px] touch-manipulation"
               >
                 <LogOut className="w-4 h-4" /> <span>Exit</span>
               </button>
@@ -1936,7 +1968,7 @@ export default function AdminDashboard() {
 
         {/* TAB 2: CEREMONY & SETTINGS */}
         {activeTab === "settings" && (
-          <div className="rounded-3xl bg-[#181216] border border-[#c5a059]/40 p-6 sm:p-8 shadow-2xl space-y-8">
+          <div className="rounded-3xl bg-[#181216] border border-[#c5a059]/40 p-4 sm:p-6 lg:p-8 shadow-2xl space-y-6 sm:space-y-8">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-[#c5a059]/30">
               <div>
                 <h2 className="font-cinzel text-xl sm:text-2xl font-bold text-[#dfba73]">
@@ -1948,24 +1980,26 @@ export default function AdminDashboard() {
               </div>
 
               {/* Live Couple Monogram Preview Badge */}
-              <div className="flex items-center gap-3 bg-[#231a20] border border-[#c5a059]/40 px-4 py-2 rounded-2xl shadow-inner">
-                <div className="w-10 h-10 rounded-full bg-[#800020] border border-[#dfba73] flex items-center justify-center text-[#fdfbf7] font-cinzel font-bold text-sm shadow">
-                  {dashboardMonogram}
-                </div>
-                <div>
-                  <span className="text-[10px] uppercase tracking-wider text-[#dfba73] font-cinzel block">
-                    Live Monogram
-                  </span>
-                  <span className="text-xs font-semibold text-[#fdfbf7]">
-                    {settings.coupleNames}
-                  </span>
+              <div className="flex items-center gap-3 bg-[#231a20] border border-[#c5a059]/40 px-4 py-2.5 rounded-2xl shadow-inner w-full sm:w-auto justify-between sm:justify-start">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-[#800020] border border-[#dfba73] flex items-center justify-center text-[#fdfbf7] font-cinzel font-bold text-sm shadow shrink-0">
+                    {dashboardMonogram}
+                  </div>
+                  <div>
+                    <span className="text-[10px] uppercase tracking-wider text-[#dfba73] font-cinzel block">
+                      Live Monogram
+                    </span>
+                    <span className="text-xs font-semibold text-[#fdfbf7] truncate max-w-[180px] block">
+                      {settings.coupleNames}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
 
-            <form onSubmit={handleSaveSettings} className="space-y-8">
+            <form onSubmit={handleSaveSettings} className="space-y-6 sm:space-y-8">
               {/* CARD 1: COUPLE & INVITATION WORDING */}
-              <div className="p-5 sm:p-6 rounded-2xl bg-[#20161c] border border-[#c5a059]/30 space-y-4 shadow-md">
+              <div className="p-4 sm:p-6 rounded-2xl bg-[#20161c] border border-[#c5a059]/30 space-y-4 shadow-md">
                 <div className="flex items-center gap-2 text-[#dfba73] pb-2 border-b border-[#c5a059]/20 font-cinzel text-sm font-bold uppercase tracking-wider">
                   <Heart className="w-4 h-4 text-[#dfba73]" /> 1. Couple Names & Invitation Story
                 </div>
@@ -1980,7 +2014,7 @@ export default function AdminDashboard() {
                       value={settings.coupleNames}
                       onChange={(e) => setSettings({ ...settings, coupleNames: e.target.value })}
                       placeholder="Groom Name & Bride Name"
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#2a1d25] border border-[#c5a059]/40 text-xs text-[#fdfbf7] focus:outline-none focus:border-[#dfba73]"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#2a1d25] border border-[#c5a059]/40 text-xs sm:text-sm text-[#fdfbf7] focus:outline-none focus:border-[#dfba73] min-h-[44px]"
                     />
                   </div>
 
@@ -1993,7 +2027,7 @@ export default function AdminDashboard() {
                       required
                       value={settings.eventDate}
                       onChange={(e) => setSettings({ ...settings, eventDate: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#2a1d25] border border-[#c5a059]/40 text-xs text-[#fdfbf7] focus:outline-none focus:border-[#dfba73]"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#2a1d25] border border-[#c5a059]/40 text-xs sm:text-sm text-[#fdfbf7] focus:outline-none focus:border-[#dfba73] min-h-[44px] [color-scheme:dark]"
                     />
                   </div>
                 </div>
@@ -2006,7 +2040,7 @@ export default function AdminDashboard() {
                     rows={2}
                     value={settings.hostIntro}
                     onChange={(e) => setSettings({ ...settings, hostIntro: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#2a1d25] border border-[#c5a059]/40 text-xs text-[#fdfbf7] focus:outline-none focus:border-[#dfba73] resize-none"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#2a1d25] border border-[#c5a059]/40 text-xs sm:text-sm text-[#fdfbf7] focus:outline-none focus:border-[#dfba73] resize-y min-h-[80px]"
                   />
                 </div>
 
@@ -2015,21 +2049,21 @@ export default function AdminDashboard() {
                     Invitation Body / Message
                   </label>
                   <textarea
-                    rows={2}
+                    rows={3}
                     value={settings.invitationBody}
                     onChange={(e) => setSettings({ ...settings, invitationBody: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#2a1d25] border border-[#c5a059]/40 text-xs text-[#fdfbf7] focus:outline-none focus:border-[#dfba73] resize-none"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#2a1d25] border border-[#c5a059]/40 text-xs sm:text-sm text-[#fdfbf7] focus:outline-none focus:border-[#dfba73] resize-y min-h-[90px]"
                   />
                 </div>
               </div>
 
               {/* CARD 2: COUPLE PHOTOS & MEDIA MANAGER */}
-              <div className="p-5 sm:p-6 rounded-2xl bg-[#20161c] border border-[#c5a059]/30 space-y-6 shadow-md">
-                <div className="flex items-center justify-between pb-2 border-b border-[#c5a059]/20">
+              <div className="p-4 sm:p-6 rounded-2xl bg-[#20161c] border border-[#c5a059]/30 space-y-6 shadow-md">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-[#c5a059]/20">
                   <div className="flex items-center gap-2 text-[#dfba73] font-cinzel text-sm font-bold uppercase tracking-wider">
                     <Film className="w-4 h-4 text-[#dfba73]" /> 2. Couple Pre-Shoot Video & Media Suite
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     {storageStatus?.hasCloudinary || storageStatus?.hasBlobToken ? (
                       <span className="px-2.5 py-0.5 rounded-full bg-emerald-950/70 text-emerald-300 text-[10px] font-cinzel font-semibold border border-emerald-500/40 inline-flex items-center gap-1.5">
                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
@@ -2072,8 +2106,8 @@ export default function AdminDashboard() {
                 )}
 
                 {/* CINEMATIC PRE-SHOOT VIDEO SECTION */}
-                <div className="p-4 rounded-2xl bg-gradient-to-r from-[#2c131d] via-[#1f0d14] to-[#14060b] border-2 border-[#dfba73]/60 shadow-lg space-y-3">
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-[#2c131d] via-[#1f0d14] to-[#14060b] border-2 border-[#dfba73]/60 shadow-lg space-y-4">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                     <div>
                       <div className="inline-flex items-center gap-1.5 text-xs uppercase tracking-wider text-[#ffd700] font-cinzel font-bold">
                         <Video className="w-4 h-4" /> Couple Pre-Shoot Cinematic Film / Trailer
@@ -2083,8 +2117,8 @@ export default function AdminDashboard() {
                       </p>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                      <label className="btn-gold-shimmer px-4 py-2 rounded-xl text-xs font-cinzel font-bold flex items-center gap-2 cursor-pointer shadow-md hover:scale-[1.02] transition">
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
+                      <label className="btn-gold-shimmer px-4 py-2.5 rounded-xl text-xs font-cinzel font-bold flex items-center justify-center gap-2 cursor-pointer shadow-md hover:scale-[1.02] transition min-h-[44px] touch-manipulation">
                         {uploadingField === "video" ? (
                           <>
                             <Loader2 className="w-4 h-4 animate-spin" />
@@ -2113,7 +2147,7 @@ export default function AdminDashboard() {
                         <button
                           type="button"
                           onClick={() => setSettings({ ...settings, heroVideoUrl: "" })}
-                          className="px-3 py-2 rounded-xl bg-black/50 hover:bg-rose-950/80 text-rose-300 border border-rose-500/30 text-xs font-cinzel font-medium cursor-pointer transition"
+                          className="px-3.5 py-2.5 rounded-xl bg-black/50 hover:bg-rose-950/80 text-rose-300 border border-rose-500/30 text-xs font-cinzel font-medium cursor-pointer transition min-h-[44px] touch-manipulation text-center"
                           title="Remove video and switch back to Hero Photo"
                         >
                           Remove Video
@@ -2122,8 +2156,8 @@ export default function AdminDashboard() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start pt-2">
-                    <div className="md:col-span-2 space-y-2">
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start pt-2">
+                    <div className="lg:col-span-2 space-y-2">
                       <label className="block text-[11px] uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold">
                         Video File URL or YouTube / Vimeo Link
                       </label>
@@ -2131,7 +2165,7 @@ export default function AdminDashboard() {
                         value={settings.heroVideoUrl || ""}
                         onChange={(e) => setSettings({ ...settings, heroVideoUrl: e.target.value })}
                         placeholder="e.g. /uploads/preshoot-video.mp4 or https://www.youtube.com/watch?v=..."
-                        className="w-full px-3.5 py-2.5 rounded-xl bg-[#1c1117] border border-[#c5a059]/50 text-xs text-[#fdfbf7] focus:outline-none focus:border-[#dfba73] font-mono"
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-[#1c1117] border border-[#c5a059]/50 text-xs sm:text-sm text-[#fdfbf7] focus:outline-none focus:border-[#dfba73] font-mono min-h-[44px]"
                       />
                       <p className="text-[10px] text-[#edd892]/60 italic font-sans">
                         💡 Tip: If you leave this blank, the invitation automatically displays the high-resolution Couple Portrait Photo below.
@@ -2139,11 +2173,11 @@ export default function AdminDashboard() {
                     </div>
 
                     {/* Video Live Preview */}
-                    <div className="flex flex-col items-center">
+                    <div className="flex flex-col items-center sm:items-start lg:items-center w-full">
                       <span className="text-[10px] uppercase text-[#dfba73] font-cinzel mb-1">
                         Video Preview
                       </span>
-                      <div className="relative w-full max-w-[200px] aspect-video rounded-xl overflow-hidden border-2 border-[#c5a059] shadow-md bg-black flex items-center justify-center">
+                      <div className="relative w-full max-w-[280px] sm:max-w-[240px] aspect-video rounded-xl overflow-hidden border-2 border-[#c5a059] shadow-md bg-black flex items-center justify-center mx-auto lg:mx-0">
                         {settings.heroVideoUrl ? (
                           settings.heroVideoUrl.includes("youtube.com") || settings.heroVideoUrl.includes("youtu.be") ? (
                             <div className="p-2 text-center text-[10px] text-[#dfba73] font-cinzel">
@@ -2172,14 +2206,14 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* Hero Couple Portrait Image */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start pt-2">
-                  <div className="md:col-span-2 space-y-3">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start pt-2">
+                  <div className="lg:col-span-2 space-y-3">
                     <div>
                       <label className="block text-xs uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold mb-1">
                         Main Hero Couple Portrait Photo
                       </label>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <label className="btn-gold-shimmer px-4 py-2 rounded-xl text-xs font-cinzel font-bold flex items-center gap-2 cursor-pointer shadow-md hover:scale-[1.02] transition">
+                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                        <label className="btn-gold-shimmer px-4 py-2.5 rounded-xl text-xs font-cinzel font-bold flex items-center justify-center gap-2 cursor-pointer shadow-md hover:scale-[1.02] transition min-h-[44px] touch-manipulation">
                           {uploadingField === "hero" ? (
                             <>
                               <Loader2 className="w-4 h-4 animate-spin" />
@@ -2203,18 +2237,17 @@ export default function AdminDashboard() {
                             }
                           />
                         </label>
-                        <span className="text-[11px] text-[#edd892]/70 font-sans">
+                        <span className="text-[11px] text-[#edd892]/70 font-sans text-center sm:text-left">
                           or paste URL below
                         </span>
                       </div>
                     </div>
 
-
                     <input
                       value={settings.heroImageUrl || ""}
                       onChange={(e) => setSettings({ ...settings, heroImageUrl: e.target.value })}
                       placeholder="/uploads/preshoot-photo-Pragya-Siddharth-Pix-1788547160301-318.jpg or https://..."
-                      className="w-full px-3.5 py-2 rounded-xl bg-[#2a1d25] border border-[#c5a059]/40 text-xs text-[#fdfbf7] focus:outline-none focus:border-[#dfba73]"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#2a1d25] border border-[#c5a059]/40 text-xs sm:text-sm text-[#fdfbf7] focus:outline-none focus:border-[#dfba73] min-h-[44px]"
                     />
 
                     {/* Quick Preset Selector */}
@@ -2222,13 +2255,13 @@ export default function AdminDashboard() {
                       <span className="text-[10px] text-[#edd892]/70 font-sans block mb-1">
                         Uploaded Photo Presets:
                       </span>
-                      <div className="flex flex-wrap gap-1.5">
+                      <div className="flex flex-wrap gap-2">
                         {PHOTO_PRESETS.map((p, i) => (
                           <button
                             key={i}
                             type="button"
                             onClick={() => setSettings({ ...settings, heroImageUrl: p.url })}
-                            className={`px-2.5 py-1 rounded-lg text-[10px] font-cinzel font-medium transition cursor-pointer border ${
+                            className={`px-3 py-1.5 rounded-lg text-[10px] font-cinzel font-medium transition cursor-pointer border min-h-[32px] touch-manipulation ${
                               (settings.heroImageUrl || "/uploads/preshoot-photo-Pragya-Siddharth-Pix-1788547160301-318.jpg") === p.url
                                 ? "bg-[#800020] text-[#fdfbf7] border-[#dfba73]"
                                 : "bg-[#181014] text-[#dfba73]/80 border-[#c5a059]/30 hover:bg-[#c5a059]/10"
@@ -2242,11 +2275,11 @@ export default function AdminDashboard() {
                   </div>
 
                   {/* Thumbnail Preview */}
-                  <div className="flex flex-col items-center">
+                  <div className="flex flex-col items-center justify-center w-full">
                     <span className="text-[10px] uppercase text-[#dfba73] font-cinzel mb-1">
                       Hero Portrait Preview
                     </span>
-                    <div className="relative w-32 h-36 rounded-xl overflow-hidden border-2 border-[#c5a059] shadow-md bg-black">
+                    <div className="relative w-32 h-36 rounded-xl overflow-hidden border-2 border-[#c5a059] shadow-md bg-black mx-auto lg:mx-0">
                       <Image
                         src={settings.heroImageUrl || "/uploads/preshoot-photo-Pragya-Siddharth-Pix-1788547160301-318.jpg"}
                         alt="Hero Couple Preview"
@@ -2256,18 +2289,17 @@ export default function AdminDashboard() {
                       />
                     </div>
                   </div>
-
                 </div>
 
                 {/* Warm Welcome Couple Photo */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start pt-4 border-t border-[#c5a059]/20">
-                  <div className="md:col-span-2 space-y-3">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start pt-4 border-t border-[#c5a059]/20">
+                  <div className="lg:col-span-2 space-y-3">
                     <div>
                       <label className="block text-xs uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold mb-1">
                         Warm Welcome Couple Photo (Invitation Greeting Plaque)
                       </label>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <label className="btn-gold-shimmer px-4 py-2 rounded-xl text-xs font-cinzel font-bold flex items-center gap-2 cursor-pointer shadow-md hover:scale-[1.02] transition">
+                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                        <label className="btn-gold-shimmer px-4 py-2.5 rounded-xl text-xs font-cinzel font-bold flex items-center justify-center gap-2 cursor-pointer shadow-md hover:scale-[1.02] transition min-h-[44px] touch-manipulation">
                           {uploadingField === "welcome" ? (
                             <>
                               <Loader2 className="w-4 h-4 animate-spin" />
@@ -2291,7 +2323,7 @@ export default function AdminDashboard() {
                             }
                           />
                         </label>
-                        <span className="text-[11px] text-[#edd892]/70 font-sans">
+                        <span className="text-[11px] text-[#edd892]/70 font-sans text-center sm:text-left">
                           or paste URL below
                         </span>
                       </div>
@@ -2301,15 +2333,15 @@ export default function AdminDashboard() {
                       value={settings.welcomeImageUrl || ""}
                       onChange={(e) => setSettings({ ...settings, welcomeImageUrl: e.target.value })}
                       placeholder="/uploads/preshoot-photo-423f40cc366ebcbcb01c-1788547168710-655.jpg or https://..."
-                      className="w-full px-3.5 py-2 rounded-xl bg-[#2a1d25] border border-[#c5a059]/40 text-xs text-[#fdfbf7] focus:outline-none focus:border-[#dfba73]"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#2a1d25] border border-[#c5a059]/40 text-xs sm:text-sm text-[#fdfbf7] focus:outline-none focus:border-[#dfba73] min-h-[44px]"
                     />
-                    <div className="flex flex-wrap gap-1.5 mt-1">
+                    <div className="flex flex-wrap gap-2 mt-1">
                       {PHOTO_PRESETS.map((p, i) => (
                         <button
                           key={i}
                           type="button"
                           onClick={() => setSettings({ ...settings, welcomeImageUrl: p.url })}
-                          className={`px-2.5 py-1 rounded-lg text-[10px] font-cinzel font-medium transition cursor-pointer border ${
+                          className={`px-3 py-1.5 rounded-lg text-[10px] font-cinzel font-medium transition cursor-pointer border min-h-[32px] touch-manipulation ${
                             (settings.welcomeImageUrl || "/uploads/preshoot-photo-423f40cc366ebcbcb01c-1788547168710-655.jpg") === p.url
                               ? "bg-[#800020] text-[#fdfbf7] border-[#dfba73]"
                               : "bg-[#181014] text-[#dfba73]/80 border-[#c5a059]/30 hover:bg-[#c5a059]/10"
@@ -2321,11 +2353,11 @@ export default function AdminDashboard() {
                     </div>
                   </div>
 
-                  <div className="flex flex-col items-center">
+                  <div className="flex flex-col items-center justify-center w-full">
                     <span className="text-[10px] uppercase text-[#dfba73] font-cinzel mb-1">
                       Welcome Preview
                     </span>
-                    <div className="relative w-32 h-24 rounded-xl overflow-hidden border-2 border-[#c5a059] shadow-md bg-black">
+                    <div className="relative w-32 h-24 rounded-xl overflow-hidden border-2 border-[#c5a059] shadow-md bg-black mx-auto lg:mx-0">
                       <Image
                         src={settings.welcomeImageUrl || "/uploads/preshoot-photo-423f40cc366ebcbcb01c-1788547168710-655.jpg"}
                         alt="Welcome Preview"
@@ -2338,14 +2370,14 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* Table Seating Place Card Photo & Sweet Note */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start pt-4 border-t border-[#c5a059]/20">
-                  <div className="md:col-span-2 space-y-3">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start pt-4 border-t border-[#c5a059]/20">
+                  <div className="lg:col-span-2 space-y-3">
                     <div>
                       <label className="block text-xs uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold mb-1">
                         Table Place Card Couple Photo
                       </label>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <label className="btn-gold-shimmer px-4 py-2 rounded-xl text-xs font-cinzel font-bold flex items-center gap-2 cursor-pointer shadow-md hover:scale-[1.02] transition">
+                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                        <label className="btn-gold-shimmer px-4 py-2.5 rounded-xl text-xs font-cinzel font-bold flex items-center justify-center gap-2 cursor-pointer shadow-md hover:scale-[1.02] transition min-h-[44px] touch-manipulation">
                           {uploadingField === "placeCard" ? (
                             <>
                               <Loader2 className="w-4 h-4 animate-spin" />
@@ -2369,7 +2401,7 @@ export default function AdminDashboard() {
                             }
                           />
                         </label>
-                        <span className="text-[11px] text-[#edd892]/70 font-sans">
+                        <span className="text-[11px] text-[#edd892]/70 font-sans text-center sm:text-left">
                           or paste URL below
                         </span>
                       </div>
@@ -2379,7 +2411,7 @@ export default function AdminDashboard() {
                       value={settings.placeCardImageUrl || ""}
                       onChange={(e) => setSettings({ ...settings, placeCardImageUrl: e.target.value })}
                       placeholder="/uploads/preshoot-photo-e5a487a560c507085cda-1788547177206-113.jpg or https://..."
-                      className="w-full px-3.5 py-2 rounded-xl bg-[#2a1d25] border border-[#c5a059]/40 text-xs text-[#fdfbf7] focus:outline-none focus:border-[#dfba73]"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#2a1d25] border border-[#c5a059]/40 text-xs sm:text-sm text-[#fdfbf7] focus:outline-none focus:border-[#dfba73] min-h-[44px]"
                     />
 
                     <div>
@@ -2390,16 +2422,16 @@ export default function AdminDashboard() {
                         value={settings.placeCardNote || ""}
                         onChange={(e) => setSettings({ ...settings, placeCardNote: e.target.value })}
                         placeholder="Thank you for sharing our joy and celebrating with us!"
-                        className="w-full px-3.5 py-2 rounded-xl bg-[#2a1d25] border border-[#c5a059]/40 text-xs text-[#fdfbf7] focus:outline-none focus:border-[#dfba73]"
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-[#2a1d25] border border-[#c5a059]/40 text-xs sm:text-sm text-[#fdfbf7] focus:outline-none focus:border-[#dfba73] min-h-[44px]"
                       />
                     </div>
                   </div>
 
-                  <div className="flex flex-col items-center">
+                  <div className="flex flex-col items-center justify-center w-full">
                     <span className="text-[10px] uppercase text-[#dfba73] font-cinzel mb-1">
                       Place Card Preview
                     </span>
-                    <div className="relative w-24 h-24 rounded-full overflow-hidden border-2 border-[#c5a059] shadow-md bg-black">
+                    <div className="relative w-24 h-24 rounded-full overflow-hidden border-2 border-[#c5a059] shadow-md bg-black mx-auto lg:mx-0">
                       <Image
                         src={settings.placeCardImageUrl || "/uploads/preshoot-photo-e5a487a560c507085cda-1788547177206-113.jpg"}
                         alt="Place Card Preview"
@@ -2412,14 +2444,14 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* Blessing Section Photo */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start pt-4 border-t border-[#c5a059]/20">
-                  <div className="md:col-span-2 space-y-3">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start pt-4 border-t border-[#c5a059]/20">
+                  <div className="lg:col-span-2 space-y-3">
                     <div>
                       <label className="block text-xs uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold mb-1">
                         Blessing Section Photo
                       </label>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <label className="btn-gold-shimmer px-4 py-2 rounded-xl text-xs font-cinzel font-bold flex items-center gap-2 cursor-pointer shadow-md hover:scale-[1.02] transition">
+                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                        <label className="btn-gold-shimmer px-4 py-2.5 rounded-xl text-xs font-cinzel font-bold flex items-center justify-center gap-2 cursor-pointer shadow-md hover:scale-[1.02] transition min-h-[44px] touch-manipulation">
                           {uploadingField === "blessing" ? (
                             <>
                               <Loader2 className="w-4 h-4 animate-spin" />
@@ -2443,7 +2475,7 @@ export default function AdminDashboard() {
                             }
                           />
                         </label>
-                        <span className="text-[11px] text-[#edd892]/70 font-sans">
+                        <span className="text-[11px] text-[#edd892]/70 font-sans text-center sm:text-left">
                           or paste URL below
                         </span>
                       </div>
@@ -2453,15 +2485,15 @@ export default function AdminDashboard() {
                       value={settings.blessingImageUrl || ""}
                       onChange={(e) => setSettings({ ...settings, blessingImageUrl: e.target.value })}
                       placeholder="/uploads/preshoot-photo-OIP2-1788547184704-193.webp or https://..."
-                      className="w-full px-3.5 py-2 rounded-xl bg-[#2a1d25] border border-[#c5a059]/40 text-xs text-[#fdfbf7] focus:outline-none focus:border-[#dfba73]"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#2a1d25] border border-[#c5a059]/40 text-xs sm:text-sm text-[#fdfbf7] focus:outline-none focus:border-[#dfba73] min-h-[44px]"
                     />
                   </div>
 
-                  <div className="flex flex-col items-center">
+                  <div className="flex flex-col items-center justify-center w-full">
                     <span className="text-[10px] uppercase text-[#dfba73] font-cinzel mb-1">
                       Blessing Preview
                     </span>
-                    <div className="relative w-32 h-24 rounded-xl overflow-hidden border-2 border-[#c5a059] shadow-md bg-black">
+                    <div className="relative w-32 h-24 rounded-xl overflow-hidden border-2 border-[#c5a059] shadow-md bg-black mx-auto lg:mx-0">
                       <Image
                         src={settings.blessingImageUrl || "/uploads/preshoot-photo-OIP2-1788547184704-193.webp"}
                         alt="Blessing Preview"
@@ -2475,7 +2507,7 @@ export default function AdminDashboard() {
 
                 {/* Moments of Love: 4 Gallery Slots */}
                 <div className="pt-4 border-t border-[#c5a059]/20 space-y-3">
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
                     <label className="block text-xs uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold">
                       Moments of Love: Gallery Photos (4 Slots)
                     </label>
@@ -2484,14 +2516,14 @@ export default function AdminDashboard() {
                     </span>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                     {galleryList.map((item, idx) => (
                       <div
                         key={idx}
-                        className="p-3.5 rounded-xl bg-[#261c22] border border-[#c5a059]/30 space-y-2 flex flex-col justify-between"
+                        className="p-3.5 sm:p-4 rounded-xl bg-[#261c22] border border-[#c5a059]/30 space-y-3 flex flex-col justify-between shadow-sm"
                       >
                         <div className="flex items-start gap-3">
-                          <div className="relative w-16 h-16 rounded-lg overflow-hidden border border-[#c5a059]/50 flex-shrink-0 bg-black">
+                          <div className="relative w-16 h-16 rounded-lg overflow-hidden border border-[#c5a059]/50 shrink-0 bg-black">
                             <Image
                               src={item.src || "/uploads/preshoot-photo-OIP1-1788547193363-824.webp"}
                               alt={item.title || `Slot ${idx + 1}`}
@@ -2500,13 +2532,12 @@ export default function AdminDashboard() {
                               className="object-cover"
                             />
                           </div>
-                          <div className="flex-1 space-y-1.5">
-                            <div className="flex items-center justify-between">
-                              <span className="text-[10px] uppercase text-[#dfba73] font-cinzel font-bold">
-
+                          <div className="flex-1 min-w-0 space-y-1.5">
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="text-[10px] uppercase text-[#dfba73] font-cinzel font-bold truncate">
                                 Photo Slot #{idx + 1}
                               </span>
-                              <label className="px-2 py-0.5 rounded bg-[#800020] hover:bg-[#6b0f24] text-[10px] text-[#edd892] font-cinzel font-bold cursor-pointer border border-[#c5a059]/40 flex items-center gap-1">
+                              <label className="px-2.5 py-1 rounded-lg bg-[#800020] hover:bg-[#6b0f24] text-[10px] text-[#edd892] font-cinzel font-bold cursor-pointer border border-[#c5a059]/40 flex items-center gap-1 shrink-0 min-h-[30px] touch-manipulation transition">
                                 {uploadingField === `gallery_${idx}` ? (
                                   <Loader2 className="w-3 h-3 animate-spin" />
                                 ) : (
@@ -2530,34 +2561,33 @@ export default function AdminDashboard() {
                               value={item.src}
                               onChange={(e) => updateGalleryItem(idx, "src", e.target.value)}
                               placeholder="Image URL or Upload above"
-                              className="w-full px-2.5 py-1.5 rounded-lg bg-[#1c1419] border border-[#c5a059]/40 text-[11px] text-[#fdfbf7] focus:outline-none"
+                              className="w-full px-3 py-2 rounded-lg bg-[#1c1419] border border-[#c5a059]/40 text-xs text-[#fdfbf7] focus:outline-none min-h-[38px]"
                             />
                           </div>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-2 pt-1">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
                           <input
                             value={item.title}
                             onChange={(e) => updateGalleryItem(idx, "title", e.target.value)}
                             placeholder="Title (e.g. A Timeless Bond)"
-                            className="w-full px-2.5 py-1.5 rounded-lg bg-[#1c1419] border border-[#c5a059]/30 text-[11px] text-[#fdfbf7] focus:outline-none"
+                            className="w-full px-3 py-2 rounded-lg bg-[#1c1419] border border-[#c5a059]/30 text-xs text-[#fdfbf7] focus:outline-none min-h-[38px]"
                           />
                           <input
                             value={item.subtitle}
                             onChange={(e) => updateGalleryItem(idx, "subtitle", e.target.value)}
                             placeholder="Subtitle / Romantic Quote"
-                            className="w-full px-2.5 py-1.5 rounded-lg bg-[#1c1419] border border-[#c5a059]/30 text-[11px] text-[#fdfbf7] focus:outline-none"
+                            className="w-full px-3 py-2 rounded-lg bg-[#1c1419] border border-[#c5a059]/30 text-xs text-[#fdfbf7] focus:outline-none min-h-[38px]"
                           />
                         </div>
                       </div>
                     ))}
                   </div>
                 </div>
-
               </div>
 
               {/* CARD 3: WEDDING DAY TIMELINE & PROGRAMME */}
-              <div className="p-5 sm:p-6 rounded-2xl bg-[#20161c] border border-[#c5a059]/30 space-y-4 shadow-md">
+              <div className="p-4 sm:p-6 rounded-2xl bg-[#20161c] border border-[#c5a059]/30 space-y-4 shadow-md">
                 <div className="flex items-center justify-between pb-2 border-b border-[#c5a059]/20">
                   <div className="flex items-center gap-2 text-[#dfba73] font-cinzel text-sm font-bold uppercase tracking-wider">
                     <Clock className="w-4 h-4 text-[#dfba73]" /> 3. Wedding Day Timeline & Programme
@@ -2565,7 +2595,7 @@ export default function AdminDashboard() {
                   <button
                     type="button"
                     onClick={addTimelineItem}
-                    className="px-3 py-1.5 rounded-lg bg-[#800020] text-[#edd892] hover:bg-[#6b0f24] text-[11px] font-cinzel font-bold border border-[#c5a059]/40 flex items-center gap-1 cursor-pointer"
+                    className="px-3.5 py-2 rounded-xl bg-[#800020] text-[#edd892] hover:bg-[#6b0f24] text-xs font-cinzel font-bold border border-[#c5a059]/40 flex items-center gap-1.5 cursor-pointer min-h-[40px] touch-manipulation transition shadow-sm"
                   >
                     <Plus className="w-3.5 h-3.5" /> Add Moment
                   </button>
@@ -2575,9 +2605,9 @@ export default function AdminDashboard() {
                   {timelineList.map((item, idx) => (
                     <div
                       key={idx}
-                      className="p-3.5 rounded-xl bg-[#261c22] border border-[#c5a059]/30 flex flex-col sm:flex-row items-start sm:items-center gap-3"
+                      className="p-3.5 sm:p-4 rounded-xl bg-[#261c22] border border-[#c5a059]/30 flex flex-col sm:flex-row items-stretch sm:items-center gap-3"
                     >
-                      <div className="w-full sm:w-32">
+                      <div className="w-full sm:w-36">
                         <label className="block text-[10px] uppercase text-[#dfba73] font-cinzel font-semibold mb-1">
                           Time
                         </label>
@@ -2585,7 +2615,7 @@ export default function AdminDashboard() {
                           value={item.time}
                           onChange={(e) => updateTimelineItem(idx, "time", e.target.value)}
                           placeholder="05:30 PM"
-                          className="w-full px-2.5 py-1.5 rounded-lg bg-[#1c1419] border border-[#c5a059]/40 text-xs text-[#fdfbf7] focus:outline-none"
+                          className="w-full px-3 py-2 rounded-lg bg-[#1c1419] border border-[#c5a059]/40 text-xs text-[#fdfbf7] focus:outline-none min-h-[42px]"
                         />
                       </div>
                       <div className="flex-1 w-full">
@@ -2596,7 +2626,7 @@ export default function AdminDashboard() {
                           value={item.title}
                           onChange={(e) => updateTimelineItem(idx, "title", e.target.value)}
                           placeholder="e.g. Poruwa Ceremony & Blessings"
-                          className="w-full px-2.5 py-1.5 rounded-lg bg-[#1c1419] border border-[#c5a059]/40 text-xs text-[#fdfbf7] focus:outline-none"
+                          className="w-full px-3 py-2 rounded-lg bg-[#1c1419] border border-[#c5a059]/40 text-xs text-[#fdfbf7] focus:outline-none min-h-[42px]"
                         />
                       </div>
                       <div className="flex-1 w-full">
@@ -2607,24 +2637,26 @@ export default function AdminDashboard() {
                           value={item.desc}
                           onChange={(e) => updateTimelineItem(idx, "desc", e.target.value)}
                           placeholder="e.g. Traditional customs & family greetings"
-                          className="w-full px-2.5 py-1.5 rounded-lg bg-[#1c1419] border border-[#c5a059]/40 text-xs text-[#fdfbf7] focus:outline-none"
+                          className="w-full px-3 py-2 rounded-lg bg-[#1c1419] border border-[#c5a059]/40 text-xs text-[#fdfbf7] focus:outline-none min-h-[42px]"
                         />
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => removeTimelineItem(idx)}
-                        className="p-2 rounded-lg bg-rose-950/40 border border-rose-800/50 text-rose-400 hover:bg-rose-900/60 transition cursor-pointer self-end sm:self-center"
-                        title="Remove Moment"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                      <div className="flex items-center justify-end sm:self-center pt-1 sm:pt-4">
+                        <button
+                          type="button"
+                          onClick={() => removeTimelineItem(idx)}
+                          className="p-2.5 rounded-lg bg-rose-950/40 border border-rose-800/50 text-rose-400 hover:bg-rose-900/60 transition cursor-pointer min-h-[42px] min-w-[42px] flex items-center justify-center touch-manipulation"
+                          title="Remove Moment"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
               </div>
 
               {/* CARD 4: DRESS CODE & STYLE PALETTE */}
-              <div className="p-5 sm:p-6 rounded-2xl bg-[#20161c] border border-[#c5a059]/30 space-y-4 shadow-md">
+              <div className="p-4 sm:p-6 rounded-2xl bg-[#20161c] border border-[#c5a059]/30 space-y-4 shadow-md">
                 <div className="flex items-center gap-2 text-[#dfba73] pb-2 border-b border-[#c5a059]/20 font-cinzel text-sm font-bold uppercase tracking-wider">
                   <Sparkles className="w-4 h-4 text-[#dfba73]" /> 4. Dress Code & Style Guide
                 </div>
@@ -2638,7 +2670,7 @@ export default function AdminDashboard() {
                       value={settings.dressCodeTitle || ""}
                       onChange={(e) => setSettings({ ...settings, dressCodeTitle: e.target.value })}
                       placeholder="e.g. Royal Splendor & Black Tie"
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#2a1d25] border border-[#c5a059]/40 text-xs text-[#fdfbf7] focus:outline-none focus:border-[#dfba73]"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#2a1d25] border border-[#c5a059]/40 text-xs sm:text-sm text-[#fdfbf7] focus:outline-none focus:border-[#dfba73] min-h-[44px]"
                     />
                   </div>
 
@@ -2650,18 +2682,19 @@ export default function AdminDashboard() {
                       value={settings.dressCodeDescription || ""}
                       onChange={(e) => setSettings({ ...settings, dressCodeDescription: e.target.value })}
                       placeholder="e.g. Traditional Sri Lankan attire or formal evening wear in warm gold & velvet tones."
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#2a1d25] border border-[#c5a059]/40 text-xs text-[#fdfbf7] focus:outline-none focus:border-[#dfba73]"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#2a1d25] border border-[#c5a059]/40 text-xs sm:text-sm text-[#fdfbf7] focus:outline-none focus:border-[#dfba73] min-h-[44px]"
                     />
                   </div>
                 </div>
               </div>
 
               {/* CARD 5: VENUE & BACKGROUND MUSIC */}
-              <div className="p-5 sm:p-6 rounded-2xl bg-[#20161c] border border-[#c5a059]/30 space-y-4 shadow-md">
+              <div className="p-4 sm:p-6 rounded-2xl bg-[#20161c] border border-[#c5a059]/30 space-y-6 shadow-md">
                 <div className="flex items-center gap-2 text-[#dfba73] pb-2 border-b border-[#c5a059]/20 font-cinzel text-sm font-bold uppercase tracking-wider">
-                  <Calendar className="w-4 h-4 text-[#dfba73]" /> 5. Venue Location & Background Music
+                  <Calendar className="w-4 h-4 text-[#dfba73]" /> 5. Venue Location & Atmosphere
                 </div>
 
+                {/* Venue Name & Address */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold mb-1">
@@ -2671,7 +2704,7 @@ export default function AdminDashboard() {
                       required
                       value={settings.venueName}
                       onChange={(e) => setSettings({ ...settings, venueName: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#2a1d25] border border-[#c5a059]/40 text-xs text-[#fdfbf7] focus:outline-none focus:border-[#dfba73]"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#2a1d25] border border-[#c5a059]/40 text-xs sm:text-sm text-[#fdfbf7] focus:outline-none focus:border-[#dfba73] min-h-[44px]"
                     />
                   </div>
 
@@ -2683,12 +2716,13 @@ export default function AdminDashboard() {
                       required
                       value={settings.venueAddress}
                       onChange={(e) => setSettings({ ...settings, venueAddress: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#2a1d25] border border-[#c5a059]/40 text-xs text-[#fdfbf7] focus:outline-none focus:border-[#dfba73]"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#2a1d25] border border-[#c5a059]/40 text-xs sm:text-sm text-[#fdfbf7] focus:outline-none focus:border-[#dfba73] min-h-[44px]"
                     />
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                {/* Coordinates & Contact Phone */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div>
                     <label className="block text-xs uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold mb-1">
                       Latitude
@@ -2698,7 +2732,7 @@ export default function AdminDashboard() {
                       step="any"
                       value={settings.venueLat}
                       onChange={(e) => setSettings({ ...settings, venueLat: parseFloat(e.target.value) || 0 })}
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#2a1d25] border border-[#c5a059]/40 text-xs text-[#fdfbf7] focus:outline-none focus:border-[#dfba73]"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#2a1d25] border border-[#c5a059]/40 text-xs sm:text-sm text-[#fdfbf7] focus:outline-none focus:border-[#dfba73] min-h-[44px]"
                     />
                   </div>
 
@@ -2711,7 +2745,7 @@ export default function AdminDashboard() {
                       step="any"
                       value={settings.venueLng}
                       onChange={(e) => setSettings({ ...settings, venueLng: parseFloat(e.target.value) || 0 })}
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#2a1d25] border border-[#c5a059]/40 text-xs text-[#fdfbf7] focus:outline-none focus:border-[#dfba73]"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#2a1d25] border border-[#c5a059]/40 text-xs sm:text-sm text-[#fdfbf7] focus:outline-none focus:border-[#dfba73] min-h-[44px]"
                     />
                   </div>
 
@@ -2723,85 +2757,93 @@ export default function AdminDashboard() {
                       value={settings.contactPhone || ""}
                       onChange={(e) => setSettings({ ...settings, contactPhone: e.target.value })}
                       placeholder="+94 77 123 4567"
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#2a1d25] border border-[#c5a059]/40 text-xs text-[#fdfbf7] focus:outline-none focus:border-[#dfba73]"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#2a1d25] border border-[#c5a059]/40 text-xs sm:text-sm text-[#fdfbf7] focus:outline-none focus:border-[#dfba73] min-h-[44px]"
                     />
+                  </div>
+                </div>
+
+                {/* Dedicated Background Music Subcard */}
+                <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-[#281520] to-[#1a1017] border border-[#dfba73]/40 space-y-3 shadow-md">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                      <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-[#ffd700] font-cinzel font-bold">
+                        <Music className="w-4 h-4 text-[#ffd700]" /> Background Music & Atmosphere Track
+                      </div>
+                      <p className="text-[11px] text-[#fdfbf7]/70 font-sans mt-0.5">
+                        Plays automatically or on guest interaction throughout the luxury invitation experience.
+                      </p>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
+                      <label className="btn-gold-shimmer px-4 py-2.5 rounded-xl text-xs font-cinzel font-bold flex items-center justify-center gap-2 cursor-pointer shadow-md hover:scale-[1.02] transition min-h-[42px] touch-manipulation">
+                        {uploadingField === "music" ? (
+                          <>
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            <span>Uploading Audio{uploadProgress !== null ? ` (${uploadProgress}%)` : "..."}</span>
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="w-3.5 h-3.5" />
+                            <span>Upload Audio Track</span>
+                          </>
+                        )}
+                        <input
+                          type="file"
+                          accept="audio/*,.mp3,.wav,.ogg,.m4a"
+                          disabled={uploadingField !== null}
+                          className="hidden"
+                          onChange={(e) =>
+                            handleImageUpload(e, "music", (url) =>
+                              setSettings((prev) => ({ ...prev, musicUrl: url }))
+                            )
+                          }
+                        />
+                      </label>
+                      {settings.musicUrl && settings.musicUrl !== "/audio/background.mp3" && (
+                        <button
+                          type="button"
+                          onClick={() => setSettings({ ...settings, musicUrl: "/audio/background.mp3" })}
+                          className="px-3 py-2 rounded-xl bg-zinc-800/80 hover:bg-zinc-700 text-zinc-300 text-xs font-sans transition min-h-[42px] touch-manipulation text-center"
+                          title="Reset to default instrumental track"
+                        >
+                          Reset Default
+                        </button>
+                      )}
+                    </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <label className="block text-xs uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold">
-                        Background Music Audio Track
-                      </label>
-                      <div className="flex items-center gap-2">
-                        <label className="px-3 py-1 rounded-lg bg-[#381c29] border border-[#dfba73]/40 text-[#dfba73] hover:bg-[#800020] text-[11px] font-cinzel font-semibold flex items-center gap-1.5 cursor-pointer transition shadow-sm">
-                          {uploadingField === "music" ? (
-                            <>
-                              <Loader2 className="w-3.5 h-3.5 animate-spin text-[#dfba73]" />
-                              <span>Uploading{uploadProgress !== null ? ` (${uploadProgress}%)` : "..."}</span>
-                            </>
-                          ) : (
-                            <>
-                              <Upload className="w-3.5 h-3.5 text-[#dfba73]" />
-                              <span>Upload Audio Track</span>
-                            </>
-                          )}
-                          <input
-                            type="file"
-                            accept="audio/*,.mp3,.wav,.ogg,.m4a"
-                            disabled={uploadingField !== null}
-                            className="hidden"
-                            onChange={(e) =>
-                              handleImageUpload(e, "music", (url) =>
-                                setSettings((prev) => ({ ...prev, musicUrl: url }))
-                              )
-                            }
-                          />
-                        </label>
-                        {settings.musicUrl && settings.musicUrl !== "/audio/background.mp3" && (
-                          <button
-                            type="button"
-                            onClick={() => setSettings({ ...settings, musicUrl: "/audio/background.mp3" })}
-                            className="px-2 py-1 rounded-lg bg-zinc-800/80 hover:bg-zinc-700 text-zinc-300 text-[10px] font-sans transition"
-                            title="Reset to default instrumental track"
-                          >
-                            Reset Default
-                          </button>
-                        )}
-                      </div>
+                  <input
+                    value={settings.musicUrl || ""}
+                    onChange={(e) => setSettings({ ...settings, musicUrl: e.target.value })}
+                    placeholder="/audio/background.mp3 or https://res.cloudinary.com/..."
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#1c1117] border border-[#c5a059]/40 text-xs sm:text-sm text-[#fdfbf7] focus:outline-none focus:border-[#dfba73] font-mono min-h-[44px]"
+                  />
+
+                  {settings.musicUrl && (
+                    <div className="pt-1">
+                      <audio
+                        controls
+                        src={settings.musicUrl}
+                        className="w-full h-9 rounded-xl opacity-90 shadow-sm"
+                        preload="none"
+                      />
                     </div>
-                    <input
-                      value={settings.musicUrl || ""}
-                      onChange={(e) => setSettings({ ...settings, musicUrl: e.target.value })}
-                      placeholder="/audio/background.mp3 or https://res.cloudinary.com/..."
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#2a1d25] border border-[#c5a059]/40 text-xs text-[#fdfbf7] focus:outline-none focus:border-[#dfba73]"
-                    />
-                    {settings.musicUrl && (
-                      <div className="pt-1">
-                        <audio
-                          controls
-                          src={settings.musicUrl}
-                          className="w-full h-8 rounded-lg opacity-90"
-                          preload="none"
-                        />
-                      </div>
-                    )}
-                  </div>
+                  )}
                 </div>
               </div>
 
-
-              {/* SAVE BUTTON */}
-              <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+              {/* SAVE BUTTON BAR */}
+              <div className="pt-3 pb-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
                 <button
                   type="submit"
                   disabled={savingSettings}
-                  className="btn-gold-shimmer px-8 py-3.5 rounded-xl text-xs font-cinzel font-bold flex items-center justify-center gap-2 shadow-xl cursor-pointer min-h-[44px] touch-manipulation"
+                  className="btn-gold-shimmer w-full sm:w-auto px-8 py-3.5 rounded-xl text-xs sm:text-sm font-cinzel font-bold flex items-center justify-center gap-2 shadow-xl cursor-pointer min-h-[48px] touch-manipulation transition"
                 >
                   <Save className="w-4 h-4" />
                   {savingSettings ? "Saving All Settings..." : "Save All Couple & Event Settings"}
                 </button>
                 {settingsSuccess && (
-                  <span className="text-xs text-emerald-400 font-cinzel flex items-center justify-center gap-1 bg-emerald-950/40 px-3 py-2.5 rounded-xl border border-emerald-800/50">
+                  <span className="text-xs text-emerald-400 font-cinzel flex items-center justify-center gap-1.5 bg-emerald-950/40 px-4 py-3 rounded-xl border border-emerald-800/50 w-full sm:w-auto text-center">
                     <Check className="w-4 h-4" /> Changes saved and active immediately across invitations!
                   </span>
                 )}
