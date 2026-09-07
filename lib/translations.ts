@@ -113,6 +113,7 @@ export interface Translations {
   rsvpSuccessAttending: string;
   rsvpSuccessDeclined: string;
   modifyRsvp: string;
+  modifyRsvpHelp: string;
 
   // Digital Wishes Guestbook
   guestbookTitle: string;
@@ -250,6 +251,7 @@ export const translations: Record<Locale, Translations> = {
     rsvpSuccessAttending: "Thank you for confirming! We can't wait to celebrate with you.",
     rsvpSuccessDeclined: "Thank you for letting us know. You will be missed dearly.",
     modifyRsvp: "Update Your Response",
+    modifyRsvpHelp: "Need to change your attendance, guest count, or message? Tap above to edit.",
 
     guestbookTitle: "Wishes & Blessings",
     guestbookSubtitle: "Heartfelt love and warm words from our family and friends",
@@ -383,6 +385,7 @@ export const translations: Record<Locale, Translations> = {
     rsvpSuccessAttending: "ඔබගේ සහභාගීත්වය තහවුරු කිරීමට ස්තූතියි! ඔබව පිළිගැනීමට අපි බලා සිටිමු.",
     rsvpSuccessDeclined: "දැනුම් දීමට ස්තූතියි. ඔබගේ නොපැමිණීම අපට මහත් පාඩුවකි.",
     modifyRsvp: "ප්‍රතිචාරය වෙනස් කරන්න",
+    modifyRsvpHelp: "පැමිණීම හෝ ආරාධිතයන් ගණන වෙනස් කිරීමට අවශ්‍යද? සංස්කරණය කිරීමට ඉහත ඔබන්න.",
 
     guestbookTitle: "ඩිජිටල් සුබපැතුම් එකතුව",
     guestbookSubtitle: "හිතවතුන් සහ ඥාතීන් විසින් එක් කළ හදපිරි ආශිර්වාද",
@@ -516,6 +519,7 @@ export const translations: Record<Locale, Translations> = {
     rsvpSuccessAttending: "வருகையை உறுதிப்படுத்தியமைக்கு நன்றி! தங்களை வரவேற்க காத்திருக்கிறோம்.",
     rsvpSuccessDeclined: "தகவலுக்கு நன்றி. தங்களின் வருகை தவறவிடப்படும்.",
     modifyRsvp: "பதிவை மாற்றவும்",
+    modifyRsvpHelp: "உங்கள் வருகை அல்லது விருந்தினர்களின் எண்ணிக்கையை மாற்ற விரும்புகிறீர்களா? மாற்ற மேலே கிளிக் செய்யவும்.",
 
     guestbookTitle: "வாழ்த்து புத்தகம்",
     guestbookSubtitle: "உறவினர்கள் மற்றும் நண்பர்களின் மனமார்ந்த வாழ்த்துக்கள்",

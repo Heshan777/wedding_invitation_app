@@ -32,6 +32,9 @@ import {
   VolumeX,
   Film,
   Globe,
+  RotateCcw,
+  Edit3,
+  CheckCircle2,
 } from "lucide-react";
 import CountdownTimer from "./CountdownTimer";
 import VenueMap from "./VenueMap";
@@ -1636,23 +1639,71 @@ export default function InvitationView({
               </div>
 
               {rsvpSubmitted && !submittingRsvp ? (
-                <div className="text-center py-6 px-4 bg-[#800020]/10 rounded-2xl border border-[#c5a059]/40 space-y-3">
-                  <Heart className="w-10 h-10 text-[#800020] mx-auto fill-[#800020] animate-pulse" />
-                  <h4 className="font-cinzel text-lg font-bold text-[#800020]">
-                    {t.rsvpSuccessTitle}
-                  </h4>
-                  <p className="text-xs text-[#3d3238]">
+                <div className="relative overflow-hidden text-center py-7 px-5 sm:px-8 bg-gradient-to-b from-[#fffcf7] via-[#fff9ef] to-[#f8f1e3] rounded-3xl border-2 border-[#dfba73]/70 shadow-xl shadow-[#800020]/10 space-y-4">
+                  {/* Subtle top ambient gold shimmer */}
+                  <div className="absolute -top-12 left-1/2 -translate-x-1/2 w-48 h-24 bg-gradient-to-b from-[#dfba73]/30 to-transparent blur-xl pointer-events-none" />
+
+                  {/* Celebratory Royal Medallion with Pulse Animation */}
+                  <div className="relative inline-flex items-center justify-center">
+                    <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#800020] via-[#941132] to-[#6b0f24] border-2 border-[#dfba73] shadow-lg shadow-[#800020]/30 flex items-center justify-center">
+                      <Heart className="w-8 h-8 text-[#edd892] fill-[#edd892] animate-pulse drop-shadow" />
+                    </div>
+                    <span className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-600 text-white shadow-md border-2 border-[#fffcf7] text-xs font-bold">
+                      ✓
+                    </span>
+                  </div>
+
+                  {/* Title & Status Pill Badge */}
+                  <div className="space-y-2">
+                    <h4 className="font-cinzel text-lg sm:text-xl font-bold text-[#800020] tracking-wide">
+                      {t.rsvpSuccessTitle}
+                    </h4>
+
+                    {/* Current recorded response status badge */}
+                    <div>
+                      {rsvpStatus === "attending" ? (
+                        <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-cinzel font-bold text-emerald-900 bg-emerald-500/15 border border-emerald-600/40 shadow-sm">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700" />
+                          <span>🍾 {t.joyfullyAccept} • {rsvpCount} {rsvpCount === 1 ? t.guestSingle : t.guestPlural}</span>
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-cinzel font-bold text-rose-900 bg-rose-500/15 border border-rose-600/40 shadow-sm">
+                          <span>🕊 {t.regretfullyDecline}</span>
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Confirmation Message */}
+                  <p className="text-xs sm:text-sm text-[#4a3b32] max-w-md mx-auto leading-relaxed">
                     {rsvpStatus === "attending"
                       ? `${t.rsvpSuccessAttending} (${rsvpCount} ${rsvpCount === 1 ? t.guestSingle : t.guestPlural}).`
                       : t.rsvpSuccessDeclined}
                   </p>
-                  <button
-                    type="button"
-                    onClick={() => setRsvpSubmitted(false)}
-                    className="text-xs text-[#800020] hover:underline font-cinzel font-semibold cursor-pointer pt-2 min-h-[36px] touch-manipulation"
-                  >
-                    {t.modifyRsvp}
-                  </button>
+
+                  {/* Elegant Floral / Gold Divider */}
+                  <div className="flex items-center justify-center gap-3 pt-1">
+                    <div className="h-px w-14 bg-gradient-to-r from-transparent to-[#c5a059]/50" />
+                    <Sparkles className="w-3.5 h-3.5 text-[#c5a059]" />
+                    <div className="h-px w-14 bg-gradient-to-l from-transparent to-[#c5a059]/50" />
+                  </div>
+
+                  {/* Highly Identifiable & Luxury "Update Your Response" Action Button */}
+                  <div className="pt-2 pb-1 space-y-2">
+                    <button
+                      type="button"
+                      onClick={() => setRsvpSubmitted(false)}
+                      className="group relative w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-7 py-3.5 rounded-xl bg-gradient-to-r from-[#800020] via-[#9b1336] to-[#800020] hover:from-[#6b0f24] hover:to-[#800020] text-[#fdfbf7] border-2 border-[#dfba73] shadow-lg shadow-[#800020]/25 hover:shadow-xl hover:shadow-[#800020]/40 transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0 cursor-pointer min-h-[48px] touch-manipulation font-cinzel font-bold text-xs sm:text-sm tracking-wider uppercase"
+                    >
+                      <RotateCcw className="w-4 h-4 text-[#dfba73] group-hover:-rotate-90 transition-transform duration-300 shrink-0" />
+                      <span>{t.modifyRsvp}</span>
+                      <Edit3 className="w-3.5 h-3.5 text-[#dfba73]/80 group-hover:text-white transition-colors shrink-0" />
+                    </button>
+
+                    <p className="text-[11px] text-[#7a6458] font-serif italic max-w-sm mx-auto">
+                      {t.modifyRsvpHelp}
+                    </p>
+                  </div>
                 </div>
               ) : (
                 <form onSubmit={handleRsvpSubmit} className="space-y-4">

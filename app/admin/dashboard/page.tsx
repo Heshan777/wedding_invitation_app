@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo } from "react";
 import Image from "next/image";
 import QRCode from "qrcode";
-import { upload } from "@vercel/blob/client";
+import { uploadToCloudinary, isCloudinaryClientConfigured } from "@/lib/cloudinary-client";
 
 import {
   Users,
@@ -325,7 +325,9 @@ export default function AdminDashboard() {
     configured: boolean;
     provider: string;
     isVercel: boolean;
-    hasBlobToken: boolean;
+    hasCloudinary?: boolean;
+    hasBlobToken?: boolean;
+    cloudName?: string | null;
     message: string;
   } | null>(null);
 
@@ -634,6 +636,7 @@ export default function AdminDashboard() {
   // Toast notification
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const [uploadingField, setUploadingField] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
 
   function showToast(msg: string) {
     setToastMsg(msg);
@@ -653,30 +656,28 @@ export default function AdminDashboard() {
     const mediaLabel = isVid ? "Pre-shoot video" : isAudio ? "Audio track" : "Photo";
 
     setUploadingField(fieldKey);
+    setUploadProgress(0);
     showToast(`Uploading ${mediaLabel.toLowerCase()}... Please wait.`);
 
     try {
       let finalUrl: string | null = null;
 
-      // Clean filename for direct blob upload
-      const ext = file.name.split(".").pop() || (isVid ? "mp4" : isAudio ? "mp3" : "jpg");
-      const baseClean = file.name.replace(/\.[^/.]+$/, "").replace(/[^a-zA-Z0-9-_]/g, "").slice(0, 20) || "media";
-      const prefix = isVid ? "preshoot-video" : isAudio ? "audio" : "preshoot-photo";
-      const uniqueName = `${prefix}-${baseClean}-${Date.now()}.${ext}`;
-
-      // Strategy 1: Direct Client Upload to Vercel Blob (bypasses 4.5MB Serverless Limit!)
-      try {
-        const newBlob = await upload(uniqueName, file, {
-          access: "public",
-          handleUploadUrl: "/api/admin/upload",
-        });
-        if (newBlob && newBlob.url) {
-          finalUrl = newBlob.url;
-        }
-      } catch (blobErr: any) {
-        console.warn("Direct blob upload failed or not configured, trying standard upload:", blobErr);
-        if (blobErr.message?.includes("Unauthorized") || blobErr.message?.includes("Only image files")) {
-          throw blobErr;
+      // Strategy 1: Direct Client Upload to Cloudinary (bypasses 4.5MB Serverless Limit!)
+      if (isCloudinaryClientConfigured()) {
+        try {
+          const cloudRes = await uploadToCloudinary(file, {
+            folder: isVid ? "wedding-videos" : isAudio ? "wedding-audio" : "wedding-photos",
+            onProgress: (pct) => setUploadProgress(pct),
+          });
+          if (cloudRes && cloudRes.secure_url) {
+            finalUrl = cloudRes.secure_url;
+          }
+        } catch (cloudErr: any) {
+          console.warn("Direct Cloudinary upload failed, attempting server upload:", cloudErr);
+          // If file is too large for server fallback (> 4.5MB), rethrow direct upload error
+          if (file.size > 4.5 * 1024 * 1024) {
+            throw new Error(`Cloudinary upload failed: ${cloudErr.message || "Unknown error"}`);
+          }
         }
       }
 
@@ -694,7 +695,7 @@ export default function AdminDashboard() {
         if (!res.ok) {
           if (res.status === 413) {
             throw new Error(
-              `File is too large for this upload path (${(file.size / (1024 * 1024)).toFixed(1)} MB). For Vercel deployments, connect Vercel Blob in the dashboard or use a direct external video URL.`
+              `File is too large for this upload path (${(file.size / (1024 * 1024)).toFixed(1)} MB). Please configure NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME and NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET.`
             );
           }
           if (data.error) {
@@ -719,6 +720,7 @@ export default function AdminDashboard() {
       alert(errMsg);
     } finally {
       setUploadingField(null);
+      setUploadProgress(null);
       e.target.value = "";
     }
   }
@@ -1979,14 +1981,14 @@ export default function AdminDashboard() {
                     <Film className="w-4 h-4 text-[#dfba73]" /> 2. Couple Pre-Shoot Video & Media Suite
                   </div>
                   <div className="flex items-center gap-2">
-                    {storageStatus?.hasBlobToken ? (
+                    {storageStatus?.hasCloudinary || storageStatus?.hasBlobToken ? (
                       <span className="px-2.5 py-0.5 rounded-full bg-emerald-950/70 text-emerald-300 text-[10px] font-cinzel font-semibold border border-emerald-500/40 inline-flex items-center gap-1.5">
                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                        Cloud Blob Active
+                        ☁️ Cloudinary Active {storageStatus.cloudName ? `(${storageStatus.cloudName})` : ""}
                       </span>
                     ) : storageStatus?.isVercel ? (
                       <span className="px-2.5 py-0.5 rounded-full bg-amber-950/70 text-amber-300 text-[10px] font-cinzel font-semibold border border-amber-500/40 inline-flex items-center gap-1.5">
-                        ⚠️ Blob Setup Required
+                        ⚠️ Cloudinary Setup Required
                       </span>
                     ) : (
                       <span className="px-2.5 py-0.5 rounded-full bg-zinc-800 text-zinc-300 text-[10px] font-cinzel border border-zinc-600">
@@ -2001,17 +2003,17 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
-                {/* Storage Notification Banner if deployed on Vercel without Blob Store */}
-                {storageStatus && storageStatus.isVercel && !storageStatus.hasBlobToken && (
+                {/* Storage Notification Banner if deployed on Vercel without Cloudinary */}
+                {storageStatus && storageStatus.isVercel && !storageStatus.hasCloudinary && !storageStatus.hasBlobToken && (
                   <div className="p-3.5 rounded-xl bg-gradient-to-r from-amber-950/50 to-orange-950/30 border border-amber-500/40 text-amber-200 text-xs flex items-start gap-3 shadow-md">
                     <Sparkles className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
                     <div className="space-y-1">
                       <div className="font-cinzel font-bold text-amber-300 text-[12px]">
-                        Notice: Enable Vercel Blob Cloud Storage for Direct Photo & Video Uploads
+                        Notice: Enable Cloudinary for Direct Audio, Video & Photo Uploads
                       </div>
                       <p className="text-[11px] text-amber-100/90 font-sans leading-relaxed">
-                        On Vercel, the local server filesystem is read-only. To upload high-resolution wedding photos and large pre-shoot videos (up to 500MB):
-                        Open your project in the <a href="https://vercel.com/dashboard" target="_blank" rel="noreferrer" className="underline font-semibold text-amber-300 hover:text-white">Vercel Dashboard</a> &rarr; <strong>Storage</strong> tab &rarr; <strong>Create Database</strong> &rarr; choose <strong>Blob</strong>.
+                        On Vercel, the local server filesystem is read-only. To upload high-resolution wedding photos, large pre-shoot videos, and background music tracks:
+                        Ensure <code>NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME</code> and <code>NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET</code> are set in your deployment environment variables.
                       </p>
                       <p className="text-[10px] text-amber-300/80 font-sans italic">
                         💡 You can also paste any direct image or video URL (from Dropbox, Google Drive, Imgur, YouTube, etc.) directly into the URL fields below.
@@ -2037,7 +2039,7 @@ export default function AdminDashboard() {
                         {uploadingField === "video" ? (
                           <>
                             <Loader2 className="w-4 h-4 animate-spin" />
-                            <span>Uploading Video...</span>
+                            <span>Uploading Video{uploadProgress !== null ? ` (${uploadProgress}%)` : "..."}</span>
                           </>
                         ) : (
                           <>
@@ -2676,16 +2678,64 @@ export default function AdminDashboard() {
                     />
                   </div>
 
-                  <div>
-                    <label className="block text-xs uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold mb-1">
-                      Music Audio URL
-                    </label>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="block text-xs uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold">
+                        Background Music Audio Track
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <label className="px-3 py-1 rounded-lg bg-[#381c29] border border-[#dfba73]/40 text-[#dfba73] hover:bg-[#800020] text-[11px] font-cinzel font-semibold flex items-center gap-1.5 cursor-pointer transition shadow-sm">
+                          {uploadingField === "music" ? (
+                            <>
+                              <Loader2 className="w-3.5 h-3.5 animate-spin text-[#dfba73]" />
+                              <span>Uploading{uploadProgress !== null ? ` (${uploadProgress}%)` : "..."}</span>
+                            </>
+                          ) : (
+                            <>
+                              <Upload className="w-3.5 h-3.5 text-[#dfba73]" />
+                              <span>Upload Audio Track</span>
+                            </>
+                          )}
+                          <input
+                            type="file"
+                            accept="audio/*,.mp3,.wav,.ogg,.m4a"
+                            disabled={uploadingField !== null}
+                            className="hidden"
+                            onChange={(e) =>
+                              handleImageUpload(e, "music", (url) =>
+                                setSettings((prev) => ({ ...prev, musicUrl: url }))
+                              )
+                            }
+                          />
+                        </label>
+                        {settings.musicUrl && settings.musicUrl !== "/audio/background.mp3" && (
+                          <button
+                            type="button"
+                            onClick={() => setSettings({ ...settings, musicUrl: "/audio/background.mp3" })}
+                            className="px-2 py-1 rounded-lg bg-zinc-800/80 hover:bg-zinc-700 text-zinc-300 text-[10px] font-sans transition"
+                            title="Reset to default instrumental track"
+                          >
+                            Reset Default
+                          </button>
+                        )}
+                      </div>
+                    </div>
                     <input
                       value={settings.musicUrl || ""}
                       onChange={(e) => setSettings({ ...settings, musicUrl: e.target.value })}
-                      placeholder="/audio/background.mp3"
+                      placeholder="/audio/background.mp3 or https://res.cloudinary.com/..."
                       className="w-full px-3.5 py-2.5 rounded-xl bg-[#2a1d25] border border-[#c5a059]/40 text-xs text-[#fdfbf7] focus:outline-none focus:border-[#dfba73]"
                     />
+                    {settings.musicUrl && (
+                      <div className="pt-1">
+                        <audio
+                          controls
+                          src={settings.musicUrl}
+                          className="w-full h-8 rounded-lg opacity-90"
+                          preload="none"
+                        />
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
