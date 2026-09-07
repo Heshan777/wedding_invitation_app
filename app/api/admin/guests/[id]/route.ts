@@ -15,8 +15,18 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     include: { event: true },
   });
 
-  if (!existing || (existing.event && existing.event.managerId !== manager.id && manager.role !== "SUPER_ADMIN")) {
-    return NextResponse.json({ error: "Guest not found or access denied" }, { status: 404 });
+  if (!existing) {
+    return NextResponse.json({ error: "Guest not found" }, { status: 404 });
+  }
+
+  // Strict tenant boundary: regular managers can ONLY modify guests from their own wedding
+  if (manager.role !== "SUPER_ADMIN") {
+    if (!existing.event || existing.event.managerId !== manager.id) {
+      return NextResponse.json(
+        { error: "Security Restriction: You do not have permission to modify guests from another wedding." },
+        { status: 403 }
+      );
+    }
   }
 
   const body = await req.json();
@@ -51,8 +61,18 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     include: { event: true },
   });
 
-  if (!existing || (existing.event && existing.event.managerId !== manager.id && manager.role !== "SUPER_ADMIN")) {
-    return NextResponse.json({ error: "Guest not found or access denied" }, { status: 404 });
+  if (!existing) {
+    return NextResponse.json({ error: "Guest not found" }, { status: 404 });
+  }
+
+  // Strict tenant boundary: regular managers can ONLY delete guests from their own wedding
+  if (manager.role !== "SUPER_ADMIN") {
+    if (!existing.event || existing.event.managerId !== manager.id) {
+      return NextResponse.json(
+        { error: "Security Restriction: You do not have permission to delete guests from another wedding." },
+        { status: 403 }
+      );
+    }
   }
 
   await prisma.guest.delete({ where: { id } });

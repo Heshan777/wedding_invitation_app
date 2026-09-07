@@ -18,7 +18,6 @@ import {
   QrCode,
   Users,
   Compass,
-  MessageSquareHeart,
   Music,
   ChevronLeft,
   ChevronRight,
@@ -1349,7 +1348,7 @@ export default function InvitationView({
                 </p>
               </div>
 
-              {/* Floating Heart Fountain Emitters */}
+              {/* Floating Sparkle Fountain Emitters */}
               {floatingHearts.map((h) => (
                 <div
                   key={h.id}
@@ -1359,7 +1358,7 @@ export default function InvitationView({
                     fontSize: `${h.size}px`,
                   }}
                 >
-                  💖
+                  ✨
                 </div>
               ))}
 
@@ -1687,7 +1686,7 @@ export default function InvitationView({
             <div className="my-10 p-5 sm:p-7 rounded-3xl bg-gradient-to-b from-[#fffdfa] to-[#f7f2e7] border-2 border-[#c5a059]/60 shadow-2xl">
               <div className="text-center mb-5">
                 <div className="inline-flex items-center gap-1.5 text-[#800020] text-xs font-cinzel font-semibold mb-1">
-                  <MessageSquareHeart className="w-4 h-4 text-[#c5a059]" /> {t.rsvpTitle}
+                  <Sparkles className="w-4 h-4 text-[#c5a059]" /> {t.rsvpTitle}
                 </div>
                 <h3 className="font-serif italic text-2xl sm:text-3xl text-[#6b0f24] font-bold">
                   {t.rsvpTitle}
@@ -1702,14 +1701,21 @@ export default function InvitationView({
                   {/* Subtle top ambient gold shimmer */}
                   <div className="absolute -top-12 left-1/2 -translate-x-1/2 w-48 h-24 bg-gradient-to-b from-[#dfba73]/30 to-transparent blur-xl pointer-events-none" />
 
-                  {/* Celebratory Royal Medallion with Pulse Animation */}
-                  <div className="relative inline-flex items-center justify-center">
-                    <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#800020] via-[#941132] to-[#6b0f24] border-2 border-[#dfba73] shadow-lg shadow-[#800020]/30 flex items-center justify-center">
-                      <Heart className="w-8 h-8 text-[#edd892] fill-[#edd892] animate-pulse drop-shadow" />
+                  {/* Celebratory Couple Illustration with Floating Sway Animation */}
+                  <div className="relative inline-flex flex-col items-center justify-center mx-auto my-2 group">
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#dfba73]/30 via-[#ffd700]/15 to-transparent blur-2xl rounded-full scale-110 pointer-events-none animate-pulse" />
+                    <div className="relative z-10 animate-couple-float transition-transform duration-500 hover:scale-105">
+                      <img
+                        src="/images/coupleshare.png"
+                        alt={settings.coupleNames || "Wedding Celebration"}
+                        className="h-44 sm:h-52 w-auto max-w-[220px] object-contain select-none pointer-events-none drop-shadow-[0_10px_20px_rgba(128,0,32,0.25)]"
+                        loading="eager"
+                      />
+                      <span className="absolute bottom-2 right-4 flex h-7 w-7 items-center justify-center rounded-full bg-emerald-600 text-white shadow-lg border-2 border-[#fffcf7] text-xs font-bold ring-2 ring-emerald-400/50">
+                        ✓
+                      </span>
                     </div>
-                    <span className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-600 text-white shadow-md border-2 border-[#fffcf7] text-xs font-bold">
-                      ✓
-                    </span>
+                    <div className="w-32 sm:w-40 h-2 bg-gradient-to-r from-transparent via-[#c5a059]/40 to-transparent blur-xs rounded-full -mt-1 pointer-events-none" />
                   </div>
 
                   {/* Title & Status Pill Badge */}

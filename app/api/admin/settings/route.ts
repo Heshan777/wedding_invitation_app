@@ -2,41 +2,64 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getAuthenticatedManager } from "@/lib/auth";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(req: NextRequest) {
   const manager = await getAuthenticatedManager();
-  const { searchParams } = new URL(req.url);
-  const eventId = searchParams.get("eventId");
-
-  if (manager && eventId) {
-    const isSuperAdmin = manager.role === "SUPER_ADMIN";
-    const event = await prisma.weddingEvent.findFirst({
-      where: isSuperAdmin ? { id: eventId } : { id: eventId, managerId: manager.id },
-      include: {
-        photos: { orderBy: { order: "asc" } },
-        tables: { orderBy: { tableNumber: "asc" } },
-      },
-    });
-    if (event) return NextResponse.json(event);
+  if (!manager) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // Fallback to manager's latest event
-  if (manager) {
-    const event = await prisma.weddingEvent.findFirst({
-      where: { managerId: manager.id },
+  const { searchParams } = new URL(req.url);
+  const requestedEventId = searchParams.get("eventId");
+  const isSuperAdmin = manager.role === "SUPER_ADMIN";
+
+  // Super Admin can view any event by ID or fallback to latest
+  if (isSuperAdmin) {
+    if (requestedEventId) {
+      const event = await prisma.weddingEvent.findUnique({
+        where: { id: requestedEventId },
+        include: {
+          photos: { orderBy: { order: "asc" } },
+          tables: { orderBy: { tableNumber: "asc" } },
+        },
+      });
+      if (event) return NextResponse.json(event);
+      return NextResponse.json({ error: "Event not found" }, { status: 404 });
+    }
+
+    const firstEvent = await prisma.weddingEvent.findFirst({
       orderBy: { createdAt: "desc" },
       include: {
         photos: { orderBy: { order: "asc" } },
         tables: { orderBy: { tableNumber: "asc" } },
       },
     });
-    if (event) return NextResponse.json(event);
+    if (firstEvent) return NextResponse.json(firstEvent);
   }
 
-  // Fallback to legacy singleton
-  const settings = await prisma.eventSettings.findUnique({
-    where: { id: "singleton" },
+  // Regular Event Manager: 1-to-1 Architecture (Strict Isolation)
+  const ownEvent = await prisma.weddingEvent.findFirst({
+    where: { managerId: manager.id },
+    include: {
+      photos: { orderBy: { order: "asc" } },
+      tables: { orderBy: { tableNumber: "asc" } },
+    },
   });
-  return NextResponse.json(settings);
+
+  if (!ownEvent) {
+    return NextResponse.json({ error: "No dedicated wedding event found for this manager" }, { status: 404 });
+  }
+
+  // Security check: If another event ID was requested, reject immediately
+  if (requestedEventId && requestedEventId !== ownEvent.id) {
+    return NextResponse.json(
+      { error: "Access Denied: You do not have permission to view settings for another wedding event." },
+      { status: 403 }
+    );
+  }
+
+  return NextResponse.json(ownEvent);
 }
 
 export async function PATCH(req: NextRequest) {
@@ -45,9 +68,65 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const isSuperAdmin = manager.role === "SUPER_ADMIN";
   const body = await req.json();
   const { searchParams } = new URL(req.url);
-  const eventId = body.eventId || searchParams.get("eventId");
+  const requestedEventId = body.eventId || searchParams.get("eventId");
+
+  let targetEventId: string;
+
+  if (isSuperAdmin) {
+    if (requestedEventId) {
+      targetEventId = requestedEventId;
+    } else {
+      const first = await prisma.weddingEvent.findFirst({ orderBy: { createdAt: "desc" } });
+      if (!first) {
+        return NextResponse.json({ error: "No wedding event found on platform" }, { status: 404 });
+      }
+      targetEventId = first.id;
+    }
+  } else {
+    // Regular Event Manager: Strict 1-to-1 Isolation
+    const ownEvent = await prisma.weddingEvent.findFirst({
+      where: { managerId: manager.id },
+    });
+
+    if (!ownEvent) {
+      return NextResponse.json(
+        { error: "No dedicated wedding event found for your account." },
+        { status: 404 }
+      );
+    }
+
+    // Security Check: Block attempts to modify another wedding's settings
+    if (requestedEventId && requestedEventId !== ownEvent.id) {
+      return NextResponse.json(
+        {
+          error:
+            "Security Restriction: You do not have permission to modify settings for other weddings. You can only manage your own dedicated wedding.",
+        },
+        { status: 403 }
+      );
+    }
+
+    targetEventId = ownEvent.id;
+  }
+
+  const existing = await prisma.weddingEvent.findUnique({
+    where: { id: targetEventId },
+  });
+
+  if (!existing) {
+    return NextResponse.json({ error: "Wedding event not found" }, { status: 404 });
+  }
+
+  // Double-verify manager ownership for non-super-admin
+  if (!isSuperAdmin && existing.managerId !== manager.id) {
+    return NextResponse.json(
+      { error: "Security Restriction: Access denied to this wedding event." },
+      { status: 403 }
+    );
+  }
 
   const {
     coupleNames,
@@ -73,120 +152,34 @@ export async function PATCH(req: NextRequest) {
     contactPhone,
   } = body;
 
-  // Update specific WeddingEvent if eventId is provided or manager has events
-  if (eventId) {
-    const event = await prisma.weddingEvent.findFirst({
-      where: { id: eventId, managerId: manager.id },
-    });
-    if (event) {
-      const updated = await prisma.weddingEvent.update({
-        where: { id: event.id },
-        data: {
-          coupleNames,
-          hostIntro,
-          invitationBody,
-          eventDate: eventDate ? new Date(eventDate) : undefined,
-          venueName,
-          venueAddress,
-          venueLat: venueLat !== undefined ? Number(venueLat) : undefined,
-          venueLng: venueLng !== undefined ? Number(venueLng) : undefined,
-          heroImageUrl,
-          heroVideoUrl,
-          videoThumbnailUrl,
-          galleryJson,
-          blessingImageUrl,
-          welcomeImageUrl,
-          placeCardImageUrl,
-          placeCardNote,
-          musicUrl,
-          dressCodeTitle,
-          dressCodeDescription,
-          timelineJson,
-          contactPhone,
-        },
-      });
-
-      // Also mirror to legacy EventSettings if it's the primary event
-      await prisma.eventSettings.upsert({
-        where: { id: "singleton" },
-        update: {
-          coupleNames,
-          hostIntro,
-          invitationBody,
-          eventDate: eventDate ? new Date(eventDate) : undefined,
-          venueName,
-          venueAddress,
-          venueLat: venueLat !== undefined ? Number(venueLat) : undefined,
-          venueLng: venueLng !== undefined ? Number(venueLng) : undefined,
-          heroImageUrl,
-          heroVideoUrl,
-          videoThumbnailUrl,
-          galleryJson,
-          blessingImageUrl,
-          welcomeImageUrl,
-          placeCardImageUrl,
-          placeCardNote,
-          musicUrl,
-          dressCodeTitle,
-          dressCodeDescription,
-          timelineJson,
-          contactPhone,
-        },
-        create: {
-          id: "singleton",
-          coupleNames: coupleNames || "Sandharu & Sanduni",
-          hostIntro: hostIntro || "We cordially invite you",
-          invitationBody: invitationBody || "to celebrate with us",
-          eventDate: eventDate ? new Date(eventDate) : new Date(),
-          venueName: venueName || "Rose Garden Banquet Hall",
-          venueAddress: venueAddress || "Kadawatha",
-          venueLat: Number(venueLat) || 7.00365,
-          venueLng: Number(venueLng) || 79.9426,
-        },
-      }).catch(() => {});
-
-      return NextResponse.json(updated);
-    }
-  }
-
-  // Fallback: update legacy EventSettings
-  const updated = await prisma.eventSettings.upsert({
-    where: { id: "singleton" },
-    update: {
-      coupleNames,
-      hostIntro,
-      invitationBody,
-      eventDate: eventDate ? new Date(eventDate) : undefined,
-      venueName,
-      venueAddress,
-      venueLat: venueLat !== undefined ? Number(venueLat) : undefined,
-      venueLng: venueLng !== undefined ? Number(venueLng) : undefined,
-      heroImageUrl,
-      heroVideoUrl,
-      videoThumbnailUrl,
-      galleryJson,
-      blessingImageUrl,
-      welcomeImageUrl,
-      placeCardImageUrl,
-      placeCardNote,
-      musicUrl,
-      dressCodeTitle,
-      dressCodeDescription,
-      timelineJson,
-      contactPhone,
-    },
-    create: {
-      id: "singleton",
-      coupleNames: coupleNames || "Sandharu & Sanduni",
-      hostIntro: hostIntro || "We cordially invite you",
-      invitationBody: invitationBody || "to celebrate with us",
-      eventDate: eventDate ? new Date(eventDate) : new Date(),
-      venueName: venueName || "Rose Garden Banquet Hall",
-      venueAddress: venueAddress || "Kadawatha",
-      venueLat: Number(venueLat) || 7.00365,
-      venueLng: Number(venueLng) || 79.9426,
+  const updated = await prisma.weddingEvent.update({
+    where: { id: targetEventId },
+    data: {
+      coupleNames: coupleNames !== undefined ? coupleNames : existing.coupleNames,
+      hostIntro: hostIntro !== undefined ? hostIntro : existing.hostIntro,
+      invitationBody: invitationBody !== undefined ? invitationBody : existing.invitationBody,
+      eventDate: eventDate ? new Date(eventDate) : existing.eventDate,
+      venueName: venueName !== undefined ? venueName : existing.venueName,
+      venueAddress: venueAddress !== undefined ? venueAddress : existing.venueAddress,
+      venueLat: venueLat !== undefined ? Number(venueLat) : existing.venueLat,
+      venueLng: venueLng !== undefined ? Number(venueLng) : existing.venueLng,
+      heroImageUrl: heroImageUrl !== undefined ? heroImageUrl : existing.heroImageUrl,
+      heroVideoUrl: heroVideoUrl !== undefined ? heroVideoUrl : existing.heroVideoUrl,
+      videoThumbnailUrl: videoThumbnailUrl !== undefined ? videoThumbnailUrl : existing.videoThumbnailUrl,
+      galleryJson: galleryJson !== undefined ? galleryJson : existing.galleryJson,
+      blessingImageUrl: blessingImageUrl !== undefined ? blessingImageUrl : existing.blessingImageUrl,
+      welcomeImageUrl: welcomeImageUrl !== undefined ? welcomeImageUrl : existing.welcomeImageUrl,
+      placeCardImageUrl: placeCardImageUrl !== undefined ? placeCardImageUrl : existing.placeCardImageUrl,
+      placeCardNote: placeCardNote !== undefined ? placeCardNote : existing.placeCardNote,
+      musicUrl: musicUrl !== undefined ? musicUrl : existing.musicUrl,
+      dressCodeTitle: dressCodeTitle !== undefined ? dressCodeTitle : existing.dressCodeTitle,
+      dressCodeDescription: dressCodeDescription !== undefined ? dressCodeDescription : existing.dressCodeDescription,
+      timelineJson: timelineJson !== undefined ? timelineJson : existing.timelineJson,
+      contactPhone: contactPhone !== undefined ? contactPhone : existing.contactPhone,
     },
   });
 
+  // Notice: We strictly DO NOT touch or overwrite the global singleton 'eventSettings'.
+  // Every wedding event is saved exclusively to its own isolated database row.
   return NextResponse.json(updated);
 }

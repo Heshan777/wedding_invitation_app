@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAuthenticatedManager } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 
+export const dynamic = "force-dynamic";
+
 // GET /api/admin/photos?eventId=... - Fetch photos for an event
 export async function GET(req: NextRequest) {
   try {
@@ -11,24 +13,43 @@ export async function GET(req: NextRequest) {
     }
 
     const { searchParams } = new URL(req.url);
-    const eventId = searchParams.get("eventId");
+    const requestedEventId = searchParams.get("eventId");
+    const isSuperAdmin = manager.role === "SUPER_ADMIN";
 
-    if (!eventId) {
-      return NextResponse.json({ error: "eventId is required" }, { status: 400 });
+    let targetEventId: string | null = null;
+
+    if (isSuperAdmin) {
+      targetEventId = requestedEventId;
+      if (!targetEventId) {
+        const first = await prisma.weddingEvent.findFirst({ orderBy: { createdAt: "desc" } });
+        targetEventId = first?.id || null;
+      }
+    } else {
+      // Regular Event Manager: 1-to-1 Architecture
+      const ownEvent = await prisma.weddingEvent.findFirst({
+        where: { managerId: manager.id },
+      });
+
+      if (!ownEvent) {
+        return NextResponse.json({ photos: [] });
+      }
+
+      if (requestedEventId && requestedEventId !== ownEvent.id) {
+        return NextResponse.json(
+          { error: "Access Denied: You can only view photos for your dedicated wedding event." },
+          { status: 403 }
+        );
+      }
+
+      targetEventId = ownEvent.id;
     }
 
-    // Verify manager owns this event (Super Admin can access any event)
-    const isSuperAdmin = manager.role === "SUPER_ADMIN";
-    const event = await prisma.weddingEvent.findFirst({
-      where: isSuperAdmin ? { id: eventId } : { id: eventId, managerId: manager.id },
-    });
-
-    if (!event) {
-      return NextResponse.json({ error: "Event not found or access denied" }, { status: 404 });
+    if (!targetEventId) {
+      return NextResponse.json({ photos: [] });
     }
 
     const photos = await prisma.eventPhoto.findMany({
-      where: { eventId },
+      where: { eventId: targetEventId },
       orderBy: { order: "asc" },
     });
 
@@ -47,32 +68,68 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const isSuperAdmin = manager.role === "SUPER_ADMIN";
     const body = await req.json();
-    const { eventId, url, title, subtitle, tag, order } = body;
+    const { url, title, subtitle, tag, order } = body;
+    const requestedEventId = body.eventId;
 
-    if (!eventId || !url) {
-      return NextResponse.json({ error: "eventId and url are required" }, { status: 400 });
+    if (!url) {
+      return NextResponse.json({ error: "url is required" }, { status: 400 });
     }
 
-    // Verify ownership
-    const isSuperAdmin = manager.role === "SUPER_ADMIN";
-    const event = await prisma.weddingEvent.findFirst({
-      where: isSuperAdmin ? { id: eventId } : { id: eventId, managerId: manager.id },
+    let targetEventId: string;
+
+    if (isSuperAdmin) {
+      if (requestedEventId) {
+        targetEventId = requestedEventId;
+      } else {
+        const first = await prisma.weddingEvent.findFirst({ orderBy: { createdAt: "desc" } });
+        if (!first) {
+          return NextResponse.json({ error: "No wedding event found on platform" }, { status: 404 });
+        }
+        targetEventId = first.id;
+      }
+    } else {
+      // Regular Event Manager: 1-to-1 Architecture
+      const ownEvent = await prisma.weddingEvent.findFirst({
+        where: { managerId: manager.id },
+      });
+
+      if (!ownEvent) {
+        return NextResponse.json(
+          { error: "No dedicated wedding event found for your account." },
+          { status: 404 }
+        );
+      }
+
+      if (requestedEventId && requestedEventId !== ownEvent.id) {
+        return NextResponse.json(
+          { error: "Security Restriction: You cannot add photos to another wedding." },
+          { status: 403 }
+        );
+      }
+
+      targetEventId = ownEvent.id;
+    }
+
+    // Verify target event exists
+    const event = await prisma.weddingEvent.findUnique({
+      where: { id: targetEventId },
     });
 
     if (!event) {
-      return NextResponse.json({ error: "Event not found or access denied" }, { status: 404 });
+      return NextResponse.json({ error: "Event not found" }, { status: 404 });
     }
 
     // Determine order
     const nextOrder =
       typeof order === "number"
         ? order
-        : (await prisma.eventPhoto.count({ where: { eventId } }));
+        : (await prisma.eventPhoto.count({ where: { eventId: targetEventId } }));
 
     const photo = await prisma.eventPhoto.create({
       data: {
-        eventId,
+        eventId: targetEventId,
         url,
         title: title || "Wedding Moment",
         subtitle: subtitle || "",
@@ -108,8 +165,18 @@ export async function DELETE(req: NextRequest) {
       include: { event: true },
     });
 
-    if (!photo || (photo.event.managerId !== manager.id && manager.role !== "SUPER_ADMIN")) {
-      return NextResponse.json({ error: "Photo not found or access denied" }, { status: 404 });
+    if (!photo) {
+      return NextResponse.json({ error: "Photo not found" }, { status: 404 });
+    }
+
+    // Regular managers can only delete photos from their own wedding
+    if (manager.role !== "SUPER_ADMIN") {
+      if (!photo.event || photo.event.managerId !== manager.id) {
+        return NextResponse.json(
+          { error: "Security Restriction: You cannot delete photos belonging to another wedding." },
+          { status: 403 }
+        );
+      }
     }
 
     await prisma.eventPhoto.delete({ where: { id } });

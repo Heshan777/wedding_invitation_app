@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAuthenticatedManager } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 
+export const dynamic = "force-dynamic";
+
 // GET /api/admin/events/[id] - Get event details
 export async function GET(
   req: NextRequest,
@@ -30,7 +32,7 @@ export async function GET(
     });
 
     if (!event) {
-      return NextResponse.json({ error: "Event not found" }, { status: 404 });
+      return NextResponse.json({ error: "Event not found or access denied" }, { status: 404 });
     }
 
     return NextResponse.json({ event });
@@ -53,12 +55,17 @@ export async function PUT(
 
     const { id } = await params;
     const isSuperAdmin = manager.role === "SUPER_ADMIN";
+
+    // Strict ownership verification:
     const existing = await prisma.weddingEvent.findFirst({
       where: isSuperAdmin ? { id } : { id, managerId: manager.id },
     });
 
     if (!existing) {
-      return NextResponse.json({ error: "Event not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Event not found or you do not have permission to modify it" },
+        { status: 404 }
+      );
     }
 
     const body = await req.json();
@@ -96,7 +103,7 @@ export async function PUT(
   }
 }
 
-// DELETE /api/admin/events/[id] - Delete event and cascade children
+// DELETE /api/admin/events/[id] - Delete event and cascade children (Super Admin only)
 export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -107,10 +114,16 @@ export async function DELETE(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    if (manager.role !== "SUPER_ADMIN") {
+      return NextResponse.json(
+        { error: "Security Restriction: Event Managers cannot delete their dedicated wedding. Only Super Admin can delete wedding events." },
+        { status: 403 }
+      );
+    }
+
     const { id } = await params;
-    const isSuperAdmin = manager.role === "SUPER_ADMIN";
-    const existing = await prisma.weddingEvent.findFirst({
-      where: isSuperAdmin ? { id } : { id, managerId: manager.id },
+    const existing = await prisma.weddingEvent.findUnique({
+      where: { id },
     });
 
     if (!existing) {
