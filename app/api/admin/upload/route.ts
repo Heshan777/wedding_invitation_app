@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isAdminAuthenticated } from "@/lib/auth";
-import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
-import { put } from "@vercel/blob";
+import { getCloudinaryConfig, uploadBufferToCloudinary } from "@/lib/cloudinary";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 
@@ -15,21 +14,24 @@ export async function GET() {
     }
 
     const isVercel = Boolean(process.env.VERCEL);
-    const hasBlobToken = Boolean(process.env.BLOB_READ_WRITE_TOKEN);
+    const cloudinaryConfig = getCloudinaryConfig();
+    const hasCloudinary = Boolean(cloudinaryConfig);
 
     return NextResponse.json({
-      configured: hasBlobToken || !isVercel,
-      provider: hasBlobToken ? "vercel-blob" : isVercel ? "none" : "local-disk",
+      configured: hasCloudinary || !isVercel,
+      provider: hasCloudinary ? "cloudinary" : isVercel ? "none" : "local-disk",
       isVercel,
-      hasBlobToken,
-      message: hasBlobToken
-        ? "Vercel Blob cloud storage is connected and active."
+      hasCloudinary,
+      cloudName: cloudinaryConfig?.cloudName || null,
+      message: hasCloudinary
+        ? `Cloudinary media storage is connected and active (${cloudinaryConfig?.cloudName}).`
         : isVercel
-        ? "Vercel Blob is not connected yet. Filesystem on Vercel is read-only. Please create a Blob Store in Vercel Dashboard (Storage -> Create Database -> Blob)."
+        ? "Cloudinary is not configured yet. Filesystem on Vercel is read-only. Please set NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME and NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET in environment variables."
         : "Local disk storage is active for local development.",
     });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message || "Failed to check storage status" }, { status: 500 });
+  } catch (err) {
+    const errorMsg = err instanceof Error ? err.message : "Failed to check storage status";
+    return NextResponse.json({ error: errorMsg }, { status: 500 });
   }
 }
 
@@ -39,64 +41,6 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const contentType = req.headers.get("content-type") || "";
-
-    // 1. Direct Client Upload handshake via @vercel/blob/client (bypasses 4.5MB Serverless limit)
-    if (contentType.includes("application/json")) {
-      const body = (await req.json()) as HandleUploadBody;
-
-      try {
-        const jsonResponse = await handleUpload({
-          body,
-          request: req,
-          onBeforeGenerateToken: async (pathname) => {
-            return {
-              allowedContentTypes: [
-                "image/jpeg",
-                "image/jpg",
-                "image/png",
-                "image/webp",
-                "image/gif",
-                "image/avif",
-                "video/mp4",
-                "video/webm",
-                "video/quicktime",
-                "video/x-matroska",
-                "video/x-msvideo",
-                "audio/mpeg",
-                "audio/wav",
-                "audio/ogg",
-                "audio/mp4",
-              ],
-              maximumSizeInBytes: 500 * 1024 * 1024, // 500 MB (supports large pre-shoot videos)
-              tokenPayload: JSON.stringify({ pathname }),
-            };
-          },
-          onUploadCompleted: async ({ blob, tokenPayload }) => {
-            console.log("Vercel Blob client upload completed:", blob.url);
-          },
-        });
-
-        return NextResponse.json(jsonResponse);
-      } catch (blobErr: any) {
-        console.error("Vercel Blob handleUpload error:", blobErr);
-        const isMissingToken =
-          !process.env.BLOB_READ_WRITE_TOKEN ||
-          blobErr.message?.includes("No token found") ||
-          blobErr.message?.includes("BLOB_READ_WRITE_TOKEN");
-
-        return NextResponse.json(
-          {
-            error: isMissingToken
-              ? "Vercel Blob is not connected. In your Vercel Dashboard, go to Storage -> Create Database -> Blob and connect it to this project."
-              : (blobErr.message || "Failed to generate client upload token"),
-          },
-          { status: 400 }
-        );
-      }
-    }
-
-    // 2. Standard Multipart / FormData Upload (Server-side)
     const formData = await req.formData();
     const file = formData.get("file") as File | null;
 
@@ -112,7 +56,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
     if (!isImage && !isVideo && !isAudio) {
       return NextResponse.json(
-        { error: "Only image files (JPEG, PNG, WebP), video files (MP4, MOV, WebM), or audio files are allowed" },
+        { error: "Only image files (JPEG, PNG, WebP), video files (MP4, MOV, WebM), or audio files (MP3, WAV, OGG) are allowed" },
         { status: 400 }
       );
     }
@@ -134,28 +78,40 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       else ext = isVideo ? ".mp4" : isAudio ? ".mp3" : ".jpg";
     }
 
-    // Clean original name prefix
+    // A. If Cloudinary is configured, upload directly to Cloudinary
+    const cloudinaryConfig = getCloudinaryConfig();
+    if (cloudinaryConfig) {
+      try {
+        const uploadResult = await uploadBufferToCloudinary(
+          buffer,
+          file.name,
+          mimeType || (isVideo ? "video/mp4" : isAudio ? "audio/mpeg" : "image/jpeg"),
+          "wedding-media"
+        );
+
+        return NextResponse.json({
+          success: true,
+          url: uploadResult.secure_url,
+          filename: uploadResult.public_id,
+          size: file.size,
+          mimeType: file.type,
+          duration: uploadResult.duration,
+        });
+      } catch (cloudErr) {
+        console.error("Cloudinary server upload error:", cloudErr);
+        const errorMsg = cloudErr instanceof Error ? cloudErr.message : "Failed to upload to Cloudinary";
+        return NextResponse.json(
+          { error: errorMsg },
+          { status: 500 }
+        );
+      }
+    }
+
+    // B. If running locally, attempt local filesystem write
     const mediaPrefix = isVideo ? "preshoot-video" : isAudio ? "audio" : "preshoot-photo";
     const baseClean = path.basename(file.name, ext).replace(/[^a-zA-Z0-9-_]/g, "").slice(0, 20) || "media";
     const uniqueFilename = `${mediaPrefix}-${baseClean}-${Date.now()}-${Math.floor(Math.random() * 1000)}${ext}`;
 
-    // A. If Vercel Blob token is configured, upload directly to Vercel Blob
-    if (process.env.BLOB_READ_WRITE_TOKEN) {
-      const blob = await put(uniqueFilename, buffer, {
-        access: "public",
-        contentType: mimeType || undefined,
-      });
-
-      return NextResponse.json({
-        success: true,
-        url: blob.url,
-        filename: uniqueFilename,
-        size: file.size,
-        mimeType: file.type,
-      });
-    }
-
-    // B. If running locally, attempt local filesystem write
     try {
       const uploadsDir = path.join(process.cwd(), "public", "uploads");
       await mkdir(uploadsDir, { recursive: true });
@@ -172,21 +128,27 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         size: file.size,
         mimeType: file.type,
       });
-    } catch (fsErr: any) {
-      // If filesystem is read-only (e.g. running on Vercel without Blob Store)
-      if (fsErr.code === "EROFS" || fsErr.message?.includes("read-only") || process.env.VERCEL) {
+    } catch (fsErr) {
+      // If filesystem is read-only (e.g. running on Vercel without Cloudinary)
+      const isReadOnly =
+        (typeof fsErr === "object" && fsErr !== null && "code" in fsErr && (fsErr as { code: string }).code === "EROFS") ||
+        (fsErr instanceof Error && fsErr.message.includes("read-only")) ||
+        Boolean(process.env.VERCEL);
+
+      if (isReadOnly) {
         return NextResponse.json(
           {
             error:
-              "Vercel file system is read-only. Please connect Vercel Blob in your Vercel Dashboard (Storage -> Create -> Blob) to enable persistent media uploads, or paste an external image/video URL directly.",
+              "Server filesystem is read-only. Please configure NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME and NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET to enable media uploads, or paste an external media URL directly.",
           },
           { status: 507 }
         );
       }
       throw fsErr;
     }
-  } catch (err: any) {
+  } catch (err) {
     console.error("Upload error:", err);
-    return NextResponse.json({ error: err.message || "Failed to upload media file" }, { status: 500 });
+    const errorMsg = err instanceof Error ? err.message : "Failed to upload media file";
+    return NextResponse.json({ error: errorMsg }, { status: 500 });
   }
 }
