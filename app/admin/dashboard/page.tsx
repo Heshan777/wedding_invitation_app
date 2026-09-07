@@ -23,6 +23,9 @@ import {
   Sparkles,
   Save,
   Calendar,
+  MapPin,
+  FileText,
+  Filter,
   X,
   FileSpreadsheet,
   Printer,
@@ -411,9 +414,114 @@ export default function AdminDashboard() {
   const [savingSettings, setSavingSettings] = useState(false);
   const [settingsSuccess, setSettingsSuccess] = useState(false);
 
-  // Place Card Designer states
+  // Place Card & Luxury Wedding Invitation Designer states
+  const [cardStationeryType, setCardStationeryType] = useState<"wedding-card" | "place-card">("wedding-card");
+  const [singlePrintGuestId, setSinglePrintGuestId] = useState<string | null>(null);
+  const [cardSearchQuery, setCardSearchQuery] = useState("");
+  const [cardFilterTable, setCardFilterTable] = useState<string>("all");
+  const [cardImportantNote, setCardImportantNote] = useState(
+    "Kindly present this personalized wedding card or scan the QR code upon arrival at the VIP reception desk. Formal Attire / Traditional Elegance."
+  );
+  const [showVenueOnCards, setShowVenueOnCards] = useState(true);
+  const [showImportantThingsOnCards, setShowImportantThingsOnCards] = useState(true);
+  const [showDateOnCards, setShowDateOnCards] = useState(true);
+  const [guestQrMap, setGuestQrMap] = useState<Record<string, string>>({});
   const [placeCardLayout, setPlaceCardLayout] = useState<"cameo" | "banner" | "side" | "minimal">("cameo");
   const [showQrOnCards, setShowQrOnCards] = useState(true);
+
+  // Reset single-card print target after browser print dialog closes
+  useEffect(() => {
+    const handleAfterPrint = () => {
+      setSinglePrintGuestId(null);
+    };
+    window.addEventListener("afterprint", handleAfterPrint);
+    return () => window.removeEventListener("afterprint", handleAfterPrint);
+  }, []);
+
+  // Pre-generate scannable QR codes for all guests when viewing cards
+  useEffect(() => {
+    if (activeTab === "tables" && guests.length > 0) {
+      const origin = typeof window !== "undefined" ? window.location.origin : "";
+      const generateAllQrs = async () => {
+        const qrs: Record<string, string> = {};
+        await Promise.all(
+          guests.map(async (g) => {
+            try {
+              const url = `${origin}/invite/${g.token}`;
+              const qrData = await QRCode.toDataURL(url, {
+                width: 220,
+                margin: 1,
+                color: { dark: "#6b0f24", light: "#ffffff" },
+              });
+              qrs[g.id] = qrData;
+            } catch (e) {
+              console.error("QR generation error for guest", g.id, e);
+            }
+          })
+        );
+        setGuestQrMap(qrs);
+      };
+      generateAllQrs();
+    }
+  }, [activeTab, guests]);
+
+  const handlePrintSingleCard = (guestId: string) => {
+    setSinglePrintGuestId(guestId);
+    setTimeout(() => {
+      window.print();
+    }, 60);
+  };
+
+  const availableTableNumbers = useMemo(() => {
+    const set = new Set<number>();
+    guests.forEach((g) => {
+      if (typeof g.tableNumber === "number") set.add(g.tableNumber);
+    });
+    return Array.from(set).sort((a, b) => a - b);
+  }, [guests]);
+
+  const filteredPrintableGuests = useMemo(() => {
+    return guests.filter((g) => {
+      if (cardFilterTable !== "all" && String(g.tableNumber) !== cardFilterTable) {
+        return false;
+      }
+      if (cardSearchQuery.trim()) {
+        const query = cardSearchQuery.toLowerCase();
+        const name = (g.displayName || "").toLowerCase();
+        const salutation = (g.salutation || "").toLowerCase();
+        const table = `table ${g.tableNumber}`.toLowerCase();
+        return name.includes(query) || salutation.includes(query) || table.includes(query);
+      }
+      return true;
+    });
+  }, [guests, cardFilterTable, cardSearchQuery]);
+
+  const formattedEventDate = useMemo(() => {
+    if (!settings.eventDate) return "Date to be announced";
+    try {
+      return new Date(settings.eventDate).toLocaleDateString("en-US", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      });
+    } catch {
+      return settings.eventDate;
+    }
+  }, [settings.eventDate]);
+
+  const formattedEventTime = useMemo(() => {
+    if (!settings.eventDate) return "";
+    try {
+      return new Date(settings.eventDate).toLocaleTimeString("en-US", {
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+      });
+    } catch {
+      return "";
+    }
+  }, [settings.eventDate]);
 
   const activeEvent = useMemo(() => {
     return events.find((e) => e.id === activeEventId) || events[0] || null;
@@ -1554,7 +1662,7 @@ export default function AdminDashboard() {
               }`}
             >
               <Printer className="w-4 h-4 text-[#dfba73] shrink-0" />
-              <span className="truncate">Printable Place Cards</span>
+              <span className="truncate">Printable Cards & Invitations</span>
             </button>
             {manager?.role === "SUPER_ADMIN" && (
               <button
@@ -2881,31 +2989,142 @@ export default function AdminDashboard() {
         )}
 
 
-        {/* TAB 3: PRINTABLE PLACE CARDS */}
+        {/* TAB 3: PRINTABLE WEDDING CARDS & PLACE CARDS */}
         {activeTab === "tables" && (
-          <div className="printable-cards-container rounded-3xl bg-[#181216] border border-[#c5a059]/40 p-6 sm:p-8 shadow-2xl space-y-6">
+          <div
+            className={`printable-cards-container rounded-3xl bg-[#181216] border border-[#c5a059]/40 p-5 sm:p-8 shadow-2xl space-y-6 ${
+              singlePrintGuestId ? "single-print-active" : ""
+            }`}
+          >
             {/* Header & Controls Toolbar (Hidden on Print) */}
             <div className="no-print space-y-6 pb-6 border-b border-[#c5a059]/30">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
+                  <div className="inline-flex items-center gap-2 mb-1">
+                    <span className="px-2.5 py-0.5 rounded-full bg-[#c5a059]/20 text-[#edd892] text-[10px] font-mono border border-[#c5a059]/40">
+                      Physical Stationery Studio
+                    </span>
+                    <span className="text-xs text-[#dfba73] font-cinzel font-semibold">
+                      {guests.length} Registered Guests
+                    </span>
+                  </div>
                   <h2 className="font-cinzel text-xl sm:text-2xl font-bold text-[#dfba73]">
-                    Banquet Table Seating Place Cards
+                    Personalized Wedding Cards & Place Stationery
                   </h2>
-                  <p className="text-xs text-[#fdfbf7]/60 font-sans mt-1">
-                    Luxury place setting stationery with couple portrait, guest typography, and cutting guidelines.
+                  <p className="text-xs text-[#fdfbf7]/60 font-sans mt-1 max-w-2xl">
+                    Generate authentic luxury wedding invitation cards and table place settings with venue address, auspicious date & timings, dress code, and scannable VIP check-in QR passes.
                   </p>
                 </div>
-                <button
-                  onClick={() => window.print()}
-                  className="btn-gold-shimmer px-6 py-3 rounded-xl text-xs font-cinzel font-bold flex items-center justify-center gap-2 shadow-xl cursor-pointer"
-                >
-                  <Printer className="w-4 h-4" /> Print Place Cards (A4 / Letter)
-                </button>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    onClick={() => {
+                      setSinglePrintGuestId(null);
+                      setTimeout(() => window.print(), 50);
+                    }}
+                    className="btn-gold-shimmer px-5 py-3 rounded-xl text-xs font-cinzel font-bold flex items-center justify-center gap-2 shadow-xl cursor-pointer"
+                  >
+                    <Printer className="w-4 h-4" /> Print All ({filteredPrintableGuests.length} Cards)
+                  </button>
+                </div>
               </div>
 
-              {/* Place Card Customizer Controls */}
+              {/* Stationery Format Selector Tabs */}
+              <div className="flex flex-wrap items-center justify-between gap-3 p-2 rounded-2xl bg-[#20161c] border border-[#c5a059]/30">
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setCardStationeryType("wedding-card")}
+                    className={`px-4 py-2.5 rounded-xl font-cinzel font-bold text-xs flex items-center gap-2 transition cursor-pointer ${
+                      cardStationeryType === "wedding-card"
+                        ? "bg-[#800020] text-[#fdfbf7] border border-[#dfba73] shadow-md shadow-[#800020]/40 ring-1 ring-[#dfba73]/30"
+                        : "text-[#dfba73]/70 hover:text-white hover:bg-[#c5a059]/10"
+                    }`}
+                  >
+                    <FileText className="w-4 h-4 text-[#dfba73]" />
+                    <span>📜 Luxury Wedding Invitation Cards (Separate Print)</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setCardStationeryType("place-card")}
+                    className={`px-4 py-2.5 rounded-xl font-cinzel font-bold text-xs flex items-center gap-2 transition cursor-pointer ${
+                      cardStationeryType === "place-card"
+                        ? "bg-[#800020] text-[#fdfbf7] border border-[#dfba73] shadow-md shadow-[#800020]/40 ring-1 ring-[#dfba73]/30"
+                        : "text-[#dfba73]/70 hover:text-white hover:bg-[#c5a059]/10"
+                    }`}
+                  >
+                    <Utensils className="w-4 h-4 text-[#dfba73]" />
+                    <span>🍽️ Banquet Table Seating Place Cards</span>
+                  </button>
+                </div>
+
+                <div className="text-[11px] text-[#dfba73] font-cinzel flex items-center gap-1.5 px-3 py-1 rounded-xl bg-[#140e12] border border-[#c5a059]/20">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>Each card can be printed individually or in batch</span>
+                </div>
+              </div>
+
+              {/* Guest Search & Table Filter Bar */}
+              <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 p-3.5 rounded-2xl bg-[#20161c] border border-[#c5a059]/30">
+                <div className="flex flex-1 flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                  <div className="relative flex-1">
+                    <Search className="w-4 h-4 text-[#dfba73]/60 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <input
+                      type="text"
+                      value={cardSearchQuery}
+                      onChange={(e) => setCardSearchQuery(e.target.value)}
+                      placeholder="Search guest by name or salutation..."
+                      className="w-full pl-9 pr-8 py-2 bg-[#140e12] border border-[#c5a059]/30 rounded-xl text-xs text-[#fdfbf7] placeholder-[#fdfbf7]/40 focus:border-[#dfba73] focus:outline-none"
+                    />
+                    {cardSearchQuery && (
+                      <button
+                        type="button"
+                        onClick={() => setCardSearchQuery("")}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[#dfba73]/60 hover:text-white cursor-pointer"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <Filter className="w-3.5 h-3.5 text-[#dfba73]" />
+                    <select
+                      value={cardFilterTable}
+                      onChange={(e) => setCardFilterTable(e.target.value)}
+                      className="bg-[#140e12] border border-[#c5a059]/30 rounded-xl px-3 py-2 text-xs text-[#dfba73] font-cinzel focus:border-[#dfba73] focus:outline-none cursor-pointer"
+                    >
+                      <option value="all">All Tables ({guests.length} Guests)</option>
+                      {availableTableNumbers.map((num) => (
+                        <option key={num} value={String(num)}>
+                          Table #{String(num).padStart(2, "0")}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 justify-between md:justify-end">
+                  <span className="text-[11px] text-[#fdfbf7]/60 font-sans">
+                    Showing <strong className="text-[#dfba73]">{filteredPrintableGuests.length}</strong> of {guests.length} cards
+                  </span>
+
+                  {singlePrintGuestId && (
+                    <button
+                      type="button"
+                      onClick={() => setSinglePrintGuestId(null)}
+                      className="px-3 py-1.5 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/40 text-xs font-cinzel font-bold flex items-center gap-1 hover:bg-amber-500/30 cursor-pointer"
+                    >
+                      <X className="w-3.5 h-3.5" /> Exit Single Print Mode
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Card Customizer Controls */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 rounded-2xl bg-[#20161c] border border-[#c5a059]/30 text-xs">
-                {/* Layout Selector */}
+                {/* Column 1: Layout Selector */}
                 <div>
                   <label className="block text-[10px] uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold mb-1.5">
                     Card Design Style
@@ -2933,7 +3152,7 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
-                {/* Photo Selector */}
+                {/* Column 2: Photo Selector */}
                 <div>
                   <label className="block text-[10px] uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold mb-1.5">
                     Couple Photo on Cards
@@ -2983,137 +3202,508 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
-
-                {/* Toggles */}
-                <div className="flex flex-col justify-center space-y-2">
-                  <label className="flex items-center gap-2 cursor-pointer text-[#fdfbf7]/80 hover:text-white">
-                    <input
-                      type="checkbox"
-                      checked={showQrOnCards}
-                      onChange={(e) => setShowQrOnCards(e.target.checked)}
-                      className="rounded accent-[#800020]"
-                    />
-                    <span>Include Check-in QR Code on Cards</span>
+                {/* Column 3: Content Toggles */}
+                <div>
+                  <label className="block text-[10px] uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold mb-1.5">
+                    Card Content & Details
                   </label>
+                  <div className="flex flex-col space-y-2">
+                    <label className="flex items-center gap-2 cursor-pointer text-[#fdfbf7]/80 hover:text-white">
+                      <input
+                        type="checkbox"
+                        checked={showQrOnCards}
+                        onChange={(e) => setShowQrOnCards(e.target.checked)}
+                        className="rounded accent-[#800020]"
+                      />
+                      <span>Include Check-in QR Code on Cards</span>
+                    </label>
+
+                    <label className="flex items-center gap-2 cursor-pointer text-[#fdfbf7]/80 hover:text-white">
+                      <input
+                        type="checkbox"
+                        checked={showVenueOnCards}
+                        onChange={(e) => setShowVenueOnCards(e.target.checked)}
+                        className="rounded accent-[#800020]"
+                      />
+                      <span>Include Venue & Address</span>
+                    </label>
+
+                    <label className="flex items-center gap-2 cursor-pointer text-[#fdfbf7]/80 hover:text-white">
+                      <input
+                        type="checkbox"
+                        checked={showDateOnCards}
+                        onChange={(e) => setShowDateOnCards(e.target.checked)}
+                        className="rounded accent-[#800020]"
+                      />
+                      <span>Include Ceremony Date & Time</span>
+                    </label>
+
+                    <label className="flex items-center gap-2 cursor-pointer text-[#fdfbf7]/80 hover:text-white">
+                      <input
+                        type="checkbox"
+                        checked={showImportantThingsOnCards}
+                        onChange={(e) => setShowImportantThingsOnCards(e.target.checked)}
+                        className="rounded accent-[#800020]"
+                      />
+                      <span>Include Important Information & Dress Code</span>
+                    </label>
+                  </div>
                 </div>
+              </div>
+
+              {/* Important Notes & Guidelines Editor */}
+              <div className="p-4 rounded-2xl bg-[#20161c] border border-[#c5a059]/30 text-xs space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="block text-[10px] uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold">
+                    Important Guest Guidelines / Dress Code Message on Cards
+                  </label>
+                  <span className="text-[10px] text-[#fdfbf7]/50 font-sans">
+                    Will appear in the Important Information box on printed cards
+                  </span>
+                </div>
+                <input
+                  type="text"
+                  value={cardImportantNote}
+                  onChange={(e) => setCardImportantNote(e.target.value)}
+                  placeholder="e.g. Kindly present this invitation card or scan QR code at VIP reception desk. Formal Attire."
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#140e12] border border-[#c5a059]/30 text-xs text-[#fdfbf7] placeholder-[#fdfbf7]/40 focus:border-[#dfba73] focus:outline-none"
+                />
+              </div>
+
+              {/* Single Print Notification Banner */}
+              <div className="flex items-center justify-between p-3 rounded-xl bg-[#800020]/20 border border-[#c5a059]/30 text-xs text-[#edd892]">
+                <div className="flex items-center gap-2">
+                  <Printer className="w-4 h-4 text-[#dfba73] shrink-0" />
+                  <span>
+                    <strong>How to print separately:</strong> Click the gold <strong>&ldquo;Print This Card Separately&rdquo;</strong> button below any card to print only that individual card!
+                  </span>
+                </div>
+                {singlePrintGuestId && (
+                  <span className="font-bold text-emerald-400 bg-emerald-900/40 px-2 py-0.5 rounded border border-emerald-500/40">
+                    Single Card Print Active
+                  </span>
+                )}
               </div>
             </div>
 
-            {/* Printable Cards Grid (Optimized for Screen & Print) */}
-            <div className="printable-cards-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {guests.map((g) => (
-                <div
-                  key={g.id}
-                  className="printable-place-card relative rounded-2xl bg-gradient-to-b from-[#fffdfa] via-[#fcf8f0] to-[#f7f0e4] text-[#1a1517] p-5 sm:p-6 border-2 border-[#c5a059] shadow-lg flex flex-col justify-between overflow-hidden"
-                  style={{ minHeight: "240px" }}
-                >
-                  {/* Subtle Gold Frame Lines */}
-                  <div className="absolute inset-1.5 rounded-xl border border-[#c5a059]/40 pointer-events-none" />
-                  <div className="absolute top-2.5 left-2.5 text-[#c5a059] text-xs select-none">⚜</div>
-                  <div className="absolute top-2.5 right-2.5 text-[#c5a059] text-xs select-none">⚜</div>
-                  <div className="absolute bottom-2.5 left-2.5 text-[#c5a059] text-xs select-none">⚜</div>
-                  <div className="absolute bottom-2.5 right-2.5 text-[#c5a059] text-xs select-none">⚜</div>
+            {/* PRINTABLE CARDS CONTAINER */}
+            {filteredPrintableGuests.length === 0 ? (
+              <div className="text-center py-16 px-4 rounded-2xl bg-[#140e12] border border-[#c5a059]/20">
+                <Printer className="w-10 h-10 text-[#dfba73]/40 mx-auto mb-2" />
+                <h3 className="font-cinzel text-base font-bold text-[#dfba73]">No Cards Match Current Filter</h3>
+                <p className="text-xs text-[#fdfbf7]/60 mt-1">
+                  Try clearing the search query or changing the table filter.
+                </p>
+              </div>
+            ) : cardStationeryType === "wedding-card" ? (
+              /* ============================================================ */
+              /* FORMAT 1: LUXURY WEDDING INVITATION CARDS (PHYSICAL WEDDING CARDS) */
+              /* ============================================================ */
+              <div className="printable-wedding-cards-grid grid grid-cols-1 md:grid-cols-2 gap-8">
+                {filteredPrintableGuests.map((g) => (
+                  <div
+                    key={g.id}
+                    className={`printable-wedding-card relative rounded-3xl bg-gradient-to-b from-[#fffdfa] via-[#fcf8f0] to-[#f8f1e3] text-[#1a1517] p-6 sm:p-8 border-2 border-[#c5a059] shadow-xl flex flex-col justify-between overflow-hidden transition hover:border-[#dfba73] ${
+                      singlePrintGuestId
+                        ? singlePrintGuestId === g.id
+                          ? "single-card-target"
+                          : "single-card-hide no-print"
+                        : ""
+                    }`}
+                    style={{ minHeight: "530px" }}
+                  >
+                    {/* Ornate Gold Filigree Corner Accents & Dual Inset Frame */}
+                    <div className="absolute inset-2 sm:inset-2.5 rounded-2xl border border-[#c5a059]/40 pointer-events-none" />
+                    <div className="absolute inset-3.5 sm:inset-4 rounded-xl border border-[#dfba73]/30 pointer-events-none" />
+                    <div className="absolute top-3 left-3 text-[#c5a059] text-sm select-none">⚜</div>
+                    <div className="absolute top-3 right-3 text-[#c5a059] text-sm select-none">⚜</div>
+                    <div className="absolute bottom-3 left-3 text-[#c5a059] text-sm select-none">⚜</div>
+                    <div className="absolute bottom-3 right-3 text-[#c5a059] text-sm select-none">⚜</div>
 
-                  {/* LAYOUT 1: CAMEO MEDALLION */}
-                  {placeCardLayout === "cameo" && (
-                    <div className="flex flex-col items-center text-center">
-                      <div className="relative w-16 h-16 rounded-full overflow-hidden border-2 border-[#c5a059] shadow-md mb-2 bg-[#800020]/10">
-                        <Image
-                          src={settings.placeCardImageUrl || "/uploads/preshoot-photo-e5a487a560c507085cda-1788547177206-113.jpg"}
-                          alt={settings.coupleNames}
-                          fill
-                          sizes="64px"
-                          className="object-cover object-top"
-                        />
-                      </div>
-                      <p className="text-[10px] uppercase tracking-[0.25em] text-[#800020] font-cinzel font-bold">
-                        {settings.coupleNames}
-                      </p>
+                    {/* Subtle Royal Background Seal Watermark */}
+                    <div className="absolute right-6 bottom-16 w-48 h-48 opacity-[0.035] pointer-events-none select-none rounded-full border-8 border-[#800020] flex items-center justify-center">
+                      <span className="font-cinzel text-6xl font-bold text-[#800020]">{dashboardMonogram}</span>
                     </div>
-                  )}
 
-                  {/* LAYOUT 2: TOP BANNER */}
-                  {placeCardLayout === "banner" && (
-                    <div className="flex flex-col items-center text-center mb-2">
-                      <div className="relative w-full h-16 rounded-lg overflow-hidden border border-[#c5a059]/60 shadow-sm mb-1.5 bg-black">
-                        <Image
-                          src={settings.placeCardImageUrl || "/uploads/preshoot-photo-e5a487a560c507085cda-1788547177206-113.jpg"}
-                          alt={settings.coupleNames}
-                          fill
-                          sizes="280px"
-                          className="object-cover object-top"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                        <span className="absolute bottom-1 inset-x-0 text-[10px] uppercase tracking-widest text-[#fff8ea] font-cinzel font-bold drop-shadow">
-                          {settings.coupleNames}
-                        </span>
+                    <div className="relative z-10 space-y-4">
+                      {/* HEADER: Couple Portrait & Names */}
+                      {placeCardLayout === "cameo" && (
+                        <div className="flex flex-col items-center text-center">
+                          <div className="relative w-20 h-20 rounded-full overflow-hidden border-2 border-[#c5a059] shadow-lg mb-2 bg-[#800020]/10 ring-2 ring-[#dfba73]/40">
+                            <Image
+                              src={settings.placeCardImageUrl || "/uploads/preshoot-photo-e5a487a560c507085cda-1788547177206-113.jpg"}
+                              alt={settings.coupleNames}
+                              fill
+                              sizes="80px"
+                              className="object-cover object-top"
+                            />
+                          </div>
+                          <p className="text-xs uppercase tracking-[0.28em] text-[#800020] font-cinzel font-bold">
+                            {settings.coupleNames}
+                          </p>
+                          <p className="text-[10px] font-cinzel text-[#8c6a2b] uppercase tracking-[0.18em] mt-0.5">
+                            Royal Wedding Celebration
+                          </p>
+                        </div>
+                      )}
+
+                      {placeCardLayout === "banner" && (
+                        <div className="flex flex-col items-center text-center mb-1">
+                          <div className="relative w-full h-24 rounded-xl overflow-hidden border-2 border-[#c5a059]/70 shadow-md mb-2 bg-black">
+                            <Image
+                              src={settings.placeCardImageUrl || "/uploads/preshoot-photo-e5a487a560c507085cda-1788547177206-113.jpg"}
+                              alt={settings.coupleNames}
+                              fill
+                              sizes="450px"
+                              className="object-cover object-top"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+                            <span className="absolute bottom-1.5 inset-x-0 text-xs uppercase tracking-widest text-[#fff8ea] font-cinzel font-bold drop-shadow">
+                              {settings.coupleNames}
+                            </span>
+                          </div>
+                        </div>
+                      )}
+
+                      {placeCardLayout === "side" && (
+                        <div className="flex items-center gap-3.5 pb-2.5 border-b border-[#c5a059]/40 mb-1">
+                          <div className="relative w-16 h-16 rounded-2xl overflow-hidden border-2 border-[#c5a059] flex-shrink-0 bg-black shadow">
+                            <Image
+                              src={settings.placeCardImageUrl || "/uploads/preshoot-photo-e5a487a560c507085cda-1788547177206-113.jpg"}
+                              alt={settings.coupleNames}
+                              fill
+                              sizes="64px"
+                              className="object-cover object-top"
+                            />
+                          </div>
+                          <div>
+                            <p className="text-xs uppercase tracking-[0.2em] text-[#800020] font-cinzel font-bold">
+                              {settings.coupleNames}
+                            </p>
+                            <span className="text-[10px] uppercase tracking-wider text-[#8c6a2b] font-cinzel">
+                              Wedding Invitation Pass
+                            </span>
+                          </div>
+                        </div>
+                      )}
+
+                      {placeCardLayout === "minimal" && (
+                        <div className="text-center pb-1">
+                          <div className="inline-flex items-center justify-center w-11 h-11 rounded-full bg-[#800020]/10 border-2 border-[#c5a059]/60 mb-1.5 shadow-sm">
+                            <span className="font-cinzel text-sm font-bold text-[#800020]">
+                              {dashboardMonogram}
+                            </span>
+                          </div>
+                          <p className="text-xs uppercase tracking-[0.28em] text-[#800020] font-cinzel font-bold">
+                            {settings.coupleNames}
+                          </p>
+                        </div>
+                      )}
+
+                      {/* FORMAL INVITATION VERSE */}
+                      <div className="text-center space-y-1 my-1">
+                        <p className="font-serif italic text-xs text-[#7a6254]">
+                          Together with their families, cordially invite
+                        </p>
+                        {/* HONORED GUEST NAME */}
+                        <h3 className="font-serif italic text-2xl sm:text-3xl font-bold text-[#6b0f24] leading-snug">
+                          {g.salutation} {g.displayName}
+                        </h3>
+                        <div className="flex items-center justify-center gap-2 pt-0.5">
+                          <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-[10px] font-cinzel font-bold bg-[#800020]/10 text-[#800020] border border-[#c5a059]/40 shadow-xs">
+                            👥 {inviteTypeLabels[g.inviteType]} • Reserved Seating
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* CEREMONY PILLARS: DATE & TIME, VENUE & HALL, RESERVED TABLE */}
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 p-3 rounded-2xl bg-[#fffdfa] border border-[#dfba73]/60 shadow-xs text-center text-xs">
+                        {showDateOnCards && (
+                          <div className="p-2 rounded-xl bg-[#fdf8ef] border border-[#c5a059]/20 flex flex-col justify-center items-center">
+                            <Calendar className="w-4 h-4 text-[#800020] mb-1 shrink-0" />
+                            <span className="text-[9px] uppercase tracking-wider text-[#8c6a2b] font-cinzel font-bold">
+                              Date & Time
+                            </span>
+                            <p className="font-serif font-bold text-[11px] text-[#1a1517] leading-tight mt-0.5">
+                              {formattedEventDate}
+                            </p>
+                            {formattedEventTime && (
+                              <span className="text-[10px] font-mono text-[#800020] font-bold mt-0.5">
+                                {formattedEventTime}
+                              </span>
+                            )}
+                          </div>
+                        )}
+
+                        {showVenueOnCards && (
+                          <div className="p-2 rounded-xl bg-[#fdf8ef] border border-[#c5a059]/20 flex flex-col justify-center items-center">
+                            <MapPin className="w-4 h-4 text-[#800020] mb-1 shrink-0" />
+                            <span className="text-[9px] uppercase tracking-wider text-[#8c6a2b] font-cinzel font-bold">
+                              Venue & Hall
+                            </span>
+                            <p className="font-serif font-bold text-[11px] text-[#1a1517] leading-tight mt-0.5">
+                              {settings.venueName || "Grand Ballroom"}
+                            </p>
+                            <span className="text-[9px] text-[#5a483e] font-sans line-clamp-2 mt-0.5">
+                              {settings.venueAddress || "Sri Lanka"}
+                            </span>
+                          </div>
+                        )}
+
+                        <div className="p-2 rounded-xl bg-[#800020]/10 border border-[#c5a059]/30 flex flex-col justify-center items-center">
+                          <Utensils className="w-4 h-4 text-[#800020] mb-1 shrink-0" />
+                          <span className="text-[9px] uppercase tracking-wider text-[#800020] font-cinzel font-bold">
+                            Assigned Table
+                          </span>
+                          <p className="font-cinzel font-bold text-base text-[#800020] mt-0.5">
+                            Table #{String(g.tableNumber).padStart(2, "0")}
+                          </p>
+                          <span className="text-[9px] text-[#8c6a2b] font-cinzel mt-0.5">
+                            VIP Guest Seating
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* IMPORTANT INFORMATION & GUIDELINES BOX */}
+                      {showImportantThingsOnCards && (
+                        <div className="p-3 sm:p-3.5 rounded-2xl bg-[#fcf5e8] border border-[#c5a059]/50 text-left space-y-1 text-xs">
+                          <div className="flex items-center gap-1.5 text-[10px] font-cinzel font-bold text-[#800020] uppercase tracking-wider">
+                            <span>⚜</span> Important Guest Information
+                          </div>
+                          {settings.dressCodeTitle && (
+                            <p className="text-[11px] text-[#4a3b32] font-sans">
+                              <strong className="text-[#800020]">Dress Code:</strong> {settings.dressCodeTitle}
+                            </p>
+                          )}
+                          <p className="text-[10px] text-[#6b584e] font-sans leading-relaxed">
+                            {cardImportantNote}
+                          </p>
+                        </div>
+                      )}
+
+                      {/* VIP CHECK-IN QR CODE & SCAN PASS */}
+                      {showQrOnCards && guestQrMap[g.id] && (
+                        <div className="flex items-center justify-between gap-3 p-2.5 rounded-xl bg-white border border-[#c5a059]/40 shadow-xs">
+                          <div className="flex items-center gap-2.5">
+                            <div className="relative w-16 h-16 shrink-0 rounded-lg overflow-hidden border border-[#c5a059]/50 bg-white p-0.5">
+                              <img
+                                src={guestQrMap[g.id]}
+                                alt="VIP Check-in QR"
+                                className="w-full h-full object-contain"
+                              />
+                            </div>
+                            <div className="text-left">
+                              <span className="inline-flex items-center gap-1 text-[9px] font-cinzel font-bold uppercase tracking-wider text-[#800020]">
+                                <QrCode className="w-3 h-3 text-[#c5a059]" /> VIP Check-in Pass
+                              </span>
+                              <p className="text-[10px] text-[#5a483e] font-sans mt-0.5">
+                                Scan for personalized invitation & venue GPS
+                              </p>
+                              <span className="text-[9px] font-mono text-[#8c6a2b]">
+                                Pass #{g.token.slice(0, 8).toUpperCase()}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="hidden sm:block text-right pr-1">
+                            <span className="font-serif italic text-[11px] text-[#800020] font-bold block">
+                              {settings.placeCardNote || "Sharing our joy & love"}
+                            </span>
+                            <span className="text-[9px] text-[#8c6a2b] font-cinzel">
+                              Honoured Guest
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* CARD ACTION BAR (Hidden during Print) */}
+                    <div className="no-print pt-3 mt-3 border-t border-[#c5a059]/30 flex flex-wrap items-center justify-between gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handlePrintSingleCard(g.id)}
+                        className="btn-gold-shimmer px-4 py-2 rounded-xl text-xs font-cinzel font-bold flex items-center gap-1.5 shadow cursor-pointer"
+                      >
+                        <Printer className="w-3.5 h-3.5" /> Print This Card Separately
+                      </button>
+
+                      <div className="flex items-center gap-1.5">
+                        <a
+                          href={inviteLink(g.token)}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="px-3 py-1.5 rounded-lg bg-[#800020]/10 hover:bg-[#800020]/20 text-[#800020] text-xs font-cinzel font-bold flex items-center gap-1 transition border border-[#c5a059]/30"
+                        >
+                          <Eye className="w-3.5 h-3.5" /> View Invite
+                        </a>
+                        <button
+                          type="button"
+                          onClick={() => handleSendWhatsApp(g)}
+                          className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-cinzel font-bold flex items-center gap-1 transition shadow-xs cursor-pointer"
+                        >
+                          <Send className="w-3.5 h-3.5" /> WhatsApp
+                        </button>
                       </div>
                     </div>
-                  )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              /* ============================================================ */
+              /* FORMAT 2: BANQUET TABLE PLACE CARDS (TABLE TENT FORMAT) */
+              /* ============================================================ */
+              <div className="printable-cards-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredPrintableGuests.map((g) => (
+                  <div
+                    key={g.id}
+                    className={`printable-place-card relative rounded-2xl bg-gradient-to-b from-[#fffdfa] via-[#fcf8f0] to-[#f7f0e4] text-[#1a1517] p-5 sm:p-6 border-2 border-[#c5a059] shadow-lg flex flex-col justify-between overflow-hidden ${
+                      singlePrintGuestId
+                        ? singlePrintGuestId === g.id
+                          ? "single-card-target"
+                          : "single-card-hide no-print"
+                        : ""
+                    }`}
+                    style={{ minHeight: "260px" }}
+                  >
+                    {/* Subtle Gold Frame Lines */}
+                    <div className="absolute inset-1.5 rounded-xl border border-[#c5a059]/40 pointer-events-none" />
+                    <div className="absolute top-2.5 left-2.5 text-[#c5a059] text-xs select-none">⚜</div>
+                    <div className="absolute top-2.5 right-2.5 text-[#c5a059] text-xs select-none">⚜</div>
+                    <div className="absolute bottom-2.5 left-2.5 text-[#c5a059] text-xs select-none">⚜</div>
+                    <div className="absolute bottom-2.5 right-2.5 text-[#c5a059] text-xs select-none">⚜</div>
 
-                  {/* LAYOUT 3: SIDE PORTRAIT */}
-                  {placeCardLayout === "side" && (
-                    <div className="flex items-center gap-3 pb-2 border-b border-[#c5a059]/30 mb-2">
-                      <div className="relative w-14 h-14 rounded-xl overflow-hidden border border-[#c5a059] flex-shrink-0 bg-black shadow">
-                        <Image
-                          src={settings.placeCardImageUrl || "/uploads/preshoot-photo-e5a487a560c507085cda-1788547177206-113.jpg"}
-                          alt={settings.coupleNames}
-                          fill
-                          sizes="56px"
-                          className="object-cover object-top"
-                        />
-                      </div>
-                      <div>
-                        <p className="text-[10px] uppercase tracking-[0.2em] text-[#800020] font-cinzel font-bold">
+                    {/* LAYOUT 1: CAMEO MEDALLION */}
+                    {placeCardLayout === "cameo" && (
+                      <div className="flex flex-col items-center text-center">
+                        <div className="relative w-16 h-16 rounded-full overflow-hidden border-2 border-[#c5a059] shadow-md mb-2 bg-[#800020]/10">
+                          <Image
+                            src={settings.placeCardImageUrl || "/uploads/preshoot-photo-e5a487a560c507085cda-1788547177206-113.jpg"}
+                            alt={settings.coupleNames}
+                            fill
+                            sizes="64px"
+                            className="object-cover object-top"
+                          />
+                        </div>
+                        <p className="text-[10px] uppercase tracking-[0.25em] text-[#800020] font-cinzel font-bold">
                           {settings.coupleNames}
                         </p>
-                        <span className="text-[9px] uppercase tracking-wider text-[#8c6a2b] font-cinzel">
-
-                          Royal Banquet Seating
-                        </span>
                       </div>
-                    </div>
-                  )}
+                    )}
 
-                  {/* LAYOUT 4: MINIMAL MONOGRAM */}
-                  {placeCardLayout === "minimal" && (
-                    <div className="text-center pb-1">
-                      <div className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-[#800020]/10 border border-[#c5a059]/60 mb-1">
-                        <span className="font-cinzel text-xs font-bold text-[#800020]">
-                          {dashboardMonogram}
-                        </span>
+                    {/* LAYOUT 2: TOP BANNER */}
+                    {placeCardLayout === "banner" && (
+                      <div className="flex flex-col items-center text-center mb-2">
+                        <div className="relative w-full h-16 rounded-lg overflow-hidden border border-[#c5a059]/60 shadow-sm mb-1.5 bg-black">
+                          <Image
+                            src={settings.placeCardImageUrl || "/uploads/preshoot-photo-e5a487a560c507085cda-1788547177206-113.jpg"}
+                            alt={settings.coupleNames}
+                            fill
+                            sizes="280px"
+                            className="object-cover object-top"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                          <span className="absolute bottom-1 inset-x-0 text-[10px] uppercase tracking-widest text-[#fff8ea] font-cinzel font-bold drop-shadow">
+                            {settings.coupleNames}
+                          </span>
+                        </div>
                       </div>
-                      <p className="text-[10px] uppercase tracking-[0.25em] text-[#800020] font-cinzel font-bold">
-                        {settings.coupleNames}
+                    )}
+
+                    {/* LAYOUT 3: SIDE PORTRAIT */}
+                    {placeCardLayout === "side" && (
+                      <div className="flex items-center gap-3 pb-2 border-b border-[#c5a059]/30 mb-2">
+                        <div className="relative w-14 h-14 rounded-xl overflow-hidden border border-[#c5a059] flex-shrink-0 bg-black shadow">
+                          <Image
+                            src={settings.placeCardImageUrl || "/uploads/preshoot-photo-e5a487a560c507085cda-1788547177206-113.jpg"}
+                            alt={settings.coupleNames}
+                            fill
+                            sizes="56px"
+                            className="object-cover object-top"
+                          />
+                        </div>
+                        <div>
+                          <p className="text-[10px] uppercase tracking-[0.2em] text-[#800020] font-cinzel font-bold">
+                            {settings.coupleNames}
+                          </p>
+                          <span className="text-[9px] uppercase tracking-wider text-[#8c6a2b] font-cinzel">
+                            Royal Banquet Seating
+                          </span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* LAYOUT 4: MINIMAL MONOGRAM */}
+                    {placeCardLayout === "minimal" && (
+                      <div className="text-center pb-1">
+                        <div className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-[#800020]/10 border border-[#c5a059]/60 mb-1">
+                          <span className="font-cinzel text-xs font-bold text-[#800020]">
+                            {dashboardMonogram}
+                          </span>
+                        </div>
+                        <p className="text-[10px] uppercase tracking-[0.25em] text-[#800020] font-cinzel font-bold">
+                          {settings.coupleNames}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Guest Name & Salutation */}
+                    <div className="text-center my-auto py-2">
+                      <span className="text-[9px] uppercase tracking-widest text-[#8c6a2b] font-cinzel">
+                        Table Place Setting
+                      </span>
+                      <h3 className="font-serif italic text-xl sm:text-2xl font-bold text-[#6b0f24] leading-tight mt-0.5">
+                        {g.salutation} {g.displayName}
+                      </h3>
+                      <p className="text-[10px] text-[#5a483e] font-sans mt-0.5">
+                        {inviteTypeLabels[g.inviteType]}
                       </p>
-                    </div>
-                  )}
 
-                  {/* Guest Name & Salutation */}
-                  <div className="text-center my-auto py-2">
-                    <span className="text-[9px] uppercase tracking-widest text-[#8c6a2b] font-cinzel">
-                      Table Place Setting
-                    </span>
-                    <h3 className="font-serif italic text-xl sm:text-2xl font-bold text-[#6b0f24] leading-tight mt-0.5">
-                      {g.salutation} {g.displayName}
-                    </h3>
-                    <p className="text-[10px] text-[#5a483e] font-sans mt-0.5">
-                      {inviteTypeLabels[g.inviteType]}
-                    </p>
-                  </div>
-
-                  {/* Table Badge & Sweet Note Footer */}
-                  <div className="pt-2 border-t border-[#c5a059]/30 flex items-center justify-between gap-2 mt-auto">
-                    <div className="px-3 py-1 rounded-xl bg-[#800020] text-[#fdfbf7] font-cinzel font-bold text-xs shadow">
-                      Table #{String(g.tableNumber).padStart(2, "0")}
+                      {showVenueOnCards && (
+                        <p className="text-[9px] text-[#8c6a2b] font-cinzel font-semibold mt-1">
+                          📍 {settings.venueName || "Grand Ballroom"} {showDateOnCards && `• ${formattedEventDate}`}
+                        </p>
+                      )}
                     </div>
-                    <span className="font-serif italic text-[10px] text-[#8c6a2b] text-right line-clamp-1">
-                      {settings.placeCardNote || "Sharing our joy & love"}
-                    </span>
+
+                    {/* Mini QR if enabled */}
+                    {showQrOnCards && guestQrMap[g.id] && (
+                      <div className="my-1 py-1 px-2 rounded-lg bg-white/70 border border-[#c5a059]/30 flex items-center justify-center gap-2">
+                        <img src={guestQrMap[g.id]} alt="QR" className="w-8 h-8 object-contain" />
+                        <span className="text-[9px] font-mono text-[#800020]">VIP Pass</span>
+                      </div>
+                    )}
+
+                    {/* Table Badge & Sweet Note Footer */}
+                    <div className="pt-2 border-t border-[#c5a059]/30 flex items-center justify-between gap-2 mt-auto">
+                      <div className="px-3 py-1 rounded-xl bg-[#800020] text-[#fdfbf7] font-cinzel font-bold text-xs shadow">
+                        Table #{String(g.tableNumber).padStart(2, "0")}
+                      </div>
+                      <span className="font-serif italic text-[10px] text-[#8c6a2b] text-right line-clamp-1">
+                        {settings.placeCardNote || "Sharing our joy & love"}
+                      </span>
+                    </div>
+
+                    {/* Print single button in Place Card mode (no-print) */}
+                    <div className="no-print pt-2 mt-2 border-t border-[#c5a059]/20 flex items-center justify-between">
+                      <button
+                        type="button"
+                        onClick={() => handlePrintSingleCard(g.id)}
+                        className="px-2.5 py-1 rounded-lg bg-[#800020]/10 hover:bg-[#800020]/20 text-[#800020] text-[10px] font-cinzel font-bold flex items-center gap-1 cursor-pointer border border-[#c5a059]/30"
+                      >
+                        <Printer className="w-3 h-3" /> Print This Card
+                      </button>
+                      <a
+                        href={inviteLink(g.token)}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-[10px] font-cinzel text-[#8c6a2b] hover:underline"
+                      >
+                        View Invite ↗
+                      </a>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
