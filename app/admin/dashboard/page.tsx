@@ -4,6 +4,12 @@ import { useEffect, useState, useMemo } from "react";
 import Image from "next/image";
 import QRCode from "qrcode";
 import { uploadToCloudinary, isCloudinaryClientConfigured } from "@/lib/cloudinary-client";
+import {
+  getOptimizedVideoUrl,
+  getVideoPosterUrl,
+  getOptimizedImageUrl,
+  getThumbnailUrl,
+} from "@/lib/media-optimization";
 
 import {
   Users,
@@ -2322,7 +2328,12 @@ export default function AdminDashboard() {
                             </div>
                           ) : (
                             <video
-                              src={settings.heroVideoUrl.startsWith("/uploads/") ? `/api/media/stream?src=${encodeURIComponent(settings.heroVideoUrl)}` : settings.heroVideoUrl}
+                              src={
+                                settings.heroVideoUrl.startsWith("/uploads/")
+                                  ? `/api/media/stream?src=${encodeURIComponent(settings.heroVideoUrl)}`
+                                  : getOptimizedVideoUrl(settings.heroVideoUrl, { width: 640, quality: "auto:eco" })
+                              }
+                              poster={getVideoPosterUrl(settings.heroVideoUrl)}
                               autoPlay
                               loop
                               muted
@@ -2417,7 +2428,7 @@ export default function AdminDashboard() {
                     </span>
                     <div className="relative w-32 h-36 rounded-xl overflow-hidden border-2 border-[#c5a059] shadow-md bg-black mx-auto lg:mx-0">
                       <Image
-                        src={settings.heroImageUrl || "/uploads/preshoot-photo-Pragya-Siddharth-Pix-1788547160301-318.jpg"}
+                        src={getOptimizedImageUrl(settings.heroImageUrl || "/images/coupleshare.png", { width: 300, quality: "auto:eco" })}
                         alt="Hero Couple Preview"
                         fill
                         sizes="130px"
@@ -2495,7 +2506,7 @@ export default function AdminDashboard() {
                     </span>
                     <div className="relative w-32 h-24 rounded-xl overflow-hidden border-2 border-[#c5a059] shadow-md bg-black mx-auto lg:mx-0">
                       <Image
-                        src={settings.welcomeImageUrl || "/uploads/preshoot-photo-423f40cc366ebcbcb01c-1788547168710-655.jpg"}
+                        src={getOptimizedImageUrl(settings.welcomeImageUrl || "/images/coupleshare.png", { width: 300, quality: "auto:eco" })}
                         alt="Welcome Preview"
                         fill
                         sizes="130px"
@@ -2569,7 +2580,7 @@ export default function AdminDashboard() {
                     </span>
                     <div className="relative w-24 h-24 rounded-full overflow-hidden border-2 border-[#c5a059] shadow-md bg-black mx-auto lg:mx-0">
                       <Image
-                        src={settings.placeCardImageUrl || "/uploads/preshoot-photo-e5a487a560c507085cda-1788547177206-113.jpg"}
+                        src={getOptimizedImageUrl(settings.placeCardImageUrl || "/images/coupleshare.png", { width: 200, height: 200, crop: "fill", quality: "auto:eco" })}
                         alt="Place Card Preview"
                         fill
                         sizes="96px"
@@ -2631,7 +2642,7 @@ export default function AdminDashboard() {
                     </span>
                     <div className="relative w-32 h-24 rounded-xl overflow-hidden border-2 border-[#c5a059] shadow-md bg-black mx-auto lg:mx-0">
                       <Image
-                        src={settings.blessingImageUrl || "/uploads/preshoot-photo-OIP2-1788547184704-193.webp"}
+                        src={getOptimizedImageUrl(settings.blessingImageUrl || "/images/coupleshare.png", { width: 300, quality: "auto:eco" })}
                         alt="Blessing Preview"
                         fill
                         sizes="130px"
@@ -2661,7 +2672,7 @@ export default function AdminDashboard() {
                         <div className="flex items-start gap-3">
                           <div className="relative w-16 h-16 rounded-lg overflow-hidden border border-[#c5a059]/50 shrink-0 bg-black">
                             <Image
-                              src={item.src || "/uploads/preshoot-photo-OIP1-1788547193363-824.webp"}
+                              src={getThumbnailUrl(item.src || "/images/coupleshare.png", 160)}
                               alt={item.title || `Slot ${idx + 1}`}
                               fill
                               sizes="64px"
@@ -3764,7 +3775,7 @@ export default function AdminDashboard() {
                     >
                       <div className="relative w-20 h-20 rounded-xl overflow-hidden border border-[#c5a059]/50 bg-black/40 shrink-0">
                         <img
-                          src={photo.url}
+                          src={getThumbnailUrl(photo.url, 200)}
                           alt={photo.title || "Wedding Photo"}
                           className="w-full h-full object-cover"
                         />
@@ -3834,7 +3845,7 @@ export default function AdminDashboard() {
                             <td className="py-3 px-4">
                               <div className="relative w-16 h-12 rounded-lg overflow-hidden border border-[#c5a059]/40 bg-black/40">
                                 <img
-                                  src={photo.url}
+                                  src={getThumbnailUrl(photo.url, 160)}
                                   alt={photo.title || "Wedding Photo"}
                                   className="w-full h-full object-cover"
                                 />
@@ -3905,7 +3916,7 @@ export default function AdminDashboard() {
                         className="group relative rounded-2xl overflow-hidden aspect-[4/3] border border-[#c5a059]/30 bg-black/40 shadow-md"
                       >
                         <img
-                          src={photo.url}
+                          src={getThumbnailUrl(photo.url, 400)}
                           alt={photo.title || "Gallery"}
                           className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
                         />
@@ -3982,7 +3993,7 @@ export default function AdminDashboard() {
                       {ev.heroImageUrl && (
                         <div className="relative w-full h-36 rounded-2xl overflow-hidden mb-3 border border-[#c5a059]/20">
                           <img
-                            src={ev.heroImageUrl}
+                            src={getThumbnailUrl(ev.heroImageUrl, 400)}
                             alt={ev.coupleNames}
                             className="w-full h-full object-cover"
                           />
@@ -4836,7 +4847,7 @@ export default function AdminDashboard() {
               {newPhotoForm.url && (
                 <div className="relative w-full h-36 rounded-2xl overflow-hidden border border-[#c5a059]/40 bg-black/40">
                   <img
-                    src={newPhotoForm.url}
+                    src={getThumbnailUrl(newPhotoForm.url, 400)}
                     alt="Preview"
                     className="w-full h-full object-cover"
                   />

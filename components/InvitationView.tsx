@@ -45,6 +45,13 @@ import ScrollReveal from "./ScrollReveal";
 import { formatEventDate } from "@/lib/date";
 import { generateICS } from "@/lib/calendar";
 import { translations, Locale } from "@/lib/translations";
+import {
+  getOptimizedVideoUrl,
+  getVideoPosterUrl,
+  getOptimizedImageUrl,
+  getThumbnailUrl,
+  getLightboxImageUrl,
+} from "@/lib/media-optimization";
 
 function FloralDivider({ className = "" }: { className?: string }) {
   return (
@@ -202,14 +209,27 @@ export default function InvitationView({
   const modalVideoRef = useRef<HTMLVideoElement>(null);
   const heroVideoContainerRef = useRef<HTMLDivElement>(null);
 
-  // High performance Range streaming endpoint for uploaded video files
+  // High performance Range streaming endpoint & adaptive Cloudinary video delivery
   const videoStreamUrl = useMemo(() => {
     if (!settings.heroVideoUrl) return "";
+    // If it's a legacy non-existent demo video placeholder, avoid 404
+    if (settings.heroVideoUrl.includes("preshoot-video-0903")) {
+      return "";
+    }
     if (settings.heroVideoUrl.startsWith("/uploads/") || settings.heroVideoUrl.startsWith("/audio/")) {
       return `/api/media/stream?src=${encodeURIComponent(settings.heroVideoUrl)}`;
     }
-    return settings.heroVideoUrl;
+    // Automatically apply adaptive bitrate, codec selection, and 1080p resolution capping
+    return getOptimizedVideoUrl(settings.heroVideoUrl, { width: 1080 });
   }, [settings.heroVideoUrl]);
+
+  // Compute lightweight instant video poster frame (under 30KB)
+  const videoPosterSrc = useMemo(() => {
+    return getVideoPosterUrl(
+      settings.heroVideoUrl,
+      settings.videoThumbnailUrl || settings.heroImageUrl
+    );
+  }, [settings.heroVideoUrl, settings.videoThumbnailUrl, settings.heroImageUrl]);
 
   // Helper to reliably configure and play hero video across mobile and desktop browsers
   const playHeroVideoSafely = () => {
@@ -388,7 +408,7 @@ export default function InvitationView({
   }
 
   // Parse Gallery items from dedicated EventPhoto table, or fallback to settings.galleryJson / defaults
-  const parsedGallery = (() => {
+  const parsedGallery = useMemo(() => {
     if (photos && Array.isArray(photos) && photos.length > 0) {
       return photos.map((p) => ({
         src: p.url,
@@ -400,11 +420,23 @@ export default function InvitationView({
     if (settings.galleryJson) {
       try {
         const parsed = JSON.parse(settings.galleryJson);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed.map((item: any) => ({
+            ...item,
+            src: item.src?.includes("preshoot-photo-") ? "/images/coupleshare.png" : item.src,
+          }));
+        }
       } catch {}
     }
-    return coupleGallery;
-  })();
+    return [
+      {
+        src: "/images/coupleshare.png",
+        title: "A Timeless Bond",
+        subtitle: "Two souls, one sacred journey under the stars",
+        tag: "Pre-Wedding Shoot",
+      },
+    ];
+  }, [photos, settings.galleryJson]);
 
   // Parse Timeline items if customized in settings
   const parsedTimeline = (() => {
@@ -418,10 +450,33 @@ export default function InvitationView({
   })();
 
   const date = formatEventDate(settings.eventDate);
-  const heroImageSrc = settings.heroImageUrl || "/uploads/preshoot-photo-Pragya-Siddharth-Pix-1788547160301-318.jpg";
-  const welcomeImageSrc = settings.welcomeImageUrl || "/uploads/preshoot-photo-423f40cc366ebcbcb01c-1788547168710-655.jpg";
-  const placeCardImageSrc = settings.placeCardImageUrl || "/uploads/preshoot-photo-e5a487a560c507085cda-1788547177206-113.jpg";
-  const blessingImageSrc = settings.blessingImageUrl || "/uploads/preshoot-photo-OIP2-1788547184704-193.webp";
+
+  // High-performance CDN optimized image URLs
+  const rawHeroImage = settings.heroImageUrl && !settings.heroImageUrl.includes("preshoot-photo-Pragya")
+    ? settings.heroImageUrl
+    : "/images/coupleshare.png";
+  const heroImageSrc = useMemo(() => getOptimizedImageUrl(rawHeroImage, { width: 1080, quality: "auto:good" }), [rawHeroImage]);
+
+  const rawWelcomeImage = settings.welcomeImageUrl && !settings.welcomeImageUrl.includes("preshoot-photo-423f")
+    ? settings.welcomeImageUrl
+    : "/images/coupleshare.png";
+  const welcomeImageSrc = useMemo(
+    () => getOptimizedImageUrl(rawWelcomeImage, { width: 360, height: 360, crop: "fill", gravity: "face", quality: "auto:good" }),
+    [rawWelcomeImage]
+  );
+
+  const rawPlaceCardImage = settings.placeCardImageUrl && !settings.placeCardImageUrl.includes("preshoot-photo-e5a4")
+    ? settings.placeCardImageUrl
+    : "/images/coupleshare.png";
+  const placeCardImageSrc = useMemo(
+    () => getOptimizedImageUrl(rawPlaceCardImage, { width: 160, height: 160, crop: "fill", quality: "auto:good" }),
+    [rawPlaceCardImage]
+  );
+
+  const rawBlessingImage = settings.blessingImageUrl && !settings.blessingImageUrl.includes("preshoot-photo-OIP2")
+    ? settings.blessingImageUrl
+    : "/images/coupleshare.png";
+  const blessingImageSrc = useMemo(() => getOptimizedImageUrl(rawBlessingImage, { width: 640, quality: "auto:good" }), [rawBlessingImage]);
   const placeCardNote = settings.placeCardNote || t.cantWaitToWelcome;
 
 
@@ -891,12 +946,12 @@ export default function InvitationView({
                       <video
                         ref={heroVideoRef}
                         src={videoStreamUrl || undefined}
-                        poster={settings.videoThumbnailUrl || heroImageSrc}
+                        poster={videoPosterSrc || heroImageSrc}
                         autoPlay
                         loop
                         muted={isVideoMuted}
                         playsInline
-                        preload="auto"
+                        preload={envelopeOpened ? "auto" : "none"}
                         onLoadedData={() => {
                           if (heroVideoRef.current && isVideoPlaying) {
                             playHeroVideoSafely();
@@ -1402,7 +1457,7 @@ export default function InvitationView({
                     className="relative w-full h-full animate-ken-burns"
                   >
                     <Image
-                      src={parsedGallery[currentPhotoIndex]?.src || heroImageSrc}
+                      src={getOptimizedImageUrl(parsedGallery[currentPhotoIndex]?.src || heroImageSrc, { width: 1080, quality: "auto:good" })}
                       alt={parsedGallery[currentPhotoIndex]?.title || settings.coupleNames}
                       fill
                       sizes="(max-width: 640px) 100vw, 550px"
@@ -1507,7 +1562,7 @@ export default function InvitationView({
                     }`}
                   >
                     <Image
-                      src={item.src}
+                      src={getThumbnailUrl(item.src, 160)}
                       alt={item.title || `Photo ${idx + 1}`}
                       fill
                       sizes="100px"
@@ -1705,11 +1760,13 @@ export default function InvitationView({
                   <div className="relative inline-flex flex-col items-center justify-center mx-auto my-2 group">
                     <div className="absolute inset-0 bg-gradient-to-t from-[#dfba73]/30 via-[#ffd700]/15 to-transparent blur-2xl rounded-full scale-110 pointer-events-none animate-pulse" />
                     <div className="relative z-10 animate-couple-float transition-transform duration-500 hover:scale-105">
-                      <img
+                      <Image
                         src="/images/coupleshare.png"
                         alt={settings.coupleNames || "Wedding Celebration"}
+                        width={220}
+                        height={200}
                         className="h-44 sm:h-52 w-auto max-w-[220px] object-contain select-none pointer-events-none drop-shadow-[0_10px_20px_rgba(128,0,32,0.25)]"
-                        loading="eager"
+                        loading="lazy"
                       />
                       <span className="absolute bottom-2 right-4 flex h-7 w-7 items-center justify-center rounded-full bg-emerald-600 text-white shadow-lg border-2 border-[#fffcf7] text-xs font-bold ring-2 ring-emerald-400/50">
                         ✓
@@ -2022,7 +2079,7 @@ export default function InvitationView({
           {/* Main Photo Center Container */}
           <div className="relative w-full max-w-4xl h-[60vh] sm:h-[72vh] flex items-center justify-center my-auto">
             <Image
-              src={parsedGallery[currentPhotoIndex]?.src || heroImageSrc}
+              src={getLightboxImageUrl(parsedGallery[currentPhotoIndex]?.src || heroImageSrc)}
               alt={parsedGallery[currentPhotoIndex]?.title || settings.coupleNames}
               fill
               sizes="(max-width: 1024px) 100vw, 1024px"
@@ -2110,7 +2167,7 @@ export default function InvitationView({
               <video
                 ref={modalVideoRef}
                 src={videoStreamUrl}
-                poster={settings.videoThumbnailUrl || heroImageSrc}
+                poster={videoPosterSrc || heroImageSrc}
                 autoPlay
                 controls
                 playsInline
