@@ -63,6 +63,9 @@ model WeddingEvent {
 
     createdAt            DateTime        @default(now())
     updatedAt            DateTime        @updatedAt
+
+    @@index([managerId])
+    @@index([createdAt])
 }
 
 // 3. Dedicated Event Photo Table (Separated photos with ordering and tags)
@@ -118,6 +121,9 @@ model Guest {
     updatedAt       DateTime      @updatedAt
 
     @@index([eventId])
+    @@index([eventId, createdAt])
+    @@index([eventId, rsvpStatus])
+    @@index([eventId, tableNumber])
 }
 
 // 6. Guestbook Wishes (Linked to WeddingEvent)
@@ -131,6 +137,7 @@ model GuestbookWish {
     createdAt  DateTime      @default(now())
 
     @@index([eventId])
+    @@index([eventId, createdAt])
 }
 
 // 7. Legacy EventSettings (Kept for backward compatibility during migration)

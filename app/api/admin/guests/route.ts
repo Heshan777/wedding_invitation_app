@@ -104,28 +104,38 @@ export async function POST(req: NextRequest) {
     targetEventId = ownEvent.id;
   }
 
-  // Bulk Import support
+  // Bulk Import support (Optimized batch insert)
   if (body.action === "bulk" && Array.isArray(body.guests)) {
-    const createdGuests = [];
-    for (const item of body.guests) {
-      if (!item.displayName) continue;
-      const newGuest = await prisma.guest.create({
-        data: {
-          eventId: targetEventId,
-          displayName: String(item.displayName).trim(),
-          salutation: item.salutation ? String(item.salutation).trim() : "Mr & Mrs",
-          inviteType: ["SINGLE", "COUPLE", "FAMILY"].includes(item.inviteType) ? item.inviteType : "COUPLE",
-          tableNumber: Number(item.tableNumber) || 1,
-          phone: item.phone ? String(item.phone).trim() : null,
-          notes: item.notes ? String(item.notes).trim() : null,
-          dietary: item.dietary ? String(item.dietary).trim() : "NONE",
-          rsvpStatus: ["ATTENDING", "DECLINED", "PENDING"].includes(item.rsvpStatus) ? item.rsvpStatus : "PENDING",
-          attendeeCount: Number(item.attendeeCount) || 1,
-        },
-      });
-      createdGuests.push(newGuest);
+    const validGuests = body.guests
+      .filter((item: any) => item && item.displayName)
+      .map((item: any) => ({
+        eventId: targetEventId,
+        displayName: String(item.displayName).trim(),
+        salutation: item.salutation ? String(item.salutation).trim() : "Mr & Mrs",
+        inviteType: ["SINGLE", "COUPLE", "FAMILY"].includes(item.inviteType) ? item.inviteType : "COUPLE",
+        tableNumber: Number(item.tableNumber) || 1,
+        phone: item.phone ? String(item.phone).trim() : null,
+        notes: item.notes ? String(item.notes).trim() : null,
+        dietary: item.dietary ? String(item.dietary).trim() : "NONE",
+        rsvpStatus: ["ATTENDING", "DECLINED", "PENDING"].includes(item.rsvpStatus) ? item.rsvpStatus : "PENDING",
+        attendeeCount:
+          Number(item.attendeeCount) || (item.inviteType === "FAMILY" ? 4 : item.inviteType === "COUPLE" ? 2 : 1),
+      }));
+
+    if (validGuests.length === 0) {
+      return NextResponse.json({ error: "No valid guests provided" }, { status: 400 });
     }
-    return NextResponse.json({ success: true, count: createdGuests.length, guests: createdGuests });
+
+    await prisma.guest.createMany({
+      data: validGuests,
+    });
+
+    const refreshedGuests = await prisma.guest.findMany({
+      where: { eventId: targetEventId },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return NextResponse.json({ success: true, count: validGuests.length, guests: refreshedGuests });
   }
 
   const { displayName, salutation, inviteType, tableNumber, notes, phone, dietary, rsvpStatus, attendeeCount } = body;

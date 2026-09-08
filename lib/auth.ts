@@ -19,7 +19,15 @@ export interface SessionPayload {
 export async function verifyManagerCredentials(
   identifier: string,
   password: string
-): Promise<{ id: string; username: string; name: string; role: string } | null> {
+): Promise<{
+  id: string;
+  username: string;
+  name: string;
+  role: string;
+  email?: string | null;
+  company?: string | null;
+  phone?: string | null;
+} | null> {
   const cleanId = identifier.trim().toLowerCase();
 
   // Look up manager by username or email
@@ -40,6 +48,9 @@ export async function verifyManagerCredentials(
         username: manager.username,
         name: manager.name,
         role: manager.role,
+        email: manager.email,
+        company: manager.company,
+        phone: manager.phone,
       };
     }
   }
@@ -68,6 +79,9 @@ export async function verifyManagerCredentials(
         username: defaultMgr.username,
         name: defaultMgr.name,
         role: defaultMgr.role,
+        email: defaultMgr.email,
+        company: defaultMgr.company,
+        phone: defaultMgr.phone,
       };
     }
   }
@@ -81,18 +95,24 @@ export async function verifyAdminCredentials(username: string, password: string)
   return mgr !== null;
 }
 
-// Create secure manager session cookie
+// Create secure manager session cookie with full profile payload
 export async function createManagerSession(manager: {
   id: string;
   username: string;
   name: string;
   role: string;
+  email?: string | null;
+  company?: string | null;
+  phone?: string | null;
 }) {
   const token = await new SignJWT({
     managerId: manager.id,
     username: manager.username,
     name: manager.name,
     role: manager.role,
+    email: manager.email || "",
+    company: manager.company || "",
+    phone: manager.phone || "",
   })
     .setProtectedHeader({ alg: "HS256", typ: "JWT" })
     .setIssuedAt()
@@ -118,6 +138,9 @@ export async function createAdminSession() {
       username: defaultMgr.username,
       name: defaultMgr.name,
       role: defaultMgr.role,
+      email: defaultMgr.email,
+      company: defaultMgr.company,
+      phone: defaultMgr.phone,
     });
   } else {
     const token = await new SignJWT({ role: "admin" })
@@ -142,7 +165,7 @@ export async function destroyAdminSession() {
   cookieStore.delete(COOKIE_NAME);
 }
 
-// Get the authenticated manager from current session
+// Get the authenticated manager from current session (0ms in-memory verification)
 export async function getAuthenticatedManager() {
   const cookieStore = await cookies();
   const token = cookieStore.get(COOKIE_NAME)?.value;
@@ -151,6 +174,19 @@ export async function getAuthenticatedManager() {
   try {
     const { payload } = await jwtVerify(token, secret);
     const managerId = payload.managerId as string | undefined;
+
+    // High-Performance Fast Path: Return directly from cryptographically verified JWT payload (0ms, 0 DB roundtrips)
+    if (managerId && payload.username && payload.name && payload.role) {
+      return {
+        id: managerId,
+        username: payload.username as string,
+        name: payload.name as string,
+        role: payload.role as string,
+        email: (payload.email as string) || null,
+        company: (payload.company as string) || null,
+        phone: (payload.phone as string) || null,
+      };
+    }
 
     if (managerId) {
       const manager = await prisma.eventManager.findUnique({
@@ -163,7 +199,6 @@ export async function getAuthenticatedManager() {
           company: true,
           phone: true,
           role: true,
-          createdAt: true,
         },
       });
       if (manager) return manager;
@@ -179,7 +214,6 @@ export async function getAuthenticatedManager() {
         company: true,
         phone: true,
         role: true,
-        createdAt: true,
       },
     });
     return firstMgr;

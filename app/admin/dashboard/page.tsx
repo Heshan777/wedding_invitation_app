@@ -755,7 +755,7 @@ export default function AdminDashboard() {
       const res = await fetch("/api/admin/guests", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "bulk", guests: parsedGuests }),
+        body: JSON.stringify({ action: "bulk", guests: parsedGuests, eventId: activeEventId }),
       });
 
       if (!res.ok) {
@@ -763,10 +763,15 @@ export default function AdminDashboard() {
         throw new Error(err.error || "Bulk import failed");
       }
 
+      const data = await res.json();
       setShowBulkModal(false);
       setBulkCsvText("");
       showToast(`Successfully imported ${parsedGuests.length} guests!`);
-      loadData();
+      if (data.guests && Array.isArray(data.guests)) {
+        setGuests(data.guests);
+      } else {
+        loadData(activeEventId);
+      }
     } catch (err: any) {
       alert(err.message || "Failed to import guests");
     } finally {
@@ -873,81 +878,54 @@ export default function AdminDashboard() {
     setLoading(true);
     setAppBaseUrl(getAppBaseUrl());
     try {
-      // 1. Fetch manager profile & events list
-      const resEvents = await fetch("/api/admin/events");
-      if (resEvents.ok) {
-        const data = await resEvents.json();
+      const savedEventId = typeof window !== "undefined" ? localStorage.getItem("active_wedding_event_id") : null;
+      const queryEventId = targetEventId || activeEventId || savedEventId || "";
+      const url = queryEventId
+        ? `/api/admin/bootstrap?eventId=${encodeURIComponent(queryEventId)}`
+        : "/api/admin/bootstrap";
+
+      const res = await fetch(url);
+      if (res.ok) {
+        const data = await res.json();
         setManager(data.manager || null);
         const evList: WeddingEventItem[] = data.events || [];
         setEvents(evList);
 
-        // Determine which event is active
-        let selectedId = "";
-        if (data.manager?.role === "SUPER_ADMIN") {
-          selectedId = targetEventId || activeEventId;
-          if (!selectedId && typeof window !== "undefined") {
-            selectedId = localStorage.getItem("active_wedding_event_id") || "";
-          }
-          if (!selectedId || !evList.some((e) => e.id === selectedId)) {
-            selectedId = evList[0]?.id || "";
-          }
-          if (typeof window !== "undefined" && selectedId) {
-            localStorage.setItem("active_wedding_event_id", selectedId);
-          }
-        } else {
-          // Regular Event Manager: Strictly locked 1-to-1 to their single dedicated wedding
-          selectedId = evList[0]?.id || "";
-          if (typeof window !== "undefined" && selectedId) {
-            localStorage.setItem("active_wedding_event_id", selectedId);
-          }
-        }
-        setActiveEventId(selectedId);
-
-        // 2. Fetch scoped guests, settings, and photos for selected event
-        if (selectedId) {
-          const [resGuests, resSettings, resPhotos, resStorage] = await Promise.all([
-            fetch(`/api/admin/guests?eventId=${selectedId}`),
-            fetch(`/api/admin/settings?eventId=${selectedId}`),
-            fetch(`/api/admin/photos?eventId=${selectedId}`),
-            fetch("/api/admin/upload"),
-          ]);
-
-          if (resStorage && resStorage.ok) {
-            const storageData = await resStorage.json().catch(() => null);
-            if (storageData) setStorageStatus(storageData);
-          }
-
-          if (resGuests.ok) {
-            const guestData = await resGuests.json();
-            setGuests(Array.isArray(guestData) ? guestData : []);
-          }
-
-          if (resSettings.ok) {
-            const settingsData = await resSettings.json();
-            if (settingsData && settingsData.coupleNames) {
-              setSettings({
-                ...settingsData,
-                eventDate: settingsData.eventDate
-                  ? new Date(settingsData.eventDate).toISOString().slice(0, 16)
-                  : "2026-10-04T19:00",
-              });
-            }
-          }
-
-          if (resPhotos.ok) {
-            const photosData = await resPhotos.json();
-            setEventPhotos(photosData.photos || []);
-          }
+        const activeId = data.activeEventId || evList[0]?.id || "";
+        setActiveEventId(activeId);
+        if (typeof window !== "undefined" && activeId) {
+          localStorage.setItem("active_wedding_event_id", activeId);
         }
 
+        if (data.storageStatus) {
+          setStorageStatus(data.storageStatus);
+        }
+
+        setGuests(Array.isArray(data.guests) ? data.guests : []);
+
+        if (data.settings && data.settings.coupleNames) {
+          setSettings({
+            ...data.settings,
+            eventDate: data.settings.eventDate
+              ? new Date(data.settings.eventDate).toISOString().slice(0, 16)
+              : "2026-10-04T19:00",
+          });
+        }
+
+        setEventPhotos(data.photos || []);
+
         if (data.manager?.role === "SUPER_ADMIN") {
-          loadManagers();
+          setManagers(data.managers || []);
         } else {
           setActiveTab((prev) => (prev === "events" || prev === "managers" ? "guests" : prev));
         }
+      } else if (res.status === 401) {
+        if (typeof window !== "undefined") {
+          window.location.href = "/admin/login";
+        }
       }
     } catch (err) {
-      console.error(err);
+      console.error("Dashboard loadData error:", err);
     } finally {
       setLoading(false);
     }
@@ -1102,18 +1080,16 @@ export default function AdminDashboard() {
           order: eventPhotos.length,
         }),
       });
+      const data = await res.json();
       if (res.ok) {
         showToast("Photo added to EventPhoto table!");
         setShowAddPhotoModal(false);
         setNewPhotoForm({ url: "", title: "", subtitle: "", tag: "Pre-Wedding" });
-        const resPhotos = await fetch(`/api/admin/photos?eventId=${activeEventId}`);
-        if (resPhotos.ok) {
-          const data = await resPhotos.json();
-          setEventPhotos(data.photos || []);
+        if (data.photo) {
+          setEventPhotos((prev) => [...prev, data.photo]);
         }
       } else {
-        const err = await res.json();
-        alert(err.error || "Failed to add photo");
+        alert(data.error || "Failed to add photo");
       }
     } catch {
       alert("Network error adding photo");
@@ -1145,29 +1121,44 @@ export default function AdminDashboard() {
   async function handleSaveGuest(e: React.FormEvent) {
     e.preventDefault();
 
-    if (editingId) {
-      await fetch(`/api/admin/guests/${editingId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-      });
-      showToast("Guest details updated successfully!");
-      setEditingId(null);
-    } else {
-      await fetch("/api/admin/guests", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...form,
-          eventId: activeEventId,
-        }),
-      });
-      showToast("New guest added and invite link generated!");
-    }
+    try {
+      if (editingId) {
+        const res = await fetch(`/api/admin/guests/${editingId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(form),
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.error || "Failed to update guest");
+        }
+        const updatedGuest: Guest = await res.json();
+        setGuests((prev) => prev.map((g) => (g.id === editingId ? updatedGuest : g)));
+        showToast("Guest details updated successfully!");
+        setEditingId(null);
+      } else {
+        const res = await fetch("/api/admin/guests", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ...form,
+            eventId: activeEventId,
+          }),
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.error || "Failed to add guest");
+        }
+        const createdGuest: Guest = await res.json();
+        setGuests((prev) => [createdGuest, ...prev]);
+        showToast("New guest added and invite link generated!");
+      }
 
-    setForm(emptyForm);
-    setShowAddModal(false);
-    loadData(activeEventId);
+      setForm(emptyForm);
+      setShowAddModal(false);
+    } catch (err: any) {
+      alert(err.message || "Failed to save guest");
+    }
   }
 
   function startEdit(g: Guest) {
@@ -1188,9 +1179,18 @@ export default function AdminDashboard() {
 
   async function handleDelete(id: string) {
     if (!confirm("Are you sure you want to remove this guest? This will invalidate their link.")) return;
-    await fetch(`/api/admin/guests/${id}`, { method: "DELETE" });
-    showToast("Guest removed.");
-    loadData(activeEventId);
+    try {
+      const res = await fetch(`/api/admin/guests/${id}`, { method: "DELETE" });
+      if (res.ok) {
+        showToast("Guest removed.");
+        setGuests((prev) => prev.filter((g) => g.id !== id));
+      } else {
+        const err = await res.json().catch(() => ({}));
+        alert(err.error || "Failed to remove guest");
+      }
+    } catch {
+      alert("Network error removing guest");
+    }
   }
 
   function inviteLink(token: string) {
