@@ -10,6 +10,7 @@ interface EnvelopeOpeningProps {
   salutation: string;
   coupleNames: string;
   initialLocale?: Locale;
+  onStartOpen?: () => void;
   onOpen: (locale: Locale) => void;
 }
 
@@ -52,6 +53,7 @@ export default function EnvelopeOpening({
   salutation,
   coupleNames,
   initialLocale = "en",
+  onStartOpen,
   onOpen,
 }: EnvelopeOpeningProps) {
   const [selectedLocale, setSelectedLocale] = useState<Locale>(initialLocale);
@@ -110,6 +112,15 @@ export default function EnvelopeOpening({
   const handleOpenEnvelope = () => {
     if (isOpening || isOpen) return;
     setIsOpening(true);
+
+    // Immediately trigger synchronous playback hook within user touch/click gesture
+    if (onStartOpen) {
+      try {
+        onStartOpen();
+      } catch (err) {
+        console.warn("onStartOpen error:", err);
+      }
+    }
 
     // Play royal harp arpeggio
     playRoyalHarpChime();

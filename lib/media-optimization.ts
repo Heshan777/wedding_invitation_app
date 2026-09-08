@@ -139,8 +139,11 @@ export function getVideoPosterUrl(
     return applyCloudinaryTransformations(videoUrl, transforms, "jpg");
   }
 
-  // If not a Cloudinary video, return provided fallback poster or optimized image URL
-  return fallbackPosterUrl ? getOptimizedImageUrl(fallbackPosterUrl, { width: 960 }) : "";
+  if (fallbackPosterUrl && fallbackPosterUrl.startsWith("/uploads/")) {
+    return "/images/coupleshare.png";
+  }
+
+  return fallbackPosterUrl ? getOptimizedImageUrl(fallbackPosterUrl, { width: 960 }) : "/images/coupleshare.png";
 }
 
 /**
@@ -151,7 +154,8 @@ export function getOptimizedImageUrl(
   url?: string | null,
   options: ImageOptimizationOptions = {}
 ): string {
-  if (!url) return "";
+  if (!url) return "/images/coupleshare.png";
+  if (url.startsWith("/uploads/")) return "/images/coupleshare.png";
   if (!isCloudinaryUrl(url)) return url;
 
   const {
@@ -184,7 +188,7 @@ export function getThumbnailUrl(
   url?: string | null,
   size: number = 200
 ): string {
-  if (!url) return "";
+  if (!url || url.startsWith("/uploads/")) return "/images/coupleshare.png";
   if (!isCloudinaryUrl(url)) return url;
 
   return getOptimizedImageUrl(url, {
@@ -204,7 +208,7 @@ export function getThumbnailUrl(
 export function getLightboxImageUrl(
   url?: string | null
 ): string {
-  if (!url) return "";
+  if (!url || url.startsWith("/uploads/")) return "/images/coupleshare.png";
   if (!isCloudinaryUrl(url)) return url;
 
   return getOptimizedImageUrl(url, {

@@ -35,8 +35,19 @@ import {
   Edit3,
   CheckCircle2,
 } from "lucide-react";
+import dynamic from "next/dynamic";
 import CountdownTimer from "./CountdownTimer";
-import VenueMap from "./VenueMap";
+const VenueMap = dynamic(() => import("./VenueMap"), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-64 rounded-2xl bg-[#1f1519] flex items-center justify-center border border-[#c5a059]/40 text-[#dfba73] text-xs font-cinzel">
+      <div className="flex items-center gap-2">
+        <MapPin className="w-4 h-4 text-[#ffd700] animate-bounce" />
+        <span>Loading Venue Map...</span>
+      </div>
+    </div>
+  ),
+});
 import FallingDecor from "./FallingDecor";
 import MusicPlayer from "./MusicPlayer";
 import EnvelopeOpening from "./EnvelopeOpening";
@@ -200,28 +211,43 @@ export default function InvitationView({
   const [hasLiked, setHasLiked] = useState(false);
 
 
+  const youtubeEmbedUrl = useMemo(
+    () => (settings.heroVideoUrl ? getYouTubeEmbedUrl(settings.heroVideoUrl) : null),
+    [settings.heroVideoUrl]
+  );
+  const vimeoEmbedUrl = useMemo(
+    () => (settings.heroVideoUrl ? getVimeoEmbedUrl(settings.heroVideoUrl) : null),
+    [settings.heroVideoUrl]
+  );
+
+  // High performance Range streaming endpoint & adaptive Cloudinary video delivery
+  const videoStreamUrl = useMemo(() => {
+    if (!settings.heroVideoUrl) return "";
+    // If it's a legacy non-existent demo video placeholder or unseeded local path, avoid 404
+    if (settings.heroVideoUrl.includes("preshoot-video-0903") || settings.heroVideoUrl.startsWith("/uploads/")) {
+      return "";
+    }
+    if (settings.heroVideoUrl.startsWith("/audio/")) {
+      return `/api/media/stream?src=${encodeURIComponent(settings.heroVideoUrl)}`;
+    }
+    // Automatically apply adaptive bitrate, codec selection, and 1080p resolution capping
+    return getOptimizedVideoUrl(settings.heroVideoUrl, { width: 1080 });
+  }, [settings.heroVideoUrl]);
+
+  const hasPlayableVideo = Boolean(
+    (videoStreamUrl && videoStreamUrl.length > 0) ||
+    youtubeEmbedUrl ||
+    vimeoEmbedUrl
+  );
+
   // Pre-Shoot Video state
-  const [mediaMode, setMediaMode] = useState<"video" | "photo">(settings.heroVideoUrl ? "video" : "photo");
+  const [mediaMode, setMediaMode] = useState<"video" | "photo">(hasPlayableVideo ? "video" : "photo");
   const [isVideoPlaying, setIsVideoPlaying] = useState(true);
   const [isVideoMuted, setIsVideoMuted] = useState(true);
   const [showCinemaModal, setShowCinemaModal] = useState(false);
   const heroVideoRef = useRef<HTMLVideoElement>(null);
   const modalVideoRef = useRef<HTMLVideoElement>(null);
   const heroVideoContainerRef = useRef<HTMLDivElement>(null);
-
-  // High performance Range streaming endpoint & adaptive Cloudinary video delivery
-  const videoStreamUrl = useMemo(() => {
-    if (!settings.heroVideoUrl) return "";
-    // If it's a legacy non-existent demo video placeholder, avoid 404
-    if (settings.heroVideoUrl.includes("preshoot-video-0903")) {
-      return "";
-    }
-    if (settings.heroVideoUrl.startsWith("/uploads/") || settings.heroVideoUrl.startsWith("/audio/")) {
-      return `/api/media/stream?src=${encodeURIComponent(settings.heroVideoUrl)}`;
-    }
-    // Automatically apply adaptive bitrate, codec selection, and 1080p resolution capping
-    return getOptimizedVideoUrl(settings.heroVideoUrl, { width: 1080 });
-  }, [settings.heroVideoUrl]);
 
   // Compute lightweight instant video poster frame (under 30KB)
   const videoPosterSrc = useMemo(() => {
@@ -311,9 +337,6 @@ export default function InvitationView({
   };
 
   const t = translations[locale] || translations.en;
-
-  const youtubeEmbedUrl = settings.heroVideoUrl ? getYouTubeEmbedUrl(settings.heroVideoUrl) : null;
-  const vimeoEmbedUrl = settings.heroVideoUrl ? getVimeoEmbedUrl(settings.heroVideoUrl) : null;
 
   function handleToggleVideoAudio(e?: React.MouseEvent) {
     e?.stopPropagation();
@@ -657,19 +680,34 @@ export default function InvitationView({
     );
   }, [guest.token]);
 
+  const handleStartOpenEnvelope = () => {
+    // 1. Directly trigger video play synchronously inside user touch/click gesture window
+    if (heroVideoRef.current) {
+      heroVideoRef.current.defaultMuted = true;
+      heroVideoRef.current.muted = true;
+      heroVideoRef.current.playsInline = true;
+      heroVideoRef.current.setAttribute("playsinline", "true");
+      heroVideoRef.current.setAttribute("webkit-playsinline", "true");
+      const p = heroVideoRef.current.play();
+      if (p !== undefined) {
+        p.catch(() => {});
+      }
+    }
+
+    // 2. Broadcast event to start music player
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new Event("start_wedding_music"));
+    }
+  };
+
   const handleOpenEnvelope = (selectedLocale: Locale) => {
     setLocale(selectedLocale);
     setEnvelopeOpened(true);
     setIsVideoPlaying(true);
     setIsVideoMuted(true);
 
-    // Direct synchronous play call within user touch/click gesture
-    if (heroVideoRef.current) {
-      heroVideoRef.current.defaultMuted = true;
-      heroVideoRef.current.muted = true;
-      heroVideoRef.current.playsInline = true;
-      heroVideoRef.current.play().catch(() => {});
-    }
+    // Re-verify and ensure playback is running as envelope finishes dissolving
+    playHeroVideoSafely();
 
     // Broadcast event to start music player
     if (typeof window !== "undefined") {
@@ -754,6 +792,7 @@ export default function InvitationView({
         salutation={guest.salutation}
         coupleNames={settings.coupleNames}
         initialLocale={locale}
+        onStartOpen={handleStartOpenEnvelope}
         onOpen={handleOpenEnvelope}
       />
 
@@ -878,7 +917,7 @@ export default function InvitationView({
           </ScrollReveal>
 
           {/* Interactive Pre-Shoot Film / Couple Photo Switcher Pills */}
-          {settings.heroVideoUrl && (
+          {hasPlayableVideo && (
             <div className="flex items-center justify-center gap-2 mb-4">
               <button
                 type="button"
@@ -917,7 +956,7 @@ export default function InvitationView({
           <ScrollReveal variant="scale-up" duration={850}>
             <div className="relative w-full my-6">
               <div className="relative rounded-3xl overflow-hidden border-2 border-[#c5a059]/60 shadow-2xl bg-[#1a1215] group">
-              {settings.heroVideoUrl && mediaMode === "video" ? (
+              {hasPlayableVideo && mediaMode === "video" ? (
                 /* PRE-SHOOT CINEMATIC VIDEO MODE */
                 <div className="relative w-full overflow-hidden bg-black">
                   {youtubeEmbedUrl ? (
@@ -951,7 +990,11 @@ export default function InvitationView({
                         loop
                         muted={isVideoMuted}
                         playsInline
-                        preload={envelopeOpened ? "auto" : "none"}
+                        preload="metadata"
+                        onError={() => {
+                          console.warn("Video playback error; switching to photo mode.");
+                          setMediaMode("photo");
+                        }}
                         onLoadedData={() => {
                           if (heroVideoRef.current && isVideoPlaying) {
                             playHeroVideoSafely();

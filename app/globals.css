@@ -26,19 +26,19 @@
 
 /* Typography Helpers */
 .font-cinzel {
-  font-family: 'Cinzel', serif, Georgia, 'Times New Roman';
+  font-family: var(--font-cinzel), 'Cinzel', serif, Georgia, 'Times New Roman';
 }
 
 .font-playfair {
-  font-family: 'Playfair Display', serif, Georgia;
+  font-family: var(--font-playfair), 'Playfair Display', serif, Georgia;
 }
 
 .font-alex {
-  font-family: 'Alex Brush', cursive, serif;
+  font-family: var(--font-alex), 'Alex Brush', cursive, serif;
 }
 
 .font-sans {
-  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: var(--font-sans), 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 
