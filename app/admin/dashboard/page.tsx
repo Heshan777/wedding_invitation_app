@@ -344,6 +344,7 @@ export default function AdminDashboard() {
   const [selectedManagerFilter, setSelectedManagerFilter] = useState<"ALL" | "SUPER_ADMIN" | "MANAGER">("ALL");
   const [managerSortBy, setManagerSortBy] = useState<"newest" | "name" | "weddings">("newest");
   const [copiedUsername, setCopiedUsername] = useState<string | null>(null);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
 
   // Super Admin: Edit Manager Modal state
   const [showEditManagerModal, setShowEditManagerModal] = useState(false);
@@ -1451,74 +1452,230 @@ export default function AdminDashboard() {
         {/* Top Executive Header */}
         <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-5 pb-6 border-b border-[#c5a059]/30 mb-6 sm:mb-8">
           {/* Left Column: Manager Profile & Active Event Info */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-            {/* Event Manager Profile Avatar & Badge */}
-            <div className="flex items-center gap-3 p-2.5 sm:p-3 rounded-2xl bg-[#1c161a] border border-[#c5a059]/40 shadow-md w-full sm:w-auto">
-              <div className="relative shrink-0">
-                <div
-                  className={`w-11 h-11 sm:w-12 sm:h-12 rounded-full flex items-center justify-center font-cinzel font-bold text-base sm:text-lg shadow-md border ${
-                    manager?.role === "SUPER_ADMIN"
-                      ? "bg-gradient-to-br from-[#800020] via-[#5c0e1e] to-[#25040b] text-[#ffd700] border-[#dfba73]"
-                      : "bg-gradient-to-br from-emerald-950 via-[#18261e] to-[#121013] text-emerald-300 border-emerald-500/50"
-                  }`}
-                >
-                  {manager?.role === "SUPER_ADMIN" ? (
-                    <Crown className="w-5 h-5 text-[#ffd700]" />
-                  ) : (
-                    (manager?.company?.[0] || manager?.name?.[0] || manager?.username?.[0] || "M").toUpperCase()
-                  )}
-                </div>
-                {/* Active Session Online Pulse Dot */}
-                <span
-                  className="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-[#1c161a] shadow-sm flex items-center justify-center"
-                  title="Active Session"
-                >
-                  <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-                </span>
-              </div>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 flex-1 min-w-0">
+            {/* Event Manager Profile Avatar & Interactive Identity Hub */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setShowProfileMenu((prev) => !prev)}
+                className="group flex items-center gap-3.5 p-2.5 sm:p-3 rounded-2xl bg-gradient-to-br from-[#1c1519] via-[#231821] to-[#181116] border border-[#c5a059]/35 hover:border-[#dfba73]/70 shadow-lg hover:shadow-[0_0_20px_rgba(197,160,89,0.2)] transition-all duration-300 w-full sm:w-auto text-left cursor-pointer"
+                aria-expanded={showProfileMenu}
+                title="Click to view Account Profile details"
+              >
+                {/* Profile Icon / Medallion */}
+                <div className="relative shrink-0">
+                  {/* Outer gilded glow ring */}
+                  <div
+                    className={`w-12 h-12 sm:w-13 sm:h-13 rounded-2xl p-0.5 shadow-md flex items-center justify-center ${
+                      manager?.role === "SUPER_ADMIN"
+                        ? "bg-gradient-to-tr from-[#c5a059] via-[#edd892] to-[#8c6a2b] shadow-[#c5a059]/20"
+                        : "bg-gradient-to-tr from-emerald-600 via-[#85e3b3] to-emerald-800 shadow-emerald-500/20"
+                    }`}
+                  >
+                    <div
+                      className={`w-full h-full rounded-[14px] flex items-center justify-center font-cinzel font-bold text-base transition-transform group-hover:scale-105 duration-200 ${
+                        manager?.role === "SUPER_ADMIN"
+                          ? "bg-gradient-to-b from-[#3a0614] via-[#22070f] to-[#140409] text-[#dfba73]"
+                          : "bg-gradient-to-b from-[#062d1d] via-[#091b13] to-[#06100c] text-emerald-300"
+                      }`}
+                    >
+                      {manager?.role === "SUPER_ADMIN" ? (
+                        <div className="relative flex items-center justify-center">
+                          <Crown className="w-6 h-6 text-[#edd892] drop-shadow-[0_2px_6px_rgba(0,0,0,0.8)]" />
+                        </div>
+                      ) : (
+                        <span className="tracking-tighter">
+                          {(
+                            manager?.name
+                              ?.trim()
+                              .split(/\s+/)
+                              .map((w) => w[0])
+                              .slice(0, 2)
+                              .join("") ||
+                            manager?.username?.slice(0, 2) ||
+                            "EM"
+                          ).toUpperCase()}
+                        </span>
+                      )}
+                    </div>
+                  </div>
 
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-1.5">
-                  {manager?.role === "SUPER_ADMIN" ? (
-                    <span className="px-2 py-0.5 rounded-full bg-[#800020]/50 text-[#ffd700] text-[10px] font-cinzel font-bold tracking-wider border border-[#dfba73]/40 flex items-center gap-1">
-                      <Crown className="w-3 h-3 text-[#ffd700]" /> Super Admin
+                  {/* Precision Online Status Pip */}
+                  <span className="absolute -bottom-1 -right-1 flex h-4 w-4">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-60" />
+                    <span className="relative inline-flex rounded-full h-4 w-4 bg-emerald-500 border-2 border-[#1c1519] items-center justify-center shadow-sm">
+                      <span className="w-1.5 h-1.5 rounded-full bg-white" />
                     </span>
-                  ) : (
-                    <span className="px-2 py-0.5 rounded-full bg-emerald-950/60 text-emerald-300 text-[10px] font-cinzel font-bold tracking-wider border border-emerald-500/40 flex items-center gap-1">
-                      <Briefcase className="w-3 h-3 text-emerald-400" /> Event Planner
-                    </span>
-                  )}
-                  <span className="text-[10px] font-mono text-[#edd892]/70 truncate">
-                    @{manager?.username || "admin"}
                   </span>
                 </div>
-                <div className="font-cinzel font-bold text-sm sm:text-base text-[#fdfbf7] truncate mt-0.5">
-                  {manager?.company || manager?.name || (manager?.role === "SUPER_ADMIN" ? "Platform Owner" : "Event Manager")}
+
+                {/* Identity Text & Details */}
+                <div className="min-w-0 flex-1 pr-1">
+                  {/* Row 1: Role pill + Username */}
+                  <div className="flex items-center gap-1.5 mb-1">
+                    {manager?.role === "SUPER_ADMIN" ? (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gradient-to-r from-[#800020]/80 to-[#420614]/90 text-[#edd892] text-[10px] font-cinzel font-bold border border-[#dfba73]/40 shadow-sm">
+                        <Crown className="w-2.5 h-2.5 text-[#dfba73]" /> Super Admin
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-950/80 text-emerald-300 text-[10px] font-sans font-medium border border-emerald-500/40">
+                        <ShieldCheck className="w-2.5 h-2.5 text-emerald-400" /> Event Planner
+                      </span>
+                    )}
+                    <span className="text-[11px] font-mono text-[#edd892]/70 group-hover:text-[#edd892] transition-colors">
+                      @{manager?.username || "admin"}
+                    </span>
+                  </div>
+
+                  {/* Row 2: User Name */}
+                  <div className="font-cinzel font-bold text-sm sm:text-base text-[#fdfbf7] group-hover:text-[#edd892] transition-colors leading-tight truncate">
+                    {manager?.name || (manager?.role === "SUPER_ADMIN" ? "Lead Wedding Planner" : "Event Manager")}
+                  </div>
+
+                  {/* Row 3: Studio / Agency */}
+                  <div className="text-[11px] text-[#edd892]/75 flex items-center gap-1.5 mt-0.5 truncate font-sans">
+                    <Building2 className="w-3 h-3 text-[#dfba73]/70 shrink-0" />
+                    <span className="truncate">{manager?.company || "Royal Digital Wedding Suite"}</span>
+                    <ChevronDown className="w-3 h-3 text-[#dfba73]/50 group-hover:text-[#dfba73] group-hover:translate-y-0.5 transition-all ml-1 shrink-0" />
+                  </div>
                 </div>
-              </div>
+              </button>
+
+              {/* Executive Account Details Dropdown Popover */}
+              {showProfileMenu && (
+                <>
+                  {/* Backdrop to close */}
+                  <div
+                    className="fixed inset-0 z-40"
+                    onClick={() => setShowProfileMenu(false)}
+                  />
+
+                  <div className="absolute left-0 top-full mt-2 w-72 sm:w-80 rounded-2xl bg-[#1b1419] border border-[#dfba73]/50 shadow-2xl z-50 p-4 space-y-3.5 backdrop-blur-xl animate-in fade-in zoom-in-95 duration-150">
+                    {/* Account Header */}
+                    <div className="flex items-center gap-3 pb-3 border-b border-[#c5a059]/20">
+                      <div
+                        className={`w-11 h-11 rounded-xl flex items-center justify-center font-cinzel font-bold text-sm border ${
+                          manager?.role === "SUPER_ADMIN"
+                            ? "bg-gradient-to-br from-[#800020] to-[#25040b] text-[#edd892] border-[#dfba73]/50"
+                            : "bg-gradient-to-br from-emerald-950 to-[#121013] text-emerald-300 border-emerald-500/50"
+                        }`}
+                      >
+                        {manager?.role === "SUPER_ADMIN" ? (
+                          <Crown className="w-5 h-5 text-[#dfba73]" />
+                        ) : (
+                          (manager?.name?.[0] || "M").toUpperCase()
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="font-cinzel font-bold text-sm text-white truncate">
+                          {manager?.name || "Lead Wedding Planner"}
+                        </div>
+                        <div className="text-xs font-mono text-[#edd892]/70">@{manager?.username}</div>
+                        <div className="text-[10px] text-emerald-400 flex items-center gap-1 mt-0.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                          <span>Active Authenticated Session</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Account Details */}
+                    <div className="space-y-1.5 text-xs text-[#fdfbf7]/80">
+                      <div className="flex items-center justify-between text-[11px] py-1 border-b border-white/5">
+                        <span className="text-white/40">Studio / Agency</span>
+                        <span className="text-[#edd892] font-semibold truncate max-w-[170px] text-right">
+                          {manager?.company || "Royal Digital Wedding Suite"}
+                        </span>
+                      </div>
+                      {manager?.email && (
+                        <div className="flex items-center justify-between text-[11px] py-1 border-b border-white/5">
+                          <span className="text-white/40">Email</span>
+                          <span className="text-white/80 font-mono truncate max-w-[170px] text-right">
+                            {manager.email}
+                          </span>
+                        </div>
+                      )}
+                      {manager?.phone && (
+                        <div className="flex items-center justify-between text-[11px] py-1 border-b border-white/5">
+                          <span className="text-white/40">Contact</span>
+                          <span className="text-white/80 font-mono text-right">{manager.phone}</span>
+                        </div>
+                      )}
+                      <div className="flex items-center justify-between text-[11px] py-1">
+                        <span className="text-white/40">Access Level</span>
+                        <span className="text-[#dfba73] font-cinzel font-bold text-right">
+                          {manager?.role === "SUPER_ADMIN" ? "Super Admin Authority" : "Event Planner Portfolio"}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Quick Shortcuts */}
+                    <div className="pt-2 border-t border-[#c5a059]/20 space-y-1.5">
+                      {manager?.role === "SUPER_ADMIN" && (
+                        <button
+                          onClick={() => {
+                            setActiveTab("managers");
+                            setShowProfileMenu(false);
+                          }}
+                          className="w-full px-3 py-2 rounded-xl bg-[#241a21] hover:bg-[#800020]/40 text-[#dfba73] text-xs font-cinzel font-semibold flex items-center justify-between transition cursor-pointer"
+                        >
+                          <span className="flex items-center gap-2">
+                            <Users className="w-3.5 h-3.5" /> Planners Directory
+                          </span>
+                          <span className="text-[10px] font-mono text-[#edd892]">{managers.length}</span>
+                        </button>
+                      )}
+
+                      <button
+                        onClick={() => {
+                          setActiveTab("settings");
+                          setShowProfileMenu(false);
+                        }}
+                        className="w-full px-3 py-2 rounded-xl bg-[#241a21] hover:bg-[#c5a059]/15 text-[#dfba73] text-xs font-cinzel font-semibold flex items-center gap-2 transition cursor-pointer"
+                      >
+                        <Settings className="w-3.5 h-3.5" /> Wedding Suite Settings
+                      </button>
+
+                      <button
+                        onClick={handleLogout}
+                        className="w-full px-3 py-2 rounded-xl bg-rose-950/30 hover:bg-rose-900/50 text-rose-300 text-xs font-cinzel font-semibold flex items-center gap-2 transition cursor-pointer border border-rose-900/40"
+                      >
+                        <LogOut className="w-3.5 h-3.5" /> Sign Out
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Wedding Title & Quick Details */}
-            <div className="space-y-1">
-              <h1 className="font-cinzel text-xl sm:text-2xl md:text-3xl font-bold text-[#fdfbf7] tracking-tight break-words">
+            <div className="space-y-1.5 flex-1 min-w-0">
+              <h1 className="font-cinzel text-xl sm:text-2xl md:text-3xl font-bold gold-foil-text tracking-tight break-words">
                 {currentEvent?.coupleNames || settings.coupleNames}
               </h1>
-              <div className="flex flex-wrap items-center gap-2 text-xs text-[#dfba73]/80">
-                <span className="px-2 py-0.5 rounded-lg bg-[#231a20] border border-[#c5a059]/30 font-mono text-[11px] text-[#edd892]">
-                  Slug: /e/{currentEvent?.slug || "wedding"}
+              <div className="flex flex-wrap items-center gap-2 text-xs">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#22171f] border border-[#c5a059]/30 font-mono text-[11px] text-[#edd892] shadow-sm">
+                  <Link2 className="w-3 h-3 text-[#dfba73]" />
+                  <span>/e/{currentEvent?.slug || "wedding"}</span>
                 </span>
+
                 {currentEvent?.manager && manager?.role === "SUPER_ADMIN" && (
-                  <span className="px-2 py-0.5 rounded-lg bg-[#800020]/20 border border-[#dfba73]/30 text-[11px] text-[#dfba73] font-sans">
-                    Planner: {currentEvent.manager.name} ({currentEvent.manager.company || currentEvent.manager.username})
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#800020]/25 border border-[#dfba73]/35 text-[11px] text-[#dfba73] font-sans shadow-sm">
+                    <User className="w-3 h-3 text-[#edd892]" />
+                    <span>
+                      Planner: <strong>{currentEvent.manager.name}</strong> (
+                      {currentEvent.manager.company || currentEvent.manager.username})
+                    </span>
                   </span>
                 )}
+
                 <a
                   href={`/e/${currentEvent?.slug || "wedding"}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="hover:text-white inline-flex items-center gap-1 text-[11px] underline bg-[#231a20]/60 px-2.5 py-1 rounded-lg border border-[#c5a059]/20 transition touch-manipulation min-h-[28px]"
+                  className="btn-gold-shimmer px-3 py-1 rounded-lg text-[11px] font-cinzel font-bold inline-flex items-center gap-1.5 shadow-sm transition touch-manipulation cursor-pointer"
+                  title="Open guest invitation preview in new tab"
                 >
-                  <ExternalLink className="w-3 h-3 text-[#dfba73]" /> Preview Wedding
+                  <ExternalLink className="w-3 h-3" /> Preview Wedding
                 </a>
               </div>
             </div>
