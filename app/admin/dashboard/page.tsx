@@ -64,6 +64,12 @@ import {
   Briefcase,
   Music,
   User,
+  Mail,
+  Key,
+  AlertTriangle,
+  ArrowUpDown,
+  ChevronDown,
+  Pencil,
 } from "lucide-react";
 
 export type WeddingEventItem = {
@@ -335,7 +341,31 @@ export default function AdminDashboard() {
   });
   const [creatingManager, setCreatingManager] = useState(false);
   const [managerSearchQuery, setManagerSearchQuery] = useState("");
-  const [selectedManagerFilter, setSelectedManagerFilter] = useState<string>("ALL");
+  const [selectedManagerFilter, setSelectedManagerFilter] = useState<"ALL" | "SUPER_ADMIN" | "MANAGER">("ALL");
+  const [managerSortBy, setManagerSortBy] = useState<"newest" | "name" | "weddings">("newest");
+  const [copiedUsername, setCopiedUsername] = useState<string | null>(null);
+
+  // Super Admin: Edit Manager Modal state
+  const [showEditManagerModal, setShowEditManagerModal] = useState(false);
+  const [editingManager, setEditingManager] = useState<EventManagerListItem | null>(null);
+  const [editManagerForm, setEditManagerForm] = useState({
+    name: "",
+    company: "",
+    email: "",
+    phone: "",
+    role: "MANAGER",
+    newPassword: "",
+  });
+  const [updatingManager, setUpdatingManager] = useState(false);
+
+  // Super Admin: Delete Confirmation Modal state
+  const [managerToDelete, setManagerToDelete] = useState<{
+    id: string;
+    username: string;
+    name: string;
+    weddingCount: number;
+  } | null>(null);
+  const [deletingManager, setDeletingManager] = useState(false);
 
   // Create Wedding Modal
   const [showCreateEventModal, setShowCreateEventModal] = useState(false);
@@ -980,21 +1010,74 @@ export default function AdminDashboard() {
     }
   }
 
-  async function handleDeleteManager(managerId: string, username: string) {
-    if (
-      !confirm(
-        `Are you sure you want to delete Event Manager "@${username}"? All associated weddings and invitations will be permanently removed.`
-      )
-    ) {
-      return;
-    }
+  function handleOpenEditManager(mgr: EventManagerListItem) {
+    setEditingManager(mgr);
+    setEditManagerForm({
+      name: mgr.name,
+      company: mgr.company || "",
+      email: mgr.email || "",
+      phone: mgr.phone || "",
+      role: mgr.role || "MANAGER",
+      newPassword: "",
+    });
+    setShowEditManagerModal(true);
+  }
+
+  async function handleUpdateManager(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editingManager) return;
+    setUpdatingManager(true);
     try {
-      const res = await fetch(`/api/admin/managers?id=${managerId}`, {
+      const res = await fetch("/api/admin/managers", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: editingManager.id,
+          name: editManagerForm.name,
+          company: editManagerForm.company,
+          email: editManagerForm.email,
+          phone: editManagerForm.phone,
+          role: editManagerForm.role,
+          newPassword: editManagerForm.newPassword || undefined,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showToast(`Event Manager "@${editingManager.username}" updated successfully!`);
+        setShowEditManagerModal(false);
+        setEditingManager(null);
+        loadManagers();
+        loadData();
+      } else {
+        alert(data.error || "Failed to update Event Manager");
+      }
+    } catch {
+      alert("Network error updating Event Manager");
+    } finally {
+      setUpdatingManager(false);
+    }
+  }
+
+  function handleOpenDeleteModal(mgr: EventManagerListItem) {
+    setManagerToDelete({
+      id: mgr.id,
+      username: mgr.username,
+      name: mgr.name,
+      weddingCount: mgr._count?.events || mgr.events?.length || 0,
+    });
+  }
+
+  async function handleConfirmDeleteManager() {
+    if (!managerToDelete) return;
+    setDeletingManager(true);
+    try {
+      const res = await fetch(`/api/admin/managers?id=${managerToDelete.id}`, {
         method: "DELETE",
       });
       const data = await res.json();
       if (res.ok) {
-        showToast(`Event Manager "@${username}" removed.`);
+        showToast(`Event Manager "@${managerToDelete.username}" removed.`);
+        setManagerToDelete(null);
         loadManagers();
         loadData();
       } else {
@@ -1002,21 +1085,61 @@ export default function AdminDashboard() {
       }
     } catch {
       alert("Network error deleting Event Manager");
+    } finally {
+      setDeletingManager(false);
+    }
+  }
+
+  async function handleCopyUsername(username: string) {
+    try {
+      await navigator.clipboard.writeText(`@${username}`);
+      setCopiedUsername(username);
+      showToast(`Copied "@${username}" to clipboard!`);
+      setTimeout(() => setCopiedUsername(null), 2200);
+    } catch {
+      showToast(`Username: @${username}`);
     }
   }
 
   const filteredManagers = useMemo(() => {
-    if (!managerSearchQuery.trim()) return managers;
-    const q = managerSearchQuery.toLowerCase();
-    return managers.filter(
-      (m) =>
-        m.name.toLowerCase().includes(q) ||
-        m.username.toLowerCase().includes(q) ||
-        (m.company && m.company.toLowerCase().includes(q)) ||
-        (m.email && m.email.toLowerCase().includes(q)) ||
-        (m.phone && m.phone.includes(q))
-    );
-  }, [managers, managerSearchQuery]);
+    let list = [...managers];
+
+    // Role filter
+    if (selectedManagerFilter === "SUPER_ADMIN") {
+      list = list.filter((m) => m.role === "SUPER_ADMIN");
+    } else if (selectedManagerFilter === "MANAGER") {
+      list = list.filter((m) => m.role !== "SUPER_ADMIN");
+    }
+
+    // Search query filter
+    if (managerSearchQuery.trim()) {
+      const q = managerSearchQuery.toLowerCase().trim();
+      list = list.filter(
+        (m) =>
+          m.name.toLowerCase().includes(q) ||
+          m.username.toLowerCase().includes(q) ||
+          (m.company && m.company.toLowerCase().includes(q)) ||
+          (m.email && m.email.toLowerCase().includes(q)) ||
+          (m.phone && m.phone.includes(q))
+      );
+    }
+
+    // Sorting
+    list.sort((a, b) => {
+      if (managerSortBy === "name") {
+        return a.name.localeCompare(b.name);
+      }
+      if (managerSortBy === "weddings") {
+        const countA = a._count?.events || a.events?.length || 0;
+        const countB = b._count?.events || b.events?.length || 0;
+        return countB - countA;
+      }
+      // default: newest
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
+
+    return list;
+  }, [managers, managerSearchQuery, selectedManagerFilter, managerSortBy]);
 
   useEffect(() => {
     loadData();
@@ -4056,239 +4179,557 @@ export default function AdminDashboard() {
         {/* TAB: EVENT MANAGERS DIRECTORY (Super Admin Exclusive) */}
         {activeTab === "managers" && manager?.role === "SUPER_ADMIN" && (
           <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-[#1c161a] border border-[#dfba73]/50 shadow-2xl">
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="px-2.5 py-0.5 rounded-full bg-[#800020]/40 text-[#dfba73] text-[10px] font-cinzel font-bold border border-[#dfba73]/40 flex items-center gap-1">
-                    <ShieldCheck className="w-3 h-3 text-[#edd892]" /> Super Admin Access
-                  </span>
-                  <span className="text-xs text-[#edd892] font-mono">
-                    {managers.length} Registered Planners
-                  </span>
+            {/* Header Banner */}
+            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#1e151b] via-[#241a22] to-[#171115] border border-[#c5a059]/40 p-5 sm:p-7 shadow-2xl">
+              <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 rounded-full bg-[#dfba73]/5 blur-3xl pointer-events-none" />
+              <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-5">
+                <div>
+                  <div className="flex flex-wrap items-center gap-2 mb-2">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#800020]/30 text-[#dfba73] text-[11px] font-cinzel font-bold border border-[#dfba73]/40 shadow-sm">
+                      <ShieldCheck className="w-3.5 h-3.5 text-[#edd892]" /> Super Admin Console
+                    </span>
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-[#251820] text-[#edd892] font-mono text-[11px] border border-[#c5a059]/25">
+                      {managers.length} {managers.length === 1 ? "Planner Registered" : "Planners Registered"}
+                    </span>
+                  </div>
+                  <h2 className="font-cinzel text-xl sm:text-2xl lg:text-3xl font-bold text-[#dfba73]">
+                    Event Managers & Planners Directory
+                  </h2>
+                  <p className="text-xs sm:text-sm text-[#fdfbf7]/70 mt-1.5 max-w-2xl leading-relaxed">
+                    Centrally provision, supervise, and administer independent Event Manager accounts. Each planner operates within an isolated workspace with dedicated wedding portals, guest registries, and RSVP tracking.
+                  </p>
                 </div>
-                <h2 className="font-cinzel text-xl sm:text-2xl font-bold text-[#dfba73] mt-1">
-                  Event Managers & Planners Directory
-                </h2>
-                <p className="text-xs text-[#fdfbf7]/60 mt-1 max-w-2xl">
-                  Create and manage independent Event Manager accounts. Each planner logs in with their unique username and password to access their own isolated wedding dashboard and client portfolios.
-                </p>
-              </div>
 
-              <button
-                onClick={() => setShowCreateManagerModal(true)}
-                className="btn-gold-shimmer px-5 py-2.5 rounded-xl text-xs font-cinzel font-bold flex items-center justify-center gap-2 shadow-lg cursor-pointer w-full sm:w-auto min-h-[42px] touch-manipulation"
-              >
-                <UserPlus className="w-4 h-4" /> Add Event Manager
-              </button>
+                <button
+                  onClick={() => setShowCreateManagerModal(true)}
+                  className="btn-gold-shimmer px-5 py-3 rounded-xl text-xs font-cinzel font-bold flex items-center justify-center gap-2 shadow-lg cursor-pointer w-full md:w-auto min-h-[44px] touch-manipulation shrink-0"
+                >
+                  <UserPlus className="w-4 h-4" /> Add Event Manager
+                </button>
+              </div>
             </div>
 
             {/* Quick Metrics */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-              <div className="p-4 rounded-2xl bg-[#1c161a] border border-[#c5a059]/30">
-                <span className="text-[10px] uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold">Total Event Managers</span>
-                <div className="font-cinzel text-2xl font-bold text-[#fdfbf7] mt-1">{managers.length}</div>
-                <span className="text-[10px] text-[#fdfbf7]/50 mt-0.5 block font-sans">Active SaaS planners</span>
+              <div className="relative overflow-hidden p-4 sm:p-5 rounded-2xl bg-gradient-to-b from-[#1e151b] to-[#171115] border border-[#c5a059]/30 shadow-lg">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold">
+                    Total Event Managers
+                  </span>
+                  <div className="w-8 h-8 rounded-lg bg-[#dfba73]/10 border border-[#dfba73]/25 flex items-center justify-center text-[#dfba73]">
+                    <Users className="w-4 h-4" />
+                  </div>
+                </div>
+                <div className="font-cinzel text-3xl font-bold text-[#fdfbf7] mt-2">{managers.length}</div>
+                <div className="flex items-center gap-2 mt-1.5 text-[11px] text-[#edd892]/70 font-sans">
+                  <span>{managers.filter((m) => m.role === "SUPER_ADMIN").length} Super Admins</span>
+                  <span>•</span>
+                  <span>{managers.filter((m) => m.role !== "SUPER_ADMIN").length} Event Managers</span>
+                </div>
               </div>
-              <div className="p-4 rounded-2xl bg-[#1c161a] border border-[#c5a059]/30">
-                <span className="text-[10px] uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold">Total Client Weddings</span>
-                <div className="font-cinzel text-2xl font-bold text-[#fdfbf7] mt-1">{events.length}</div>
-                <span className="text-[10px] text-[#fdfbf7]/50 mt-0.5 block font-sans">Portfolios across all managers</span>
+
+              <div className="relative overflow-hidden p-4 sm:p-5 rounded-2xl bg-gradient-to-b from-[#1e151b] to-[#171115] border border-[#c5a059]/30 shadow-lg">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold">
+                    Client Wedding Suites
+                  </span>
+                  <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/25 flex items-center justify-center text-amber-400">
+                    <Heart className="w-4 h-4" />
+                  </div>
+                </div>
+                <div className="font-cinzel text-3xl font-bold text-[#edd892] mt-2">{events.length}</div>
+                <span className="text-[11px] text-[#fdfbf7]/50 mt-1.5 block font-sans">
+                  Portfolios managed across SaaS accounts
+                </span>
               </div>
-              <div className="p-4 rounded-2xl bg-[#1c161a] border border-[#c5a059]/30">
-                <span className="text-[10px] uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold">Platform Guests</span>
-                <div className="font-cinzel text-2xl font-bold text-emerald-400 mt-1">
+
+              <div className="relative overflow-hidden p-4 sm:p-5 rounded-2xl bg-gradient-to-b from-[#1e151b] to-[#171115] border border-[#c5a059]/30 shadow-lg">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold">
+                    Total Platform Guests
+                  </span>
+                  <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center text-emerald-400">
+                    <Sparkles className="w-4 h-4" />
+                  </div>
+                </div>
+                <div className="font-cinzel text-3xl font-bold text-emerald-400 mt-2">
                   {events.reduce((acc, ev) => acc + (ev._count?.guests || 0), 0)}
                 </div>
-                <span className="text-[10px] text-[#fdfbf7]/50 mt-0.5 block font-sans">Invitations provisioned</span>
+                <span className="text-[11px] text-[#fdfbf7]/50 mt-1.5 block font-sans">
+                  Invitations provisioned platform-wide
+                </span>
               </div>
             </div>
 
-            {/* Search Bar */}
-            <div className="flex items-center gap-3">
-              <div className="relative flex-1">
-                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#c5a059]/60" />
-                <input
-                  type="text"
-                  placeholder="Search managers by name, username, agency, or email..."
-                  value={managerSearchQuery}
-                  onChange={(e) => setManagerSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-[#1c161a] border border-[#c5a059]/40 text-xs text-[#fdfbf7] placeholder-[#fdfbf7]/40 focus:outline-none focus:border-[#dfba73] min-h-[42px]"
-                />
+            {/* Smart Search, Filter & Sort Control Bar */}
+            <div className="p-3 sm:p-4 rounded-2xl bg-[#1b1419] border border-[#c5a059]/30 shadow-xl space-y-3">
+              <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
+                {/* Search Box */}
+                <div className="relative flex-1">
+                  <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#c5a059]/70" />
+                  <input
+                    type="text"
+                    placeholder="Search by manager name, username, agency, email, or phone..."
+                    value={managerSearchQuery}
+                    onChange={(e) => setManagerSearchQuery(e.target.value)}
+                    className="w-full pl-10 pr-9 py-2.5 rounded-xl bg-[#22171f] border border-[#c5a059]/30 text-xs text-[#fdfbf7] placeholder-[#fdfbf7]/40 focus:outline-none focus:border-[#dfba73] focus:ring-1 focus:ring-[#dfba73]/30 min-h-[40px] transition"
+                  />
+                  {managerSearchQuery && (
+                    <button
+                      onClick={() => setManagerSearchQuery("")}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white cursor-pointer"
+                      title="Clear search"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+
+                {/* Filter & Sort Controls */}
+                <div className="flex flex-wrap items-center gap-2">
+                  {/* Role Tabs */}
+                  <div className="inline-flex rounded-xl bg-[#22171f] p-1 border border-[#c5a059]/25">
+                    <button
+                      onClick={() => setSelectedManagerFilter("ALL")}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-cinzel font-semibold transition cursor-pointer ${
+                        selectedManagerFilter === "ALL"
+                          ? "bg-[#800020] text-[#dfba73] shadow-md border border-[#dfba73]/40"
+                          : "text-[#fdfbf7]/60 hover:text-[#dfba73]"
+                      }`}
+                    >
+                      All ({managers.length})
+                    </button>
+                    <button
+                      onClick={() => setSelectedManagerFilter("MANAGER")}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-cinzel font-semibold transition cursor-pointer ${
+                        selectedManagerFilter === "MANAGER"
+                          ? "bg-[#800020] text-[#dfba73] shadow-md border border-[#dfba73]/40"
+                          : "text-[#fdfbf7]/60 hover:text-[#dfba73]"
+                      }`}
+                    >
+                      Managers ({managers.filter((m) => m.role !== "SUPER_ADMIN").length})
+                    </button>
+                    <button
+                      onClick={() => setSelectedManagerFilter("SUPER_ADMIN")}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-cinzel font-semibold transition cursor-pointer ${
+                        selectedManagerFilter === "SUPER_ADMIN"
+                          ? "bg-[#800020] text-[#dfba73] shadow-md border border-[#dfba73]/40"
+                          : "text-[#fdfbf7]/60 hover:text-[#dfba73]"
+                      }`}
+                    >
+                      Admins ({managers.filter((m) => m.role === "SUPER_ADMIN").length})
+                    </button>
+                  </div>
+
+                  {/* Sort Dropdown */}
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#22171f] border border-[#c5a059]/25 text-xs text-[#edd892]">
+                    <ArrowUpDown className="w-3.5 h-3.5 text-[#dfba73]" />
+                    <span className="text-white/40 hidden sm:inline">Sort:</span>
+                    <select
+                      value={managerSortBy}
+                      onChange={(e) => setManagerSortBy(e.target.value as any)}
+                      className="bg-transparent text-xs text-[#edd892] focus:outline-none cursor-pointer"
+                    >
+                      <option value="newest" className="bg-[#1c1519] text-[#fdfbf7]">Newest First</option>
+                      <option value="name" className="bg-[#1c1519] text-[#fdfbf7]">Name (A-Z)</option>
+                      <option value="weddings" className="bg-[#1c1519] text-[#fdfbf7]">Most Weddings</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Status Line */}
+              <div className="flex items-center justify-between text-[11px] text-[#fdfbf7]/50 px-1 pt-1">
+                <span>
+                  Showing <strong className="text-[#edd892]">{filteredManagers.length}</strong> of{" "}
+                  {managers.length} accounts
+                </span>
+                {(managerSearchQuery || selectedManagerFilter !== "ALL") && (
+                  <button
+                    onClick={() => {
+                      setManagerSearchQuery("");
+                      setSelectedManagerFilter("ALL");
+                    }}
+                    className="text-[#dfba73] hover:underline cursor-pointer"
+                  >
+                    Reset all filters
+                  </button>
+                )}
               </div>
             </div>
+
+            {/* Empty State */}
+            {filteredManagers.length === 0 && (
+              <div className="rounded-3xl bg-[#181216]/90 border border-dashed border-[#c5a059]/40 p-8 sm:p-12 text-center space-y-3">
+                <div className="w-12 h-12 rounded-full bg-[#dfba73]/10 border border-[#dfba73]/30 mx-auto flex items-center justify-center text-[#dfba73]">
+                  <Search className="w-6 h-6" />
+                </div>
+                <h3 className="font-cinzel text-base sm:text-lg font-bold text-[#dfba73]">
+                  No Event Planners Found
+                </h3>
+                <p className="text-xs text-[#fdfbf7]/60 max-w-sm mx-auto">
+                  No accounts matched your search criteria. Try modifying your keywords or resetting filters.
+                </p>
+                <button
+                  onClick={() => {
+                    setManagerSearchQuery("");
+                    setSelectedManagerFilter("ALL");
+                  }}
+                  className="px-4 py-2 rounded-xl bg-[#2a1c24] text-[#dfba73] border border-[#c5a059]/40 text-xs font-cinzel hover:bg-[#800020] transition cursor-pointer"
+                >
+                  Reset Filters
+                </button>
+              </div>
+            )}
 
             {/* MOBILE VIEW (< md): Responsive Manager Cards */}
-            <div className="block md:hidden space-y-3">
-              {filteredManagers.map((mgr) => {
-                const isSelf = mgr.id === manager.id;
-                const weddingCount = mgr._count?.events || mgr.events?.length || 0;
-                return (
-                  <div
-                    key={`mobile-mgr-${mgr.id}`}
-                    className="rounded-2xl bg-[#1c141a] border border-[#c5a059]/35 p-4 shadow-lg space-y-3"
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <div className="font-cinzel font-bold text-[#fdfbf7] text-base flex items-center gap-1.5">
-                          {mgr.name}
-                          {isSelf && (
-                            <span className="px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 text-[9px] font-mono border border-amber-500/40">
-                              You
+            {filteredManagers.length > 0 && (
+              <div className="block md:hidden space-y-3.5">
+                {filteredManagers.map((mgr) => {
+                  const isSelf = mgr.id === manager.id;
+                  const weddingCount = mgr._count?.events || mgr.events?.length || 0;
+                  const initials = mgr.name
+                    ? mgr.name
+                        .trim()
+                        .split(/\s+/)
+                        .map((w) => w[0])
+                        .slice(0, 2)
+                        .join("")
+                        .toUpperCase()
+                    : "EM";
+
+                  return (
+                    <div
+                      key={`mobile-mgr-${mgr.id}`}
+                      className="rounded-2xl bg-gradient-to-b from-[#1e151b] to-[#161014] border border-[#c5a059]/35 p-4 shadow-xl space-y-3.5 relative overflow-hidden"
+                    >
+                      {/* Top Row: Avatar, Name, Role */}
+                      <div className="flex items-start gap-3">
+                        <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#420614] via-[#241a22] to-[#171115] border border-[#dfba73]/50 flex items-center justify-center font-cinzel font-bold text-[#dfba73] text-sm shadow-md shrink-0">
+                          {initials}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5">
+                            <h3 className="font-cinzel font-bold text-[#fdfbf7] text-sm truncate">
+                              {mgr.name}
+                            </h3>
+                            {isSelf && (
+                              <span className="px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[9px] font-mono border border-amber-500/40 shrink-0">
+                                You
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-[11px] text-[#edd892]/80 flex items-center gap-1 mt-0.5 truncate">
+                            <Building2 className="w-3 h-3 text-[#dfba73]/70 shrink-0" />
+                            <span className="truncate">{mgr.company || "Independent Studio"}</span>
+                          </div>
+                        </div>
+
+                        {/* Role Badge */}
+                        <div className="shrink-0">
+                          {mgr.role === "SUPER_ADMIN" ? (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#800020]/50 text-[#dfba73] text-[10px] font-cinzel font-bold border border-[#dfba73]/40 shadow-sm">
+                              <Crown className="w-2.5 h-2.5" /> Admin
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-950/60 text-emerald-300 text-[10px] font-sans font-medium border border-emerald-600/40">
+                              <ShieldCheck className="w-2.5 h-2.5 text-emerald-400" /> Planner
                             </span>
                           )}
                         </div>
-                        <div className="text-[11px] text-[#edd892]/80 flex items-center gap-1 mt-0.5">
-                          <Building2 className="w-3 h-3 text-[#dfba73]" />
-                          {mgr.company || "Independent Planner"}
-                        </div>
                       </div>
-                      <div>
-                        {mgr.role === "SUPER_ADMIN" ? (
-                          <span className="px-2 py-0.5 rounded-full bg-[#800020]/40 text-[#dfba73] text-[10px] font-cinzel font-bold border border-[#dfba73]/40 inline-flex items-center gap-1">
-                            <Crown className="w-2.5 h-2.5" /> Super Admin
+
+                      {/* Middle Details Grid */}
+                      <div className="rounded-xl bg-[#22171f]/80 border border-[#c5a059]/15 p-3 space-y-2 text-xs">
+                        {/* Username & Weddings count */}
+                        <div className="flex items-center justify-between gap-2">
+                          <button
+                            onClick={() => handleCopyUsername(mgr.username)}
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#1a1217] border border-[#c5a059]/30 text-[#edd892] font-mono text-xs hover:border-[#dfba73] transition cursor-pointer"
+                            title="Click to copy username"
+                          >
+                            <span>@{mgr.username}</span>
+                            {copiedUsername === mgr.username ? (
+                              <Check className="w-3 h-3 text-emerald-400" />
+                            ) : (
+                              <Copy className="w-3 h-3 text-[#dfba73]/60" />
+                            )}
+                          </button>
+
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#1a1217] border border-[#c5a059]/25 text-[#edd892] font-mono text-[11px]">
+                            <Heart className="w-3 h-3 text-[#dfba73]" />
+                            {weddingCount} {weddingCount === 1 ? "Wedding" : "Weddings"}
                           </span>
+                        </div>
+
+                        {/* Contact details */}
+                        {(mgr.email || mgr.phone) ? (
+                          <div className="space-y-1 pt-1 border-t border-[#c5a059]/15 text-[11px]">
+                            {mgr.email && (
+                              <a
+                                href={`mailto:${mgr.email}`}
+                                className="flex items-center gap-1.5 text-[#fdfbf7]/80 hover:text-[#dfba73] truncate"
+                              >
+                                <Mail className="w-3 h-3 text-[#dfba73]/70 shrink-0" />
+                                <span className="truncate">{mgr.email}</span>
+                              </a>
+                            )}
+                            {mgr.phone && (
+                              <a
+                                href={`tel:${mgr.phone}`}
+                                className="flex items-center gap-1.5 text-[#fdfbf7]/70 font-mono hover:text-[#dfba73]"
+                              >
+                                <Phone className="w-3 h-3 text-[#dfba73]/70 shrink-0" />
+                                <span>{mgr.phone}</span>
+                              </a>
+                            )}
+                          </div>
                         ) : (
-                          <span className="px-2 py-0.5 rounded-full bg-emerald-950/50 text-emerald-300 text-[10px] font-cinzel font-semibold border border-emerald-600/40">
-                            Event Manager
-                          </span>
+                          <div className="pt-1 border-t border-[#c5a059]/15 text-[10px] text-white/40 italic">
+                            No contact details specified
+                          </div>
+                        )}
+
+                        {/* Starter wedding couple name if present */}
+                        {mgr.events && mgr.events.length > 0 && (
+                          <div className="text-[11px] text-[#edd892]/80 pt-1 border-t border-[#c5a059]/15 flex items-center gap-1.5 truncate">
+                            <Sparkles className="w-3 h-3 text-[#dfba73] shrink-0" />
+                            <span className="truncate">{mgr.events[0].coupleNames}</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Bottom Action Buttons */}
+                      <div className="pt-1 flex items-center gap-2">
+                        {mgr.events && mgr.events.length > 0 && (
+                          <button
+                            onClick={() => {
+                              handleSelectEvent(mgr.events![0].id);
+                              setActiveTab("guests");
+                            }}
+                            className="flex-1 py-2.5 rounded-xl bg-[#2a1c24] hover:bg-[#800020] text-[#dfba73] hover:text-white border border-[#c5a059]/40 text-xs font-cinzel font-bold transition cursor-pointer flex items-center justify-center gap-1.5 min-h-[40px] touch-manipulation"
+                          >
+                            <ExternalLink className="w-3.5 h-3.5" /> Manage Wedding
+                          </button>
+                        )}
+
+                        {/* Edit Button */}
+                        <button
+                          onClick={() => handleOpenEditManager(mgr)}
+                          className="px-3 py-2.5 rounded-xl bg-[#22171f] hover:bg-[#2e1f2a] text-[#dfba73] border border-[#c5a059]/35 text-xs font-cinzel transition cursor-pointer flex items-center justify-center gap-1 min-h-[40px] touch-manipulation"
+                          title="Edit Planner Details"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
+
+                        {/* Delete Button */}
+                        {!isSelf && mgr.username !== "admin" && (
+                          <button
+                            onClick={() => handleOpenDeleteModal(mgr)}
+                            className="w-10 h-10 rounded-xl bg-rose-950/40 hover:bg-rose-900/60 border border-rose-800/40 text-rose-300 flex items-center justify-center transition cursor-pointer touch-manipulation shrink-0"
+                            title="Delete Event Manager Account"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
                         )}
                       </div>
                     </div>
+                  );
+                })}
+              </div>
+            )}
 
-                    <div className="flex flex-wrap items-center gap-3 text-xs text-[#fdfbf7]/70 font-sans pt-1 border-t border-[#c5a059]/15">
-                      <span className="font-mono text-[#dfba73]">@{mgr.username}</span>
-                      {mgr.email && <span className="truncate max-w-[160px]">{mgr.email}</span>}
-                      {mgr.phone && <span className="font-mono">{mgr.phone}</span>}
-                      <span className="px-2 py-0.5 rounded bg-[#2a1c24] border border-[#c5a059]/30 text-[#edd892] font-mono text-[11px]">
-                        {weddingCount} {weddingCount === 1 ? "Wedding" : "Weddings"}
-                      </span>
-                    </div>
+            {/* DESKTOP VIEW (≥ md): Executive Management Table */}
+            {filteredManagers.length > 0 && (
+              <div className="hidden md:block rounded-3xl bg-[#181216]/95 border border-[#c5a059]/35 overflow-hidden shadow-2xl backdrop-blur-sm">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-[#241a21]/90 text-[#dfba73] font-cinzel text-[11px] uppercase tracking-wider font-semibold border-b border-[#c5a059]/30">
+                      <tr>
+                        <th className="py-4 px-5">Manager / Agency</th>
+                        <th className="py-4 px-4">Login Username</th>
+                        <th className="py-4 px-4">Contact Info</th>
+                        <th className="py-4 px-4 text-center">Role</th>
+                        <th className="py-4 px-4 text-center">Wedding Portfolio</th>
+                        <th className="py-4 px-4">Joined Date</th>
+                        <th className="py-4 px-5 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[#c5a059]/15">
+                      {filteredManagers.map((mgr) => {
+                        const isSelf = mgr.id === manager.id;
+                        const weddingCount = mgr._count?.events || mgr.events?.length || 0;
+                        const initials = mgr.name
+                          ? mgr.name
+                              .trim()
+                              .split(/\s+/)
+                              .map((w) => w[0])
+                              .slice(0, 2)
+                              .join("")
+                              .toUpperCase()
+                          : "EM";
 
-                    <div className="pt-2 border-t border-[#c5a059]/20 flex items-center gap-2">
-                      {mgr.events && mgr.events.length > 0 && (
-                        <button
-                          onClick={() => {
-                            handleSelectEvent(mgr.events![0].id);
-                            setActiveTab("guests");
-                          }}
-                          className="flex-1 py-2 rounded-xl bg-[#2a1c24] hover:bg-[#800020] text-[#dfba73] hover:text-white border border-[#c5a059]/40 text-xs font-cinzel font-bold transition cursor-pointer min-h-[40px] touch-manipulation"
-                        >
-                          View Wedding
-                        </button>
-                      )}
-                      {!isSelf && mgr.username !== "admin" && (
-                        <button
-                          onClick={() => handleDeleteManager(mgr.id, mgr.username)}
-                          className="w-10 h-10 rounded-xl bg-rose-950/40 hover:bg-rose-900/60 border border-rose-800/40 text-rose-300 flex items-center justify-center transition cursor-pointer touch-manipulation shrink-0"
-                          title="Delete Event Manager Account"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+                        return (
+                          <tr
+                            key={mgr.id}
+                            className="hover:bg-[#231a20]/60 transition-colors duration-150 group"
+                          >
+                            {/* Planner & Agency */}
+                            <td className="py-4 px-5">
+                              <div className="flex items-center gap-3.5">
+                                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#420614] via-[#241a22] to-[#171115] border border-[#dfba73]/50 flex items-center justify-center font-cinzel font-bold text-[#dfba73] text-sm shadow-md shrink-0">
+                                  {initials}
+                                </div>
+                                <div className="min-w-0">
+                                  <div className="font-cinzel font-bold text-[#fdfbf7] text-sm group-hover:text-[#edd892] transition-colors flex items-center gap-2">
+                                    <span className="truncate">{mgr.name}</span>
+                                    {isSelf && (
+                                      <span className="px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[9px] font-mono border border-amber-500/40 shrink-0">
+                                        You
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="text-[11px] text-[#edd892]/70 flex items-center gap-1.5 mt-0.5 truncate">
+                                    <Building2 className="w-3 h-3 text-[#dfba73]/70 shrink-0" />
+                                    <span className="truncate">{mgr.company || "Independent Studio"}</span>
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
 
-            {/* DESKTOP VIEW (≥ md): Table of Event Managers */}
-            <div className="hidden md:block rounded-3xl bg-[#181216] border border-[#c5a059]/40 overflow-hidden shadow-2xl">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
-                  <thead className="bg-[#241a21] text-[#dfba73] font-cinzel font-bold border-b border-[#c5a059]/30">
-                    <tr>
-                      <th className="py-3.5 px-4">Manager / Agency</th>
-                      <th className="py-3.5 px-4">Login Username</th>
-                      <th className="py-3.5 px-4">Contact Info</th>
-                      <th className="py-3.5 px-4 text-center">Role</th>
-                      <th className="py-3.5 px-4 text-center">Managed Weddings</th>
-                      <th className="py-3.5 px-4">Created Date</th>
-                      <th className="py-3.5 px-4 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-[#c5a059]/15">
-                    {filteredManagers.map((mgr) => {
-                      const isSelf = mgr.id === manager.id;
-                      const weddingCount = mgr._count?.events || mgr.events?.length || 0;
-                      return (
-                        <tr key={mgr.id} className="hover:bg-[#231a20]/60 transition">
-                          <td className="py-3.5 px-4">
-                            <div className="font-cinzel font-bold text-[#fdfbf7] text-sm flex items-center gap-1.5">
-                              {mgr.name}
-                              {isSelf && (
-                                <span className="px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 text-[9px] font-mono border border-amber-500/40">
-                                  You
+                            {/* Login Username */}
+                            <td className="py-4 px-4">
+                              <button
+                                onClick={() => handleCopyUsername(mgr.username)}
+                                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#22171f] border border-[#c5a059]/25 text-[#edd892] font-mono text-xs hover:border-[#dfba73] hover:bg-[#2a1c24] transition cursor-pointer group/copy"
+                                title="Click to copy username"
+                              >
+                                <span>@{mgr.username}</span>
+                                {copiedUsername === mgr.username ? (
+                                  <span className="inline-flex items-center gap-0.5 text-emerald-400 font-sans text-[10px] font-semibold">
+                                    <Check className="w-3 h-3" />
+                                  </span>
+                                ) : (
+                                  <Copy className="w-3 h-3 text-[#dfba73]/50 group-hover/copy:text-[#dfba73] transition-colors" />
+                                )}
+                              </button>
+                            </td>
+
+                            {/* Contact Info */}
+                            <td className="py-4 px-4 text-[11px] space-y-1">
+                              {mgr.email ? (
+                                <a
+                                  href={`mailto:${mgr.email}`}
+                                  className="flex items-center gap-1.5 text-[#fdfbf7]/80 hover:text-[#dfba73] transition truncate max-w-[190px]"
+                                  title={mgr.email}
+                                >
+                                  <Mail className="w-3 h-3 text-[#dfba73]/70 shrink-0" />
+                                  <span className="truncate">{mgr.email}</span>
+                                </a>
+                              ) : null}
+                              {mgr.phone ? (
+                                <a
+                                  href={`tel:${mgr.phone}`}
+                                  className="flex items-center gap-1.5 text-[#fdfbf7]/60 font-mono hover:text-[#dfba73] transition"
+                                  title={mgr.phone}
+                                >
+                                  <Phone className="w-3 h-3 text-[#dfba73]/70 shrink-0" />
+                                  <span>{mgr.phone}</span>
+                                </a>
+                              ) : null}
+                              {!mgr.email && !mgr.phone && (
+                                <span className="text-white/30 italic text-[11px]">— No contact details —</span>
+                              )}
+                            </td>
+
+                            {/* Role */}
+                            <td className="py-4 px-4 text-center">
+                              {mgr.role === "SUPER_ADMIN" ? (
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-[#800020]/50 to-[#420614]/70 text-[#edd892] text-[10px] font-cinzel font-bold border border-[#dfba73]/50 shadow-sm">
+                                  <Crown className="w-3 h-3 text-[#dfba73]" /> Super Admin
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-950/60 text-emerald-300 text-[10px] font-sans font-medium border border-emerald-600/40 shadow-sm">
+                                  <ShieldCheck className="w-3 h-3 text-emerald-400" /> Event Manager
                                 </span>
                               )}
-                            </div>
-                            <div className="text-[11px] text-[#edd892]/80 flex items-center gap-1 mt-0.5">
-                              <Building2 className="w-3 h-3 text-[#dfba73]" />
-                              {mgr.company || "Independent Planner"}
-                            </div>
-                          </td>
-                          <td className="py-3.5 px-4 font-mono text-xs text-[#dfba73]">
-                            @{mgr.username}
-                          </td>
-                          <td className="py-3.5 px-4 text-[11px] space-y-0.5">
-                            {mgr.email && (
-                              <div className="text-[#fdfbf7]/80 truncate max-w-[180px]">{mgr.email}</div>
-                            )}
-                            {mgr.phone && (
-                              <div className="text-[#fdfbf7]/50 font-mono">{mgr.phone}</div>
-                            )}
-                            {!mgr.email && !mgr.phone && <span className="text-white/40">—</span>}
-                          </td>
-                          <td className="py-3.5 px-4 text-center">
-                            {mgr.role === "SUPER_ADMIN" ? (
-                              <span className="px-2.5 py-1 rounded-full bg-[#800020]/40 text-[#dfba73] text-[10px] font-cinzel font-bold border border-[#dfba73]/40 inline-flex items-center gap-1">
-                                <Crown className="w-2.5 h-2.5" /> Super Admin
-                              </span>
-                            ) : (
-                              <span className="px-2.5 py-1 rounded-full bg-emerald-950/50 text-emerald-300 text-[10px] font-cinzel font-semibold border border-emerald-600/40">
-                                Event Manager
-                              </span>
-                            )}
-                          </td>
-                          <td className="py-3.5 px-4 text-center">
-                            <span className="px-2.5 py-1 rounded-lg bg-[#2a1c24] border border-[#c5a059]/30 text-[#edd892] font-mono font-bold text-xs">
-                              {weddingCount} {weddingCount === 1 ? "Wedding" : "Weddings"}
-                            </span>
-                          </td>
-                          <td className="py-3.5 px-4 font-mono text-[11px] text-[#fdfbf7]/50">
-                            {new Date(mgr.createdAt).toLocaleDateString()}
-                          </td>
-                          <td className="py-3.5 px-4 text-right">
-                            <div className="flex items-center justify-end gap-1.5">
-                              {mgr.events && mgr.events.length > 0 && (
+                            </td>
+
+                            {/* Managed Weddings */}
+                            <td className="py-4 px-4 text-center">
+                              <div className="inline-flex flex-col items-center">
+                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-[#251820] border border-[#c5a059]/30 text-[#edd892] font-mono font-semibold text-xs">
+                                  <Heart className="w-3 h-3 text-[#dfba73]" />
+                                  {weddingCount} {weddingCount === 1 ? "Wedding" : "Weddings"}
+                                </span>
+                                {mgr.events && mgr.events.length > 0 && (
+                                  <span className="text-[10px] text-[#dfba73]/70 font-sans truncate max-w-[140px] mt-1 flex items-center gap-1">
+                                    <Sparkles className="w-2.5 h-2.5 text-[#dfba73]" />
+                                    {mgr.events[0].coupleNames}
+                                  </span>
+                                )}
+                              </div>
+                            </td>
+
+                            {/* Created Date */}
+                            <td className="py-4 px-4 font-mono text-[11px] text-[#fdfbf7]/60">
+                              <div className="flex items-center gap-1.5">
+                                <Calendar className="w-3 h-3 text-[#dfba73]/60 shrink-0" />
+                                <span>
+                                  {new Date(mgr.createdAt).toLocaleDateString("en-US", {
+                                    month: "short",
+                                    day: "numeric",
+                                    year: "numeric",
+                                  })}
+                                </span>
+                              </div>
+                            </td>
+
+                            {/* Actions */}
+                            <td className="py-4 px-5 text-right">
+                              <div className="flex items-center justify-end gap-2">
+                                {mgr.events && mgr.events.length > 0 && (
+                                  <button
+                                    onClick={() => {
+                                      handleSelectEvent(mgr.events![0].id);
+                                      setActiveTab("guests");
+                                    }}
+                                    className="px-3 py-1.5 rounded-lg bg-[#2a1c24] hover:bg-[#800020] text-[#dfba73] hover:text-white border border-[#c5a059]/40 text-xs font-cinzel font-semibold transition cursor-pointer flex items-center gap-1.5"
+                                    title="Open Manager's Wedding Portal"
+                                  >
+                                    <ExternalLink className="w-3 h-3" /> View Wedding
+                                  </button>
+                                )}
+
+                                {/* Edit Button */}
                                 <button
-                                  onClick={() => {
-                                    handleSelectEvent(mgr.events![0].id);
-                                    setActiveTab("guests");
-                                  }}
-                                  className="px-2.5 py-1.5 rounded-lg bg-[#2a1c24] hover:bg-[#800020] text-[#dfba73] hover:text-white border border-[#c5a059]/40 text-xs font-cinzel transition cursor-pointer"
-                                  title="Open Manager's Wedding"
+                                  onClick={() => handleOpenEditManager(mgr)}
+                                  className="p-1.5 rounded-lg bg-[#22171f] hover:bg-[#2e1f2a] text-[#dfba73] border border-[#c5a059]/35 hover:border-[#dfba73] text-xs transition cursor-pointer"
+                                  title="Edit Planner Details & Credentials"
                                 >
-                                  View Wedding
+                                  <Pencil className="w-3.5 h-3.5" />
                                 </button>
-                              )}
-                              {!isSelf && mgr.username !== "admin" && (
-                                <button
-                                  onClick={() => handleDeleteManager(mgr.id, mgr.username)}
-                                  className="px-2.5 py-1.5 rounded-lg bg-rose-950/40 hover:bg-rose-900/60 border border-rose-800/40 text-rose-300 text-xs font-cinzel transition cursor-pointer"
-                                  title="Delete Event Manager Account"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </button>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+
+                                {/* Delete Button */}
+                                {!isSelf && mgr.username !== "admin" && (
+                                  <button
+                                    onClick={() => handleOpenDeleteModal(mgr)}
+                                    className="p-1.5 rounded-lg bg-rose-950/40 hover:bg-rose-900/70 border border-rose-800/40 hover:border-rose-600/60 text-rose-300 text-xs transition cursor-pointer"
+                                    title="Delete Event Manager Account"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
               </div>
-            </div>
+            )}
           </div>
         )}
 
@@ -5089,6 +5530,203 @@ export default function AdminDashboard() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* EDIT EVENT MANAGER MODAL (Super Admin) */}
+      {showEditManagerModal && editingManager && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-3 sm:p-4 overflow-y-auto overscroll-contain">
+          <div className="relative w-full max-w-lg max-h-[92dvh] overflow-y-auto overscroll-contain rounded-3xl bg-[#1c1519] border border-[#dfba73]/60 p-5 sm:p-8 shadow-2xl my-auto">
+            <button
+              onClick={() => {
+                setShowEditManagerModal(false);
+                setEditingManager(null);
+              }}
+              className="absolute top-4 right-4 sm:top-5 sm:right-5 text-[#fdfbf7]/60 hover:text-[#dfba73] cursor-pointer min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg hover:bg-[#c5a059]/10 transition-colors"
+              aria-label="Close modal"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#800020]/20 text-[#dfba73] text-xs font-cinzel font-semibold mb-2">
+              <Pencil className="w-3.5 h-3.5 text-[#edd892]" /> Account Administration
+            </div>
+            <h2 className="font-cinzel text-lg sm:text-xl font-bold text-[#dfba73] mb-1">
+              Edit Event Manager
+            </h2>
+            <p className="text-xs text-[#fdfbf7]/60 mb-5">
+              Update details for <span className="font-mono text-[#edd892]">@{editingManager.username}</span>. You can also reset their password if needed.
+            </p>
+
+            <form onSubmit={handleUpdateManager} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold mb-1">
+                    Username
+                  </label>
+                  <input
+                    disabled
+                    value={`@${editingManager.username}`}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#20161d] border border-[#c5a059]/20 text-xs font-mono text-[#edd892]/70 cursor-not-allowed opacity-75"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold mb-1">
+                    System Role *
+                  </label>
+                  <select
+                    value={editManagerForm.role}
+                    disabled={editingManager.username === "admin"}
+                    onChange={(e) => setEditManagerForm({ ...editManagerForm, role: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#261c22] border border-[#c5a059]/40 text-xs text-[#dfba73] focus:outline-none disabled:opacity-50 cursor-pointer"
+                  >
+                    <option value="MANAGER">Event Manager (Planner)</option>
+                    <option value="SUPER_ADMIN">Super Administrator</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold mb-1">
+                    Planner Full Name *
+                  </label>
+                  <input
+                    required
+                    value={editManagerForm.name}
+                    onChange={(e) => setEditManagerForm({ ...editManagerForm, name: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#261c22] border border-[#c5a059]/40 text-xs text-[#fdfbf7] focus:outline-none focus:border-[#dfba73]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold mb-1">
+                    Agency / Company Name
+                  </label>
+                  <input
+                    value={editManagerForm.company}
+                    onChange={(e) => setEditManagerForm({ ...editManagerForm, company: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#261c22] border border-[#c5a059]/40 text-xs text-[#fdfbf7] focus:outline-none focus:border-[#dfba73]"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold mb-1">
+                    Email Address
+                  </label>
+                  <input
+                    type="email"
+                    value={editManagerForm.email}
+                    onChange={(e) => setEditManagerForm({ ...editManagerForm, email: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#261c22] border border-[#c5a059]/40 text-xs text-[#fdfbf7] focus:outline-none focus:border-[#dfba73]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold mb-1">
+                    Contact Phone
+                  </label>
+                  <input
+                    value={editManagerForm.phone}
+                    onChange={(e) => setEditManagerForm({ ...editManagerForm, phone: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#261c22] border border-[#c5a059]/40 text-xs text-[#fdfbf7] focus:outline-none focus:border-[#dfba73]"
+                  />
+                </div>
+              </div>
+
+              {/* Password Reset Section */}
+              <div className="p-4 rounded-2xl bg-[#241a22] border border-[#c5a059]/30 space-y-2">
+                <div className="flex items-center gap-2 text-xs font-cinzel font-semibold text-[#dfba73]">
+                  <Key className="w-3.5 h-3.5 text-[#edd892]" />
+                  <span>Reset Planner Password (Optional)</span>
+                </div>
+                <p className="text-[11px] text-[#fdfbf7]/60">
+                  Leave this field blank to keep their current password unchanged. Enter a new password (min 5 characters) to immediately overwrite it.
+                </p>
+                <input
+                  type="password"
+                  placeholder="New password (leave blank to keep current)"
+                  value={editManagerForm.newPassword}
+                  onChange={(e) => setEditManagerForm({ ...editManagerForm, newPassword: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#191116] border border-[#c5a059]/35 text-xs text-[#fdfbf7] placeholder-[#fdfbf7]/30 focus:outline-none focus:border-[#dfba73]"
+                />
+              </div>
+
+              <div className="pt-3 flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowEditManagerModal(false);
+                    setEditingManager(null);
+                  }}
+                  className="flex-1 sm:flex-initial px-4 py-2.5 rounded-xl bg-[#261c22] text-[#fdfbf7]/70 text-xs font-cinzel font-semibold hover:bg-[#c5a059]/10 cursor-pointer min-h-[42px] touch-manipulation text-center"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={updatingManager}
+                  className="flex-1 sm:flex-initial btn-gold-shimmer px-6 py-2.5 rounded-xl text-xs font-cinzel font-bold shadow-lg disabled:opacity-50 cursor-pointer flex items-center justify-center gap-1.5 min-h-[42px] touch-manipulation"
+                >
+                  {updatingManager ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                  {updatingManager ? "Saving Changes..." : "Save Manager Changes"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* DELETE EVENT MANAGER CONFIRMATION MODAL (Super Admin) */}
+      {managerToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-3 sm:p-4 overflow-y-auto overscroll-contain">
+          <div className="relative w-full max-w-md rounded-3xl bg-gradient-to-b from-[#1f141b] to-[#161014] border border-rose-800/60 p-6 sm:p-8 shadow-2xl my-auto text-center space-y-4">
+            <div className="w-14 h-14 rounded-2xl bg-rose-950/60 border border-rose-700/50 flex items-center justify-center mx-auto text-rose-300 shadow-lg">
+              <AlertTriangle className="w-7 h-7 text-rose-400" />
+            </div>
+
+            <div>
+              <h2 className="font-cinzel text-xl font-bold text-[#fdfbf7]">
+                Delete Event Manager Account
+              </h2>
+              <p className="text-xs text-[#fdfbf7]/70 mt-1.5 leading-relaxed">
+                Are you sure you want to permanently delete account{" "}
+                <span className="font-mono text-[#edd892] font-semibold">@{managerToDelete.username}</span> ({managerToDelete.name})?
+              </p>
+            </div>
+
+            <div className="rounded-2xl bg-rose-950/30 border border-rose-800/40 p-3.5 text-left text-xs text-rose-200/90 space-y-1">
+              <div className="font-semibold text-rose-300 flex items-center gap-1.5">
+                <AlertTriangle className="w-3.5 h-3.5" /> Permanent Impact Notice:
+              </div>
+              <p className="text-[11px] text-rose-200/75 leading-relaxed">
+                This account manages <strong className="text-white">{managerToDelete.weddingCount} wedding portfolio(s)</strong>. Deleting this account will permanently cascade-erase all associated wedding portals, guest lists, seating tables, and RSVP logs.
+              </p>
+            </div>
+
+            <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-2.5">
+              <button
+                type="button"
+                onClick={() => setManagerToDelete(null)}
+                disabled={deletingManager}
+                className="flex-1 px-4 py-2.5 rounded-xl bg-[#261c22] text-[#fdfbf7]/70 text-xs font-cinzel font-semibold hover:bg-[#c5a059]/10 cursor-pointer min-h-[42px] touch-manipulation"
+              >
+                Keep Account
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDeleteManager}
+                disabled={deletingManager}
+                className="flex-1 px-5 py-2.5 rounded-xl bg-gradient-to-r from-rose-800 to-rose-900 hover:from-rose-700 hover:to-rose-800 text-white text-xs font-cinzel font-bold shadow-lg border border-rose-600/50 flex items-center justify-center gap-1.5 min-h-[42px] touch-manipulation cursor-pointer disabled:opacity-50"
+              >
+                {deletingManager ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                {deletingManager ? "Deleting Account..." : "Permanently Delete"}
+              </button>
+            </div>
           </div>
         </div>
       )}

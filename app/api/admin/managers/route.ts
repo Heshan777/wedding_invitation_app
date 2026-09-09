@@ -279,3 +279,129 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ error: "Failed to delete event manager" }, { status: 500 });
   }
 }
+
+// PATCH /api/admin/managers - Update an Event Manager or reset their password (Super Admin only)
+export async function PATCH(req: NextRequest) {
+  try {
+    const currentManager = await getAuthenticatedManager();
+    if (!currentManager) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    if (currentManager.role !== "SUPER_ADMIN") {
+      return NextResponse.json(
+        { error: "Forbidden: Super Admin access required" },
+        { status: 403 }
+      );
+    }
+
+    const body = await req.json();
+    const { id, name, company, email, phone, role, newPassword } = body;
+
+    if (!id) {
+      return NextResponse.json({ error: "Manager ID is required" }, { status: 400 });
+    }
+
+    const targetManager = await prisma.eventManager.findUnique({
+      where: { id },
+    });
+
+    if (!targetManager) {
+      return NextResponse.json({ error: "Event Manager not found" }, { status: 404 });
+    }
+
+    // Build update payload
+    const updateData: any = {};
+
+    if (name !== undefined) {
+      if (!name.trim()) {
+        return NextResponse.json({ error: "Name cannot be empty" }, { status: 400 });
+      }
+      updateData.name = name.trim();
+    }
+
+    if (company !== undefined) {
+      updateData.company = company ? company.trim() : null;
+    }
+
+    if (phone !== undefined) {
+      updateData.phone = phone ? phone.trim() : null;
+    }
+
+    if (email !== undefined) {
+      const cleanEmail = email ? email.trim().toLowerCase() : null;
+      if (cleanEmail && cleanEmail !== targetManager.email) {
+        const existingEmail = await prisma.eventManager.findUnique({
+          where: { email: cleanEmail },
+        });
+        if (existingEmail && existingEmail.id !== id) {
+          return NextResponse.json(
+            { error: `The email "${cleanEmail}" is already used by another account.` },
+            { status: 409 }
+          );
+        }
+      }
+      updateData.email = cleanEmail;
+    }
+
+    if (role !== undefined) {
+      // Default admin must remain SUPER_ADMIN
+      if (targetManager.username === "admin" && role !== "SUPER_ADMIN") {
+        return NextResponse.json(
+          { error: "The default platform admin account must remain Super Admin" },
+          { status: 400 }
+        );
+      }
+      updateData.role = role === "SUPER_ADMIN" ? "SUPER_ADMIN" : "MANAGER";
+    }
+
+    if (newPassword && newPassword.trim()) {
+      if (newPassword.trim().length < 5) {
+        return NextResponse.json(
+          { error: "New password must be at least 5 characters long" },
+          { status: 400 }
+        );
+      }
+      updateData.password = await bcrypt.hash(newPassword.trim(), 10);
+    }
+
+    const updated = await prisma.eventManager.update({
+      where: { id },
+      data: updateData,
+      select: {
+        id: true,
+        username: true,
+        name: true,
+        company: true,
+        email: true,
+        phone: true,
+        role: true,
+        createdAt: true,
+        _count: {
+          select: {
+            events: true,
+          },
+        },
+        events: {
+          select: {
+            id: true,
+            slug: true,
+            coupleNames: true,
+            eventDate: true,
+            venueName: true,
+          },
+        },
+      },
+    });
+
+    return NextResponse.json({
+      success: true,
+      manager: updated,
+      message: "Event Manager updated successfully",
+    });
+  } catch (err: any) {
+    console.error("Update manager error:", err);
+    return NextResponse.json({ error: "Failed to update event manager" }, { status: 500 });
+  }
+}
+
