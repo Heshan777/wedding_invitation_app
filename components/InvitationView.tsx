@@ -66,12 +66,10 @@ import {
 
 function FloralDivider({ className = "" }: { className?: string }) {
   return (
-    <div className={`flex items-center justify-center gap-2.5 my-6 pointer-events-none select-none ${className}`}>
-      <div className="h-px w-10 sm:w-16 bg-gradient-to-r from-transparent to-[#c5a059]" />
-      <span className="text-[#c5a059] text-[10px]">❦</span>
-      <span className="text-[#800020] text-xs animate-pulse">🌸</span>
-      <span className="text-[#c5a059] text-[10px]">❧</span>
-      <div className="h-px w-10 sm:w-16 bg-gradient-to-l from-transparent to-[#c5a059]" />
+    <div className={`flex items-center justify-center gap-3 my-8 sm:my-10 pointer-events-none select-none ${className}`}>
+      <div className="h-px w-12 sm:w-20 bg-gradient-to-r from-transparent via-[#bda06d]/30 to-transparent" />
+      <span className="text-[#bda06d]/50 text-[8px] tracking-widest">◇</span>
+      <div className="h-px w-12 sm:w-20 bg-gradient-to-l from-transparent via-[#bda06d]/30 to-transparent" />
     </div>
   );
 }
@@ -828,90 +826,33 @@ export default function InvitationView({
       <div className="relative z-10 max-w-xl mx-auto px-3 sm:px-6 py-6 sm:py-16">
         {/* Parchment Invitation Card Frame */}
         <div className="parchment-card rounded-2xl sm:rounded-3xl p-4 sm:p-10 text-[#1a1517] relative overflow-hidden">
-          {/* Ornate Gold Border Lining */}
-          <div className="absolute inset-1.5 sm:inset-3 rounded-xl sm:rounded-2xl border-2 border-[#c5a059]/40 pointer-events-none" />
-          <div className="absolute inset-2.5 sm:inset-4 rounded-xl sm:rounded-2xl border border-[#c5a059]/20 pointer-events-none" />
+          {/* Refined Inset Hairline Border */}
+          <div className="absolute inset-2 sm:inset-4 rounded-xl sm:rounded-2xl border border-[#bda06d]/25 pointer-events-none" />
 
-          {/* Top-to-Bottom Royal Floral Botanical Borders (Left & Right - Desktop / Tablet) */}
-          <div className="hidden sm:flex absolute top-10 bottom-10 left-2.5 w-4 pointer-events-none select-none flex-col justify-around items-center opacity-40 text-[#800020] text-xs z-10">
-            <span className="animate-pulse-slow">🌸</span>
-            <span className="text-[#c5a059] text-[10px]">🌿</span>
-            <span className="text-sm">🌹</span>
-            <span className="text-[#c5a059] text-[10px]">🌿</span>
-            <span className="text-xs">🌺</span>
-            <span className="text-[#c5a059] text-[10px]">🌿</span>
-            <span className="text-sm">🌸</span>
-            <span className="text-[#c5a059] text-[10px]">🌿</span>
-            <span className="text-sm">🌹</span>
-            <span className="text-[#c5a059] text-[10px]">🌿</span>
-            <span className="text-xs">🏵️</span>
-            <span className="text-[#c5a059] text-[10px]">🌿</span>
-            <span className="text-sm">🌸</span>
-            <span className="text-[#c5a059] text-[10px]">🌿</span>
-            <span className="text-sm">🌹</span>
-            <span className="text-[#c5a059] text-[10px]">🌿</span>
-            <span className="text-xs">🌸</span>
-          </div>
-
-          <div className="hidden sm:flex absolute top-10 bottom-10 right-2.5 w-4 pointer-events-none select-none flex-col justify-around items-center opacity-40 text-[#800020] text-xs z-10">
-            <span className="animate-pulse-slow">🌸</span>
-            <span className="text-[#c5a059] text-[10px]">🌿</span>
-            <span className="text-sm">🌹</span>
-            <span className="text-[#c5a059] text-[10px]">🌿</span>
-            <span className="text-xs">🌺</span>
-            <span className="text-[#c5a059] text-[10px]">🌿</span>
-            <span className="text-sm">🌸</span>
-            <span className="text-[#c5a059] text-[10px]">🌿</span>
-            <span className="text-sm">🌹</span>
-            <span className="text-[#c5a059] text-[10px]">🌿</span>
-            <span className="text-xs">🏵️</span>
-            <span className="text-[#c5a059] text-[10px]">🌿</span>
-            <span className="text-sm">🌸</span>
-            <span className="text-[#c5a059] text-[10px]">🌿</span>
-            <span className="text-sm">🌹</span>
-            <span className="text-[#c5a059] text-[10px]">🌿</span>
-            <span className="text-xs">🌸</span>
-          </div>
-
-          {/* Corner Vintage Filigree Accents */}
-          <div className="absolute top-3 left-3 sm:top-4 sm:left-4 text-[#c5a059] text-sm sm:text-base select-none">⚜</div>
-          <div className="absolute top-3 right-3 sm:top-4 sm:right-4 text-[#c5a059] text-sm sm:text-base select-none">⚜</div>
-          <div className="absolute bottom-3 left-3 sm:bottom-4 sm:left-4 text-[#c5a059] text-sm sm:text-base select-none">⚜</div>
-          <div className="absolute bottom-3 right-3 sm:bottom-4 sm:right-4 text-[#c5a059] text-sm sm:text-base select-none">⚜</div>
-
-          {/* Header Crown / Monogram with Scroll Reveal */}
+          {/* Header Monogram & Title with Scroll Reveal */}
           <ScrollReveal variant="fade-up" duration={750}>
-            {/* Header Floral Garland Flourish */}
-            <div className="flex items-center justify-center gap-2 mb-1.5 select-none pointer-events-none text-xs">
-              <span className="text-[#c5a059]">❀</span>
-              <span className="text-sm animate-pulse-slow">🌸</span>
-              <span className="text-[#800020] font-serif text-base">⚜</span>
-              <span className="text-sm animate-pulse-slow">🌸</span>
-              <span className="text-[#c5a059]">❀</span>
-            </div>
-
-            <div className="text-center pt-1 mb-4">
-              <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-[#800020]/10 border border-[#c5a059]/50 shadow-inner mb-3">
-                <span className="font-cinzel text-xl font-bold text-[#800020]">
+            <div className="text-center pt-2 sm:pt-4 mb-4">
+              <div className="inline-flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-[#661022]/8 border border-[#bda06d]/40 shadow-sm mb-3">
+                <span className="font-cinzel text-lg sm:text-xl font-bold text-[#661022] tracking-wider">
                   {monogram}
                 </span>
               </div>
-              <p className="text-[11px] sm:text-xs uppercase tracking-[0.35em] text-[#8c6a2b] font-cinzel font-semibold">
+              <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.35em] text-[#8c6a2b] font-cinzel font-semibold">
                 {t.royalHomecoming}
               </p>
-              <h1 className="font-serif italic text-4xl sm:text-5xl text-[#6b0f24] font-bold mt-1 tracking-tight">
+              <h1 className="font-serif italic text-3xl sm:text-5xl text-[#661022] font-normal mt-1.5 tracking-tight">
                 {t.invitationTitle}
               </h1>
             </div>
 
-            {/* Intro Ribbon */}
-            <div className="flex items-center justify-center gap-3 my-4">
-              <div className="h-px w-12 bg-gradient-to-r from-transparent to-[#c5a059]" />
-              <Sparkles className="w-4 h-4 text-[#c5a059]" />
-              <div className="h-px w-12 bg-gradient-to-l from-transparent to-[#c5a059]" />
+            {/* Subtle Typographic Divider */}
+            <div className="flex items-center justify-center gap-3 my-3">
+              <div className="h-px w-8 sm:w-14 bg-gradient-to-r from-transparent via-[#bda06d]/30 to-transparent" />
+              <span className="text-[#bda06d]/50 text-[7px]">◇</span>
+              <div className="h-px w-8 sm:w-14 bg-gradient-to-l from-transparent via-[#bda06d]/30 to-transparent" />
             </div>
 
-            <p className="text-center text-sm sm:text-base text-[#3d3238] font-sans leading-relaxed mb-4">
+            <p className="text-center text-xs sm:text-sm text-[#4a3b42] font-sans leading-relaxed max-w-md mx-auto mb-4">
               {t.familyIntro}
             </p>
           </ScrollReveal>
@@ -1098,9 +1039,6 @@ export default function InvitationView({
 
                   <div className="absolute inset-0 bg-gradient-to-t from-[#12080c] via-[#12080c]/30 to-transparent" />
 
-                  {/* Luxury Gold Frame Filigree Accents inside photo */}
-                  <div className="absolute top-3 left-3 text-[#edd892] text-sm select-none opacity-80">⚜</div>
-                  <div className="absolute top-3 right-3 text-[#edd892] text-sm select-none opacity-80">⚜</div>
 
                   {/* Lightbox Trigger Button */}
                   <button
@@ -1138,19 +1076,17 @@ export default function InvitationView({
 
           {/* Host Intro & Personalized Guest Salutation Card with Scroll Reveal */}
           <ScrollReveal variant="fade-up" duration={750}>
-            {/* Host Intro */}
-            <p className="text-center text-sm sm:text-base text-[#3d3238] font-sans leading-relaxed my-4 px-2">
-              {settings.hostIntro}
-            </p>
-
-            {/* Personalized Guest Salutation Card */}
-            <div className="relative my-6 rounded-2xl bg-gradient-to-r from-[#800020] via-[#6b0f24] to-[#420614] p-5 text-center text-[#fdfbf7] shadow-xl border border-[#dfba73]/40">
-              <div className="text-[10px] uppercase tracking-[0.25em] text-[#edd892] font-cinzel font-semibold mb-1">
+            <div className="text-center my-6 sm:my-8 px-4 py-6 sm:py-8 rounded-2xl bg-[#f8f4ee]/80 border border-[#bda06d]/25">
+              <p className="text-xs sm:text-sm text-[#5a483e] font-sans leading-relaxed max-w-md mx-auto mb-3">
+                {settings.hostIntro}
+              </p>
+              <div className="text-[10px] uppercase tracking-[0.3em] text-[#8c6a2b] font-cinzel font-semibold mb-1.5">
                 {t.honouredGuest}
               </div>
-              <div className="font-serif italic text-2xl sm:text-3xl font-bold tracking-wide">
+              <div className="font-serif italic text-2xl sm:text-4xl text-[#661022] font-normal tracking-wide">
                 {formatInviteLine(guest)}
               </div>
+              <div className="w-12 h-px bg-[#bda06d]/30 mx-auto mt-4" />
             </div>
           </ScrollReveal>
 
@@ -1159,61 +1095,54 @@ export default function InvitationView({
 
           {/* SWEET COUPLE WARM WELCOME VIGNETTE with Scroll Reveal */}
           <ScrollReveal variant="scale-up" duration={850}>
-            <div className="relative my-8 rounded-3xl overflow-hidden border-2 border-[#c5a059]/60 bg-gradient-to-b from-[#2a1721] via-[#1c0e16] to-[#12080e] text-[#fdfbf7] p-6 sm:p-8 shadow-2xl">
-              {/* Ornate Corner Stars */}
-              <div className="absolute top-3 left-3 text-[#edd892]/60 text-xs select-none">✦</div>
-              <div className="absolute top-3 right-3 text-[#edd892]/60 text-xs select-none">✦</div>
-              <div className="absolute bottom-3 left-3 text-[#edd892]/60 text-xs select-none">✦</div>
-              <div className="absolute bottom-3 right-3 text-[#edd892]/60 text-xs select-none">✦</div>
-
+            <div className="relative my-6 sm:my-8 rounded-2xl overflow-hidden border border-[#bda06d]/30 bg-[#1e171b] text-[#fdfbf7] p-5 sm:p-7 shadow-xl">
               <div className="flex flex-col sm:flex-row items-center gap-5 sm:gap-6">
                 {/* Sweet Couple Portrait Cameo */}
-                <div className="relative w-32 h-32 sm:w-40 sm:h-40 rounded-full overflow-hidden border-4 border-[#dfba73] shadow-[0_0_25px_rgba(223,186,115,0.4)] flex-shrink-0 group">
+                <div className="relative w-28 h-28 sm:w-36 sm:h-36 rounded-full overflow-hidden border-2 border-[#bda06d]/60 shadow-lg flex-shrink-0 group">
                   <Image
                     src={welcomeImageSrc}
                     alt={t.cantWaitToWelcome}
                     fill
-                    sizes="160px"
+                    sizes="144px"
                     loading="lazy"
-                    className="object-cover transition duration-700 group-hover:scale-110"
+                    className="object-cover transition duration-700 group-hover:scale-105"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
                 </div>
 
                 {/* Sweet Welcome Narrative */}
                 <div className="text-center sm:text-left flex-1">
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#800020]/80 text-[#edd892] text-[10px] sm:text-xs font-cinzel font-semibold mb-2 border border-[#dfba73]/40">
-                    <Heart className="w-3.5 h-3.5 fill-[#ffd700] text-[#ffd700]" /> {t.withAllOurLove}
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#661022]/60 text-[#dfba73] text-[10px] sm:text-xs font-cinzel font-medium mb-2 border border-[#bda06d]/30">
+                    <Heart className="w-3 h-3 fill-[#dfba73] text-[#dfba73]" /> {t.withAllOurLove}
                   </div>
-                  <h3 className="font-serif italic text-2xl sm:text-3xl text-[#fff8ea] font-bold">
+                  <h3 className="font-serif italic text-xl sm:text-2xl text-[#fdfbf7] font-normal">
                     {t.cantWaitToWelcome}
                   </h3>
-                  <p className="font-sans text-xs sm:text-sm text-[#edd892]/90 leading-relaxed mt-2">
+                  <p className="font-sans text-xs sm:text-sm text-[#edd892]/80 leading-relaxed mt-1.5">
                     {t.sweetWelcomeSub}
                   </p>
 
-                  {/* Sweet Interactive Reaction Buttons */}
-                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mt-4">
+                  {/* Clean Reaction Buttons */}
+                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mt-3.5">
                     <button
                       type="button"
                       onClick={() => triggerReaction("love")}
-                      className="px-3 py-1.5 rounded-full bg-white/10 hover:bg-[#800020] border border-[#c5a059]/40 text-[#edd892] text-xs font-sans font-semibold flex items-center gap-1.5 transition cursor-pointer active:scale-95"
+                      className="px-3.5 py-1.5 rounded-full bg-white/10 hover:bg-[#661022] border border-[#bda06d]/30 text-[#edd892] text-xs font-sans font-medium flex items-center gap-1.5 transition cursor-pointer active:scale-95"
                     >
-                      💖 {t.happyCouple}
+                      <Heart className="w-3 h-3 text-[#dfba73]" /> {t.happyCouple}
                     </button>
                     <button
                       type="button"
                       onClick={() => triggerReaction("cheers")}
-                      className="px-3 py-1.5 rounded-full bg-white/10 hover:bg-[#800020] border border-[#c5a059]/40 text-[#edd892] text-xs font-sans font-semibold flex items-center gap-1.5 transition cursor-pointer active:scale-95"
+                      className="px-3.5 py-1.5 rounded-full bg-white/10 hover:bg-[#661022] border border-[#bda06d]/30 text-[#edd892] text-xs font-sans font-medium flex items-center gap-1.5 transition cursor-pointer active:scale-95"
                     >
-                      🥂 Cheers & Love
+                      <Sparkles className="w-3 h-3 text-[#dfba73]" /> Cheers & Love
                     </button>
                     <button
                       type="button"
                       onClick={() => triggerReaction("bless")}
-                      className="px-3 py-1.5 rounded-full bg-white/10 hover:bg-[#800020] border border-[#c5a059]/40 text-[#edd892] text-xs font-sans font-semibold flex items-center gap-1.5 transition cursor-pointer active:scale-95"
+                      className="px-3.5 py-1.5 rounded-full bg-white/10 hover:bg-[#661022] border border-[#bda06d]/30 text-[#edd892] text-xs font-sans font-medium flex items-center gap-1.5 transition cursor-pointer active:scale-95"
                     >
-                      ✨ Auspicious Blessings
+                      <Check className="w-3 h-3 text-[#dfba73]" /> Blessings
                     </button>
                   </div>
                 </div>
@@ -1230,26 +1159,39 @@ export default function InvitationView({
               {settings.invitationBody}
             </p>
 
-            {/* Golden Date & Time Badge */}
-            <div className="my-8 text-center bg-gradient-to-b from-[#fdf6e7] to-[#faedd0] rounded-2xl p-6 border border-[#c5a059]/50 shadow-md">
-              <div className="w-16 h-px bg-[#c5a059] mx-auto mb-2" />
-              <p className="font-cinzel text-xl sm:text-2xl text-[#800020] font-bold uppercase tracking-wider">
-                {date.weekday}
-              </p>
-              <p className="font-serif italic text-base text-[#8c6a2b]">{date.month}</p>
-              <p className="font-cinzel text-5xl sm:text-7xl text-[#1a1517] font-black my-1">
+            {/* Editorial Date & Time Lockup */}
+            <div className="my-8 text-center py-6 px-4 rounded-2xl bg-[#f8f4ee]/70 border border-[#bda06d]/25">
+              <div className="flex items-center justify-center gap-2 mb-2 text-[#8c6a2b]">
+                <Calendar className="w-3.5 h-3.5 text-[#8c6a2b]" />
+                <span className="text-[11px] font-cinzel font-semibold uppercase tracking-[0.25em]">
+                  {date.weekday}
+                </span>
+              </div>
+              <p className="font-serif italic text-lg sm:text-xl text-[#661022]">{date.month}</p>
+              <div className="font-cinzel text-5xl sm:text-7xl text-[#1a1517] font-normal my-1 tracking-tight">
                 {String(date.day).padStart(2, "0")}
-                <sup className="text-xl sm:text-3xl text-[#800020] font-serif italic ml-1">
+                <sup className="text-xl sm:text-2xl text-[#8c6a2b] font-serif italic ml-1">
                   {date.ordinal}
                 </sup>
-              </p>
-              <p className="font-cinzel text-xl text-[#800020] font-semibold tracking-widest">
+              </div>
+              <p className="font-cinzel text-lg sm:text-xl text-[#661022] font-semibold tracking-widest">
                 {date.year}
               </p>
-              <div className="w-16 h-px bg-[#c5a059] mx-auto mt-2" />
-              <p className="text-xs sm:text-sm text-[#4a3b32] font-sans font-medium mt-3">
-                Ceremony & Reception from <span className="font-bold text-[#800020]">{date.time}</span> onwards
-              </p>
+              <div className="flex items-center justify-center gap-1.5 text-xs text-[#5a483e] font-sans font-medium mt-3">
+                <Clock className="w-3.5 h-3.5 text-[#8c6a2b]" />
+                <span>Ceremony & Reception from <strong className="text-[#661022]">{date.time}</strong> onwards</span>
+              </div>
+              {/* Value-Giving Add to Calendar Button */}
+              <div className="mt-4 pt-3 border-t border-[#bda06d]/20">
+                <button
+                  type="button"
+                  onClick={handleDownloadICS}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white hover:bg-[#661022] hover:text-[#fdfbf7] text-[#661022] text-xs font-cinzel font-semibold border border-[#bda06d]/40 transition shadow-xs cursor-pointer active:scale-95"
+                >
+                  <Calendar className="w-3.5 h-3.5" />
+                  <span>{t.addToCalendarTitle}</span>
+                </button>
+              </div>
             </div>
           </ScrollReveal>
 
@@ -1258,27 +1200,20 @@ export default function InvitationView({
 
           {/* VIRTUAL LUXURY TABLE SEATING PLACE CARD with Scroll Reveal */}
           <ScrollReveal variant="scale-up" duration={850}>
-            <div className="my-8 rounded-3xl border-2 border-[#c5a059] bg-gradient-to-b from-[#fffdfa] via-[#faf5ec] to-[#f5eedf] p-6 sm:p-7 shadow-2xl relative overflow-hidden text-[#1a1517]">
-              {/* Ornate Gold Border Filigrees */}
-              <div className="absolute inset-2 rounded-2xl border border-[#c5a059]/30 pointer-events-none" />
-              <div className="absolute top-3 left-3 text-[#c5a059] text-xs select-none">⚜</div>
-              <div className="absolute top-3 right-3 text-[#c5a059] text-xs select-none">⚜</div>
-              <div className="absolute bottom-3 left-3 text-[#c5a059] text-xs select-none">⚜</div>
-              <div className="absolute bottom-3 right-3 text-[#c5a059] text-xs select-none">⚜</div>
-
+            <div className="my-8 rounded-2xl border border-[#bda06d]/30 bg-[#fbf8f3] p-5 sm:p-7 shadow-lg relative overflow-hidden text-[#1a1517]">
               {/* Header Couple Cameo & Title */}
-              <div className="flex flex-col items-center text-center pb-4 border-b border-[#c5a059]/30">
-                <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden border-2 border-[#c5a059] shadow-md mb-2 bg-[#800020]/10">
+              <div className="flex flex-col items-center text-center pb-4 border-b border-[#bda06d]/25">
+                <div className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-full overflow-hidden border border-[#bda06d]/60 shadow-xs mb-2 bg-[#661022]/10">
                   <Image
                     src={placeCardImageSrc}
                     alt={settings.coupleNames}
                     fill
-                    sizes="80px"
+                    sizes="64px"
                     loading="lazy"
                     className="object-cover object-top"
                   />
                 </div>
-                <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.25em] text-[#800020] font-cinzel font-bold">
+                <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.25em] text-[#661022] font-cinzel font-bold">
                   {settings.coupleNames}
                 </p>
                 <span className="text-[9px] uppercase tracking-wider text-[#8c6a2b] font-cinzel">
@@ -1289,19 +1224,19 @@ export default function InvitationView({
               {/* Guest & Table Details */}
               <div className="flex flex-col sm:flex-row items-center justify-between gap-4 py-4">
                 <div className="text-center sm:text-left">
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#800020]/10 text-[#800020] text-xs font-cinzel font-semibold mb-1">
-                    <QrCode className="w-3.5 h-3.5" /> {t.vipCheckinPass}
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#661022]/8 text-[#661022] text-xs font-cinzel font-semibold mb-1 border border-[#bda06d]/20">
+                    <QrCode className="w-3.5 h-3.5 text-[#8c6a2b]" /> {t.vipCheckinPass}
                   </div>
-                  <h3 className="font-serif italic text-2xl sm:text-3xl font-bold text-[#6b0f24]">
+                  <h3 className="font-serif italic text-2xl sm:text-3xl font-normal text-[#661022]">
                     {formatInviteLine(guest)}
                   </h3>
                   <div className="flex items-center justify-center sm:justify-start gap-2 mt-1 text-xs text-[#5a483e]">
-                    <Users className="w-3.5 h-3.5 text-[#800020]" />
+                    <Users className="w-3.5 h-3.5 text-[#8c6a2b]" />
                     <span>{t.guestPlural}: <strong>{guest.inviteType === "COUPLE" ? "2 Persons (Couple)" : guest.inviteType === "FAMILY" ? "Family Group" : "1 Person"}</strong></span>
                   </div>
                   <div className="mt-3 flex items-center justify-center sm:justify-start gap-2">
                     <span className="text-xs text-[#5a483e] font-sans font-medium">{t.tablePrefix}:</span>
-                    <div className="px-4 py-1.5 rounded-xl bg-[#800020] text-[#fdfbf7] font-cinzel font-bold text-base shadow-md">
+                    <div className="px-4 py-1.5 rounded-xl bg-[#661022] text-[#fdfbf7] font-cinzel font-bold text-sm sm:text-base shadow-sm">
                       {t.tableNumber(guest.tableNumber)}
                     </div>
                   </div>
@@ -1309,16 +1244,16 @@ export default function InvitationView({
 
                 {/* QR Code Scannable Reception Pass */}
                 {qrDataUrl && (
-                  <div className="flex flex-col items-center bg-white p-2.5 rounded-2xl border border-[#c5a059]/50 shadow-md">
+                  <div className="flex flex-col items-center bg-white p-2.5 rounded-xl border border-[#bda06d]/30 shadow-xs">
                     <Image
                       src={qrDataUrl}
                       alt="Guest Reception QR Code"
-                      width={110}
-                      height={110}
+                      width={100}
+                      height={100}
                       loading="lazy"
-                      className="w-24 h-24 sm:w-28 sm:h-28"
+                      className="w-20 h-20 sm:w-24 sm:h-24"
                     />
-                    <span className="text-[9px] uppercase tracking-wider text-[#800020] font-cinzel font-bold mt-1 text-center max-w-[120px]">
+                    <span className="text-[9px] uppercase tracking-wider text-[#661022] font-cinzel font-semibold mt-1 text-center max-w-[110px]">
                       {t.scanAtEntrance}
                     </span>
                   </div>
@@ -1326,8 +1261,8 @@ export default function InvitationView({
               </div>
 
               {/* Sweet Couple Note */}
-              <div className="pt-3 border-t border-[#c5a059]/30 text-center">
-                <p className="font-serif italic text-xs sm:text-sm text-[#6b0f24] font-medium">
+              <div className="pt-3 border-t border-[#bda06d]/25 text-center">
+                <p className="font-serif italic text-xs sm:text-sm text-[#661022] font-normal">
                   &ldquo;{placeCardNote}&rdquo;
                 </p>
               </div>
@@ -1829,11 +1764,11 @@ export default function InvitationView({
                       {rsvpStatus === "attending" ? (
                         <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-cinzel font-bold text-emerald-900 bg-emerald-500/15 border border-emerald-600/40 shadow-sm">
                           <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700" />
-                          <span>🍾 {t.joyfullyAccept} • {rsvpCount} {rsvpCount === 1 ? t.guestSingle : t.guestPlural}</span>
+                          <span>{t.joyfullyAccept} • {rsvpCount} {rsvpCount === 1 ? t.guestSingle : t.guestPlural}</span>
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-cinzel font-bold text-rose-900 bg-rose-500/15 border border-rose-600/40 shadow-sm">
-                          <span>🕊 {t.regretfullyDecline}</span>
+                        <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-cinzel font-bold text-stone-800 bg-stone-500/15 border border-stone-600/30 shadow-xs">
+                          <span>{t.regretfullyDecline}</span>
                         </span>
                       )}
                     </div>
@@ -1846,23 +1781,22 @@ export default function InvitationView({
                       : t.rsvpSuccessDeclined}
                   </p>
 
-                  {/* Elegant Floral / Gold Divider */}
+                  {/* Subtle Hairline Divider */}
                   <div className="flex items-center justify-center gap-3 pt-1">
-                    <div className="h-px w-14 bg-gradient-to-r from-transparent to-[#c5a059]/50" />
-                    <Sparkles className="w-3.5 h-3.5 text-[#c5a059]" />
-                    <div className="h-px w-14 bg-gradient-to-l from-transparent to-[#c5a059]/50" />
+                    <div className="h-px w-10 bg-gradient-to-r from-transparent to-[#bda06d]/30" />
+                    <span className="text-[#bda06d]/50 text-[7px]">◇</span>
+                    <div className="h-px w-10 bg-gradient-to-l from-transparent to-[#bda06d]/30" />
                   </div>
 
-                  {/* Highly Identifiable & Luxury "Update Your Response" Action Button */}
+                  {/* "Update Your Response" Action Button */}
                   <div className="pt-2 pb-1 space-y-2">
                     <button
                       type="button"
                       onClick={() => setRsvpSubmitted(false)}
-                      className="group relative w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-7 py-3.5 rounded-xl bg-gradient-to-r from-[#800020] via-[#9b1336] to-[#800020] hover:from-[#6b0f24] hover:to-[#800020] text-[#fdfbf7] border-2 border-[#dfba73] shadow-lg shadow-[#800020]/25 hover:shadow-xl hover:shadow-[#800020]/40 transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0 cursor-pointer min-h-[48px] touch-manipulation font-cinzel font-bold text-xs sm:text-sm tracking-wider uppercase"
+                      className="group relative w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl bg-[#661022] hover:bg-[#4d0c19] text-[#fdfbf7] border border-[#bda06d]/40 shadow-md transition duration-200 cursor-pointer min-h-[46px] touch-manipulation font-cinzel font-semibold text-xs tracking-wider uppercase"
                     >
-                      <RotateCcw className="w-4 h-4 text-[#dfba73] group-hover:-rotate-90 transition-transform duration-300 shrink-0" />
+                      <RotateCcw className="w-3.5 h-3.5 text-[#dfba73] group-hover:-rotate-90 transition-transform duration-300 shrink-0" />
                       <span>{t.modifyRsvp}</span>
-                      <Edit3 className="w-3.5 h-3.5 text-[#dfba73]/80 group-hover:text-white transition-colors shrink-0" />
                     </button>
 
                     <p className="text-[11px] text-[#7a6458] font-serif italic max-w-sm mx-auto">
@@ -1877,25 +1811,27 @@ export default function InvitationView({
                     <button
                       type="button"
                       onClick={() => setRsvpStatus("attending")}
-                      className={`py-3.5 px-3 rounded-2xl font-cinzel text-xs font-bold border transition cursor-pointer flex flex-col items-center justify-center gap-1 min-h-[52px] touch-manipulation ${
+                      className={`py-3.5 px-3 rounded-xl font-cinzel text-xs font-semibold border transition cursor-pointer flex items-center justify-center gap-1.5 min-h-[48px] touch-manipulation ${
                         rsvpStatus === "attending"
-                          ? "bg-[#800020] text-[#fdfbf7] border-[#dfba73] shadow-md scale-[1.02]"
-                          : "bg-white text-[#1a1517] border-[#c5a059]/40 hover:bg-[#800020]/5"
+                          ? "bg-[#661022] text-[#fdfbf7] border-[#661022] shadow-sm"
+                          : "bg-white text-[#1a1517] border-[#bda06d]/40 hover:bg-[#661022]/5"
                       }`}
                     >
-                      <span>🍾 {t.joyfullyAccept}</span>
+                      <Check className="w-3.5 h-3.5" />
+                      <span>{t.joyfullyAccept}</span>
                     </button>
 
                     <button
                       type="button"
                       onClick={() => setRsvpStatus("declined")}
-                      className={`py-3.5 px-3 rounded-2xl font-cinzel text-xs font-bold border transition cursor-pointer flex flex-col items-center justify-center gap-1 min-h-[52px] touch-manipulation ${
+                      className={`py-3.5 px-3 rounded-xl font-cinzel text-xs font-semibold border transition cursor-pointer flex items-center justify-center gap-1.5 min-h-[48px] touch-manipulation ${
                         rsvpStatus === "declined"
-                          ? "bg-[#4a3b32] text-[#fdfbf7] border-[#dfba73] shadow-md scale-[1.02]"
-                          : "bg-white text-[#1a1517] border-[#c5a059]/40 hover:bg-[#800020]/5"
+                          ? "bg-[#3d3238] text-[#fdfbf7] border-[#3d3238] shadow-sm"
+                          : "bg-white text-[#1a1517] border-[#bda06d]/40 hover:bg-[#661022]/5"
                       }`}
                     >
-                      <span>🕊 {t.regretfullyDecline}</span>
+                      <X className="w-3.5 h-3.5" />
+                      <span>{t.regretfullyDecline}</span>
                     </button>
                   </div>
 
@@ -1970,12 +1906,12 @@ export default function InvitationView({
 
           {/* DIGITAL WISHES GUESTBOOK STREAM with Scroll Reveal */}
           <ScrollReveal variant="fade-up" duration={800}>
-            <div className="my-10 p-6 rounded-3xl bg-gradient-to-b from-[#fffdfa] to-[#fbf6eb] border-2 border-[#c5a059]/50 shadow-xl">
-              <div className="text-center mb-6">
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#800020]/10 text-[#800020] text-xs font-cinzel font-semibold mb-2">
-                  <Heart className="w-3.5 h-3.5 text-[#c5a059] fill-[#c5a059]" /> {t.guestbookTitle}
+            <div className="my-8 sm:my-10 p-5 sm:p-7 rounded-2xl bg-[#fbf8f3] border border-[#bda06d]/30 shadow-md">
+              <div className="text-center mb-5">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#661022]/8 text-[#661022] text-xs font-cinzel font-semibold mb-2 border border-[#bda06d]/20">
+                  <Heart className="w-3 h-3 text-[#8c6a2b]" /> {t.guestbookTitle}
                 </div>
-                <h3 className="font-serif italic text-2xl sm:text-3xl text-[#6b0f24] font-bold">
+                <h3 className="font-serif italic text-2xl sm:text-3xl text-[#661022] font-normal">
                   {t.guestbookTitle}
                 </h3>
                 <p className="text-xs text-[#5a483e] mt-1">
@@ -1988,8 +1924,8 @@ export default function InvitationView({
                   Loading blessings...
                 </div>
               ) : wishes.length === 0 ? (
-                <div className="text-center py-6 px-4 rounded-2xl bg-white/60 border border-[#c5a059]/30 text-xs text-[#5a483e] font-sans italic">
-                  {t.noWishesYet} 💖
+                <div className="text-center py-6 px-4 rounded-xl bg-white/70 border border-[#bda06d]/25 text-xs text-[#5a483e] font-sans italic">
+                  {t.noWishesYet}
                 </div>
               ) : (
                 <div className="space-y-3 max-h-80 overflow-y-auto pr-1">
@@ -2076,13 +2012,11 @@ export default function InvitationView({
               </button>
             </div>
 
-            {/* Footer Floral Garland Flourish */}
-            <div className="flex items-center justify-center gap-2 mt-5 text-[#c5a059] text-xs select-none pointer-events-none">
-              <span>❀</span>
-              <span className="text-[#800020] text-sm animate-pulse-slow">🌸</span>
-              <span className="text-[#800020] font-serif text-sm">❦</span>
-              <span className="text-[#800020] text-sm animate-pulse-slow">🌸</span>
-              <span>❀</span>
+            {/* Subtle Footer Divider */}
+            <div className="flex items-center justify-center gap-3 mt-6 select-none pointer-events-none">
+              <div className="h-px w-10 bg-gradient-to-r from-transparent to-[#bda06d]/30" />
+              <span className="text-[#bda06d]/50 text-[7px]">◇</span>
+              <div className="h-px w-10 bg-gradient-to-l from-transparent to-[#bda06d]/30" />
             </div>
           </ScrollReveal>
 

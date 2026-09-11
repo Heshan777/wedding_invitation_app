@@ -48,11 +48,11 @@ export default function CountdownTimer({
 
   if (time?.done) {
     return (
-      <div className="text-center py-4 px-6 rounded-2xl bg-[#800020]/20 border border-[#c5a059]/40 backdrop-blur-md">
-        <p className="font-cinzel text-xl sm:text-2xl text-[#dfba73] font-bold tracking-wide">
-          ✨ {t.ceremonyBegan} ✨
+      <div className="text-center py-4 px-6 rounded-xl bg-[#661022]/8 border border-[#bda06d]/30">
+        <p className="font-cinzel text-lg sm:text-xl text-[#661022] font-semibold tracking-wide">
+          {t.ceremonyBegan}
         </p>
-        <p className="text-xs text-[#fdfbf7]/70 font-sans mt-1">
+        <p className="text-xs text-[#5a483e] font-sans mt-1">
           {t.foreverBegins}
         </p>
       </div>
@@ -62,8 +62,8 @@ export default function CountdownTimer({
   return (
     <div className="w-full">
       <div className="flex items-center justify-center gap-2 mb-3">
-        <Clock className="w-4 h-4 text-[#c5a059]" />
-        <span className="text-[11px] uppercase tracking-[0.25em] text-[#800020] font-cinzel font-semibold text-center">
+        <Clock className="w-3.5 h-3.5 text-[#8c6a2b]" />
+        <span className="text-[10px] sm:text-[11px] uppercase tracking-[0.25em] text-[#8c6a2b] font-cinzel font-semibold text-center">
           {t.auspiciousCountdown}
         </span>
       </div>
@@ -72,15 +72,12 @@ export default function CountdownTimer({
         {units.map((u, i) => (
           <div
             key={i}
-            className="relative group overflow-hidden rounded-2xl bg-gradient-to-b from-[#800020]/10 via-[#800020]/5 to-transparent border border-[#c5a059]/40 py-3.5 px-2 text-center backdrop-blur-sm shadow-md hover:border-[#c5a059] transition duration-300"
+            className="relative rounded-xl bg-[#f7f2ea]/70 border border-[#bda06d]/25 py-3 px-2 text-center transition duration-200"
           >
-            {/* Top subtle highlight */}
-            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#edd892] to-transparent" />
-            
-            <div className="font-cinzel font-bold text-2xl sm:text-3xl lg:text-4xl text-[#800020] tracking-tight">
+            <div className="font-cinzel font-bold text-xl sm:text-2xl lg:text-3xl text-[#661022] tracking-tight">
               {typeof u.value === "number" ? String(u.value).padStart(2, "0") : u.value}
             </div>
-            <div className="text-[10px] sm:text-[11px] font-sans uppercase tracking-[0.15em] text-[#8c6a2b] font-semibold mt-1 truncate">
+            <div className="text-[9px] sm:text-[10px] font-sans uppercase tracking-[0.15em] text-[#8c6a2b] font-medium mt-0.5 truncate">
               {u.label}
             </div>
           </div>

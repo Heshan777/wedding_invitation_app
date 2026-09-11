@@ -160,26 +160,14 @@ function renderParticle(type: ParticleType, size: number) {
   }
 }
 
-// Harmonious, romantic luxury distribution across the viewport width - zero hearts
+// Subtle, quiet atmospheric ambient particles - gentle warmth without obscuring content
 const PARTICLES: ParticleDef[] = [
-  { id: 1, type: "golden-petal", left: 6, delay: 0.5, duration: 14, size: 22, opacity: 0.9, animation: "animate-fall-sway-left" },
-  { id: 2, type: "ruby-star", left: 13, delay: 4.2, duration: 13, size: 21, opacity: 0.88, animation: "animate-fall-sway-right" },
-  { id: 3, type: "wedding-rings", left: 20, delay: 8.5, duration: 16, size: 23, opacity: 0.88, animation: "animate-fall-drift-center" },
-  { id: 4, type: "golden-petal", left: 28, delay: 2.1, duration: 14, size: 24, opacity: 0.9, animation: "animate-fall-sway-left" },
-  { id: 5, type: "sparkle", left: 35, delay: 6.8, duration: 15, size: 20, opacity: 0.88, animation: "animate-fall-sway-right" },
-  { id: 6, type: "ruby-star", left: 42, delay: 11.3, duration: 14, size: 21, opacity: 0.88, animation: "animate-fall-drift-center" },
-  { id: 7, type: "wedding-rings", left: 49, delay: 3.4, duration: 14, size: 23, opacity: 0.9, animation: "animate-fall-sway-left" },
-  { id: 8, type: "golden-petal", left: 56, delay: 9.7, duration: 15, size: 23, opacity: 0.9, animation: "animate-fall-sway-right" },
-  { id: 9, type: "sparkle", left: 63, delay: 1.2, duration: 12, size: 18, opacity: 0.85, animation: "animate-fall-drift-center" },
-  { id: 10, type: "golden-petal", left: 70, delay: 7.6, duration: 14, size: 24, opacity: 0.9, animation: "animate-fall-sway-left" },
-  { id: 11, type: "ruby-star", left: 77, delay: 12.8, duration: 15, size: 22, opacity: 0.88, animation: "animate-fall-sway-right" },
-  { id: 12, type: "wedding-rings", left: 84, delay: 5.1, duration: 15, size: 23, opacity: 0.88, animation: "animate-fall-drift-center" },
-  { id: 13, type: "sparkle", left: 91, delay: 10.4, duration: 13, size: 19, opacity: 0.9, animation: "animate-fall-sway-left" },
-  { id: 14, type: "golden-petal", left: 10, delay: 13.5, duration: 15, size: 22, opacity: 0.86, animation: "animate-fall-drift-center" },
-  { id: 15, type: "wedding-rings", left: 24, delay: 14.6, duration: 15, size: 24, opacity: 0.88, animation: "animate-fall-sway-right" },
-  { id: 16, type: "ruby-star", left: 59, delay: 13.1, duration: 14, size: 22, opacity: 0.88, animation: "animate-fall-sway-right" },
-  { id: 17, type: "sparkle", left: 38, delay: 15.2, duration: 13, size: 18, opacity: 0.85, animation: "animate-fall-drift-center" },
-  { id: 18, type: "golden-petal", left: 88, delay: 14.1, duration: 14, size: 23, opacity: 0.88, animation: "animate-fall-sway-left" },
+  { id: 1, type: "golden-petal", left: 5, delay: 1, duration: 22, size: 16, opacity: 0.35, animation: "animate-fall-sway-left" },
+  { id: 2, type: "sparkle", left: 14, delay: 5, duration: 20, size: 12, opacity: 0.25, animation: "animate-fall-sway-right" },
+  { id: 3, type: "golden-petal", left: 88, delay: 3, duration: 24, size: 15, opacity: 0.3, animation: "animate-fall-drift-center" },
+  { id: 4, type: "sparkle", left: 93, delay: 8, duration: 22, size: 13, opacity: 0.25, animation: "animate-fall-sway-left" },
+  { id: 5, type: "golden-petal", left: 3, delay: 12, duration: 25, size: 14, opacity: 0.25, animation: "animate-fall-sway-right" },
+  { id: 6, type: "sparkle", left: 96, delay: 15, duration: 23, size: 12, opacity: 0.2, animation: "animate-fall-drift-center" },
 ];
 
 export default function FallingDecor() {
