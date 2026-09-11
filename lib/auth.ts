@@ -3,8 +3,16 @@ import { cookies } from "next/headers";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
 
-const DEFAULT_SECRET = "wedding_luxury_secret_session_jwt_key_2026_super_secure_royal_pass";
-const SESSION_SECRET = process.env.SESSION_SECRET || DEFAULT_SECRET;
+const isProduction = process.env.NODE_ENV === "production";
+const rawSecret = process.env.SESSION_SECRET;
+
+if (isProduction && (!rawSecret || rawSecret.length < 32)) {
+  console.warn(
+    "SECURITY WARNING: SESSION_SECRET is either unset or shorter than 32 characters in production. Set a cryptographically strong secret."
+  );
+}
+
+const SESSION_SECRET = rawSecret || "dev-wedding-session-jwt-key-local-only-not-for-prod-32char";
 const secret = new TextEncoder().encode(SESSION_SECRET);
 const COOKIE_NAME = "admin_session";
 
@@ -204,19 +212,8 @@ export async function getAuthenticatedManager() {
       if (manager) return manager;
     }
 
-    // Fallback if legacy token has no managerId
-    const firstMgr = await prisma.eventManager.findFirst({
-      select: {
-        id: true,
-        username: true,
-        name: true,
-        email: true,
-        company: true,
-        phone: true,
-        role: true,
-      },
-    });
-    return firstMgr;
+    // Unkeyed or malformed tokens must be rejected immediately
+    return null;
   } catch {
     return null;
   }

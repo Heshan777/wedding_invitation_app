@@ -25,13 +25,8 @@ export default async function WeddingPreviewPage({
     notFound();
   }
 
-  // Find the first guest for this event to show authentic preview, or construct preview guest
-  const firstGuest = await prisma.guest.findFirst({
-    where: { eventId: event.id },
-    orderBy: { createdAt: "asc" },
-  });
-
-  const previewGuest = firstGuest || {
+  // Safe isolated preview guest: Zero DB queries on real guest records, preventing PII leaks and RSVP hijacking
+  const previewGuest = {
     id: "preview",
     token: "preview",
     eventId: event.id,
@@ -53,7 +48,7 @@ export default async function WeddingPreviewPage({
 
   return (
     <InvitationView
-      guest={previewGuest as any}
+      guest={previewGuest}
       settings={event}
       photos={event.photos}
     />

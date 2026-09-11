@@ -29,9 +29,29 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Missing 'src' parameter" }, { status: 400 });
   }
 
-  // If src is an absolute HTTP/HTTPS URL (e.g. Vercel Blob or external CDN), redirect directly
+  // If src is an absolute HTTP/HTTPS URL, only redirect if it matches trusted media CDN hosts
   if (src.startsWith("http://") || src.startsWith("https://")) {
-    return NextResponse.redirect(src, { status: 307 });
+    try {
+      const parsedUrl = new URL(src);
+      const allowedHosts = [
+        "res.cloudinary.com",
+        "public.blob.vercel-storage.com",
+      ];
+      const isAllowed = allowedHosts.some(
+        (host) => parsedUrl.hostname === host || parsedUrl.hostname.endsWith(`.${host}`)
+      );
+
+      if (!isAllowed) {
+        return NextResponse.json(
+          { error: "Access denied: External media host not permitted" },
+          { status: 403 }
+        );
+      }
+
+      return NextResponse.redirect(src, { status: 307 });
+    } catch {
+      return NextResponse.json({ error: "Invalid media URL" }, { status: 400 });
+    }
   }
 
   // Clean relative path and prevent directory traversal

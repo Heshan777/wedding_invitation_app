@@ -40,13 +40,16 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // If a sweet message was written, also publish to Guestbook
-    if (message && String(message).trim().length > 0) {
-      const author = guest.salutation ? `${guest.salutation} ${guest.displayName}` : guest.displayName;
+    // If a sweet message was written, also publish to Guestbook linked to the guest's event
+    const cleanMessage = message ? String(message).trim().slice(0, 500) : "";
+    if (cleanMessage.length > 0 && guest.eventId) {
+      const rawAuthor = guest.salutation ? `${guest.salutation} ${guest.displayName}` : guest.displayName;
+      const author = rawAuthor.trim().slice(0, 100);
       await prisma.guestbookWish.create({
         data: {
+          eventId: guest.eventId,
           authorName: author,
-          message: String(message).trim(),
+          message: cleanMessage,
         },
       });
     }

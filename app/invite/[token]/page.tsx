@@ -42,12 +42,14 @@ export default async function InvitePage({
 
   // Record view timestamp if not yet viewed
   if (!guest.viewedAt) {
-    prisma.guest
-      .update({
+    try {
+      await prisma.guest.update({
         where: { id: guest.id },
         data: { viewedAt: new Date() },
-      })
-      .catch(() => {});
+      });
+    } catch (err) {
+      console.error("Failed to update guest view timestamp:", err);
+    }
   }
 
   return <InvitationView guest={guest} settings={settings} photos={photos} />;

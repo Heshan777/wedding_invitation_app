@@ -48,16 +48,43 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
     }
 
+    const MAX_IMAGE_SIZE = 15 * 1024 * 1024; // 15MB
+    const MAX_MEDIA_SIZE = 100 * 1024 * 1024; // 100MB
+
+    // Prohibit SVG files to prevent stored XSS vulnerabilities
+    const lowerName = file.name.toLowerCase();
+    const mimeType = (file.type || "").toLowerCase();
+    if (mimeType.includes("svg") || lowerName.endsWith(".svg")) {
+      return NextResponse.json(
+        { error: "SVG files are disabled for security reasons." },
+        { status: 400 }
+      );
+    }
+
     // Validate mime type: images, videos, audio
-    const mimeType = file.type || "";
     const isImage = mimeType.startsWith("image/");
-    const isVideo = mimeType.startsWith("video/") || Boolean(file.name.match(/\.(mp4|mov|webm|m4v|mkv|avi)$/i));
-    const isAudio = mimeType.startsWith("audio/") || Boolean(file.name.match(/\.(mp3|wav|ogg|m4a)$/i));
+    const isVideo = mimeType.startsWith("video/") || Boolean(lowerName.match(/\.(mp4|mov|webm|m4v|mkv|avi)$/));
+    const isAudio = mimeType.startsWith("audio/") || Boolean(lowerName.match(/\.(mp3|wav|ogg|m4a)$/));
 
     if (!isImage && !isVideo && !isAudio) {
       return NextResponse.json(
-        { error: "Only image files (JPEG, PNG, WebP), video files (MP4, MOV, WebM), or audio files (MP3, WAV, OGG) are allowed" },
+        { error: "Only image files (JPEG, PNG, WebP, AVIF), video files (MP4, MOV, WebM), or audio files (MP3, WAV, OGG) are allowed." },
         { status: 400 }
+      );
+    }
+
+    // Enforce size limits before reading into memory
+    if (isImage && file.size > MAX_IMAGE_SIZE) {
+      return NextResponse.json(
+        { error: "Image file exceeds the 15MB maximum allowed size." },
+        { status: 413 }
+      );
+    }
+
+    if (file.size > MAX_MEDIA_SIZE) {
+      return NextResponse.json(
+        { error: "Media file exceeds the 100MB maximum allowed size." },
+        { status: 413 }
       );
     }
 
