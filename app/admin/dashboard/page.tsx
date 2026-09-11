@@ -1449,248 +1449,212 @@ export default function AdminDashboard() {
       )}
 
       <div className="max-w-6xl mx-auto">
-        {/* Top Executive Header */}
-        <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-5 pb-6 border-b border-[#c5a059]/30 mb-6 sm:mb-8">
-          {/* Left Column: Manager Profile & Active Event Info */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 flex-1 min-w-0">
-            {/* Event Manager Profile Avatar & Interactive Identity Hub */}
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setShowProfileMenu((prev) => !prev)}
-                className="group flex items-center gap-3.5 p-2.5 sm:p-3 rounded-2xl bg-gradient-to-br from-[#1c1519] via-[#231821] to-[#181116] border border-[#c5a059]/35 hover:border-[#dfba73]/70 shadow-lg hover:shadow-[0_0_20px_rgba(197,160,89,0.2)] transition-all duration-300 w-full sm:w-auto text-left cursor-pointer"
-                aria-expanded={showProfileMenu}
-                title="Click to view Account Profile details"
-              >
-                {/* Profile Icon / Medallion */}
-                <div className="relative shrink-0">
-                  {/* Outer gilded glow ring */}
+        {/* Tier 1: Top Navigation Bar (Manager Identity + System Actions & Switcher) */}
+        <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-[#c5a059]/25">
+          {/* Left: Event Manager Profile Avatar & Interactive Identity Hub */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setShowProfileMenu((prev) => !prev)}
+              className="group flex items-center gap-3.5 p-2.5 sm:p-3 rounded-2xl bg-gradient-to-br from-[#1c1519] via-[#231821] to-[#181116] border border-[#c5a059]/35 hover:border-[#dfba73]/70 shadow-lg hover:shadow-[0_0_20px_rgba(197,160,89,0.2)] transition-all duration-300 w-full sm:w-auto text-left cursor-pointer"
+              aria-expanded={showProfileMenu}
+              title="Click to view Account Profile details"
+            >
+              {/* Profile Icon / Medallion */}
+              <div className="relative shrink-0">
+                {/* Outer gilded glow ring */}
+                <div
+                  className={`w-12 h-12 sm:w-13 sm:h-13 rounded-2xl p-0.5 shadow-md flex items-center justify-center ${
+                    manager?.role === "SUPER_ADMIN"
+                      ? "bg-gradient-to-tr from-[#c5a059] via-[#edd892] to-[#8c6a2b] shadow-[#c5a059]/20"
+                      : "bg-gradient-to-tr from-emerald-600 via-[#85e3b3] to-emerald-800 shadow-emerald-500/20"
+                  }`}
+                >
                   <div
-                    className={`w-12 h-12 sm:w-13 sm:h-13 rounded-2xl p-0.5 shadow-md flex items-center justify-center ${
+                    className={`w-full h-full rounded-[14px] flex items-center justify-center font-cinzel font-bold text-base transition-transform group-hover:scale-105 duration-200 ${
                       manager?.role === "SUPER_ADMIN"
-                        ? "bg-gradient-to-tr from-[#c5a059] via-[#edd892] to-[#8c6a2b] shadow-[#c5a059]/20"
-                        : "bg-gradient-to-tr from-emerald-600 via-[#85e3b3] to-emerald-800 shadow-emerald-500/20"
+                        ? "bg-gradient-to-b from-[#3a0614] via-[#22070f] to-[#140409] text-[#dfba73]"
+                        : "bg-gradient-to-b from-[#062d1d] via-[#091b13] to-[#06100c] text-emerald-300"
                     }`}
                   >
+                    {manager?.role === "SUPER_ADMIN" ? (
+                      <div className="relative flex items-center justify-center">
+                        <Crown className="w-6 h-6 text-[#edd892] drop-shadow-[0_2px_6px_rgba(0,0,0,0.8)]" />
+                      </div>
+                    ) : (
+                      <span className="tracking-tighter">
+                        {(
+                          manager?.name
+                            ?.trim()
+                            .split(/\s+/)
+                            .map((w) => w[0])
+                            .slice(0, 2)
+                            .join("") ||
+                          manager?.username?.slice(0, 2) ||
+                          "EM"
+                        ).toUpperCase()}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Precision Online Status Pip */}
+                <span className="absolute -bottom-1 -right-1 flex h-4 w-4">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-60" />
+                  <span className="relative inline-flex rounded-full h-4 w-4 bg-emerald-500 border-2 border-[#1c1519] items-center justify-center shadow-sm">
+                    <span className="w-1.5 h-1.5 rounded-full bg-white" />
+                  </span>
+                </span>
+              </div>
+
+              {/* Identity Text & Details */}
+              <div className="min-w-0 flex-1 pr-1">
+                {/* Row 1: Role pill + Username */}
+                <div className="flex items-center gap-1.5 mb-1">
+                  {manager?.role === "SUPER_ADMIN" ? (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gradient-to-r from-[#800020]/80 to-[#420614]/90 text-[#edd892] text-[10px] font-cinzel font-bold border border-[#dfba73]/40 shadow-sm">
+                      <Crown className="w-2.5 h-2.5 text-[#dfba73]" /> Super Admin
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-950/80 text-emerald-300 text-[10px] font-sans font-medium border border-emerald-500/40">
+                      <ShieldCheck className="w-2.5 h-2.5 text-emerald-400" /> Event Planner
+                    </span>
+                  )}
+                  <span className="text-[11px] font-mono text-[#edd892]/70 group-hover:text-[#edd892] transition-colors">
+                    @{manager?.username || "admin"}
+                  </span>
+                </div>
+
+                {/* Row 2: User Name */}
+                <div className="font-cinzel font-bold text-sm sm:text-base text-[#fdfbf7] group-hover:text-[#edd892] transition-colors leading-tight truncate">
+                  {manager?.name || (manager?.role === "SUPER_ADMIN" ? "Lead Wedding Planner" : "Event Manager")}
+                </div>
+
+                {/* Row 3: Studio / Agency */}
+                <div className="text-[11px] text-[#edd892]/75 flex items-center gap-1.5 mt-0.5 truncate font-sans">
+                  <Building2 className="w-3 h-3 text-[#dfba73]/70 shrink-0" />
+                  <span className="truncate">{manager?.company || "Royal Digital Wedding Suite"}</span>
+                  <ChevronDown className="w-3 h-3 text-[#dfba73]/50 group-hover:text-[#dfba73] group-hover:translate-y-0.5 transition-all ml-1 shrink-0" />
+                </div>
+              </div>
+            </button>
+
+            {/* Executive Account Details Dropdown Popover */}
+            {showProfileMenu && (
+              <>
+                {/* Backdrop to close */}
+                <div
+                  className="fixed inset-0 z-40"
+                  onClick={() => setShowProfileMenu(false)}
+                />
+
+                <div className="absolute left-0 top-full mt-2 w-72 sm:w-80 rounded-2xl bg-[#1b1419] border border-[#dfba73]/50 shadow-2xl z-50 p-4 space-y-3.5 backdrop-blur-xl animate-in fade-in zoom-in-95 duration-150">
+                  {/* Account Header */}
+                  <div className="flex items-center gap-3 pb-3 border-b border-[#c5a059]/20">
                     <div
-                      className={`w-full h-full rounded-[14px] flex items-center justify-center font-cinzel font-bold text-base transition-transform group-hover:scale-105 duration-200 ${
+                      className={`w-11 h-11 rounded-xl flex items-center justify-center font-cinzel font-bold text-sm border ${
                         manager?.role === "SUPER_ADMIN"
-                          ? "bg-gradient-to-b from-[#3a0614] via-[#22070f] to-[#140409] text-[#dfba73]"
-                          : "bg-gradient-to-b from-[#062d1d] via-[#091b13] to-[#06100c] text-emerald-300"
+                          ? "bg-gradient-to-br from-[#800020] to-[#25040b] text-[#edd892] border-[#dfba73]/50"
+                          : "bg-gradient-to-br from-emerald-950 to-[#121013] text-emerald-300 border-emerald-500/50"
                       }`}
                     >
                       {manager?.role === "SUPER_ADMIN" ? (
-                        <div className="relative flex items-center justify-center">
-                          <Crown className="w-6 h-6 text-[#edd892] drop-shadow-[0_2px_6px_rgba(0,0,0,0.8)]" />
-                        </div>
+                        <Crown className="w-5 h-5 text-[#dfba73]" />
                       ) : (
-                        <span className="tracking-tighter">
-                          {(
-                            manager?.name
-                              ?.trim()
-                              .split(/\s+/)
-                              .map((w) => w[0])
-                              .slice(0, 2)
-                              .join("") ||
-                            manager?.username?.slice(0, 2) ||
-                            "EM"
-                          ).toUpperCase()}
-                        </span>
+                        (manager?.name?.[0] || "M").toUpperCase()
                       )}
                     </div>
-                  </div>
-
-                  {/* Precision Online Status Pip */}
-                  <span className="absolute -bottom-1 -right-1 flex h-4 w-4">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-60" />
-                    <span className="relative inline-flex rounded-full h-4 w-4 bg-emerald-500 border-2 border-[#1c1519] items-center justify-center shadow-sm">
-                      <span className="w-1.5 h-1.5 rounded-full bg-white" />
-                    </span>
-                  </span>
-                </div>
-
-                {/* Identity Text & Details */}
-                <div className="min-w-0 flex-1 pr-1">
-                  {/* Row 1: Role pill + Username */}
-                  <div className="flex items-center gap-1.5 mb-1">
-                    {manager?.role === "SUPER_ADMIN" ? (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gradient-to-r from-[#800020]/80 to-[#420614]/90 text-[#edd892] text-[10px] font-cinzel font-bold border border-[#dfba73]/40 shadow-sm">
-                        <Crown className="w-2.5 h-2.5 text-[#dfba73]" /> Super Admin
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-950/80 text-emerald-300 text-[10px] font-sans font-medium border border-emerald-500/40">
-                        <ShieldCheck className="w-2.5 h-2.5 text-emerald-400" /> Event Planner
-                      </span>
-                    )}
-                    <span className="text-[11px] font-mono text-[#edd892]/70 group-hover:text-[#edd892] transition-colors">
-                      @{manager?.username || "admin"}
-                    </span>
-                  </div>
-
-                  {/* Row 2: User Name */}
-                  <div className="font-cinzel font-bold text-sm sm:text-base text-[#fdfbf7] group-hover:text-[#edd892] transition-colors leading-tight truncate">
-                    {manager?.name || (manager?.role === "SUPER_ADMIN" ? "Lead Wedding Planner" : "Event Manager")}
-                  </div>
-
-                  {/* Row 3: Studio / Agency */}
-                  <div className="text-[11px] text-[#edd892]/75 flex items-center gap-1.5 mt-0.5 truncate font-sans">
-                    <Building2 className="w-3 h-3 text-[#dfba73]/70 shrink-0" />
-                    <span className="truncate">{manager?.company || "Royal Digital Wedding Suite"}</span>
-                    <ChevronDown className="w-3 h-3 text-[#dfba73]/50 group-hover:text-[#dfba73] group-hover:translate-y-0.5 transition-all ml-1 shrink-0" />
-                  </div>
-                </div>
-              </button>
-
-              {/* Executive Account Details Dropdown Popover */}
-              {showProfileMenu && (
-                <>
-                  {/* Backdrop to close */}
-                  <div
-                    className="fixed inset-0 z-40"
-                    onClick={() => setShowProfileMenu(false)}
-                  />
-
-                  <div className="absolute left-0 top-full mt-2 w-72 sm:w-80 rounded-2xl bg-[#1b1419] border border-[#dfba73]/50 shadow-2xl z-50 p-4 space-y-3.5 backdrop-blur-xl animate-in fade-in zoom-in-95 duration-150">
-                    {/* Account Header */}
-                    <div className="flex items-center gap-3 pb-3 border-b border-[#c5a059]/20">
-                      <div
-                        className={`w-11 h-11 rounded-xl flex items-center justify-center font-cinzel font-bold text-sm border ${
-                          manager?.role === "SUPER_ADMIN"
-                            ? "bg-gradient-to-br from-[#800020] to-[#25040b] text-[#edd892] border-[#dfba73]/50"
-                            : "bg-gradient-to-br from-emerald-950 to-[#121013] text-emerald-300 border-emerald-500/50"
-                        }`}
-                      >
-                        {manager?.role === "SUPER_ADMIN" ? (
-                          <Crown className="w-5 h-5 text-[#dfba73]" />
-                        ) : (
-                          (manager?.name?.[0] || "M").toUpperCase()
-                        )}
+                    <div className="min-w-0 flex-1">
+                      <div className="font-cinzel font-bold text-sm text-white truncate">
+                        {manager?.name || "Lead Wedding Planner"}
                       </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="font-cinzel font-bold text-sm text-white truncate">
-                          {manager?.name || "Lead Wedding Planner"}
-                        </div>
-                        <div className="text-xs font-mono text-[#edd892]/70">@{manager?.username}</div>
-                        <div className="text-[10px] text-emerald-400 flex items-center gap-1 mt-0.5">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                          <span>Active Authenticated Session</span>
-                        </div>
+                      <div className="text-xs font-mono text-[#edd892]/70">@{manager?.username}</div>
+                      <div className="text-[10px] text-emerald-400 flex items-center gap-1 mt-0.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                        <span>Active Authenticated Session</span>
                       </div>
                     </div>
+                  </div>
 
-                    {/* Account Details */}
-                    <div className="space-y-1.5 text-xs text-[#fdfbf7]/80">
+                  {/* Account Details */}
+                  <div className="space-y-1.5 text-xs text-[#fdfbf7]/80">
+                    <div className="flex items-center justify-between text-[11px] py-1 border-b border-white/5">
+                      <span className="text-white/40">Studio / Agency</span>
+                      <span className="text-[#edd892] font-semibold truncate max-w-[170px] text-right">
+                        {manager?.company || "Royal Digital Wedding Suite"}
+                      </span>
+                    </div>
+                    {manager?.email && (
                       <div className="flex items-center justify-between text-[11px] py-1 border-b border-white/5">
-                        <span className="text-white/40">Studio / Agency</span>
-                        <span className="text-[#edd892] font-semibold truncate max-w-[170px] text-right">
-                          {manager?.company || "Royal Digital Wedding Suite"}
+                        <span className="text-white/40">Email</span>
+                        <span className="text-white/80 font-mono truncate max-w-[170px] text-right">
+                          {manager.email}
                         </span>
                       </div>
-                      {manager?.email && (
-                        <div className="flex items-center justify-between text-[11px] py-1 border-b border-white/5">
-                          <span className="text-white/40">Email</span>
-                          <span className="text-white/80 font-mono truncate max-w-[170px] text-right">
-                            {manager.email}
-                          </span>
-                        </div>
-                      )}
-                      {manager?.phone && (
-                        <div className="flex items-center justify-between text-[11px] py-1 border-b border-white/5">
-                          <span className="text-white/40">Contact</span>
-                          <span className="text-white/80 font-mono text-right">{manager.phone}</span>
-                        </div>
-                      )}
-                      <div className="flex items-center justify-between text-[11px] py-1">
-                        <span className="text-white/40">Access Level</span>
-                        <span className="text-[#dfba73] font-cinzel font-bold text-right">
-                          {manager?.role === "SUPER_ADMIN" ? "Super Admin Authority" : "Event Planner Portfolio"}
-                        </span>
+                    )}
+                    {manager?.phone && (
+                      <div className="flex items-center justify-between text-[11px] py-1 border-b border-white/5">
+                        <span className="text-white/40">Contact</span>
+                        <span className="text-white/80 font-mono text-right">{manager.phone}</span>
                       </div>
+                    )}
+                    <div className="flex items-center justify-between text-[11px] py-1">
+                      <span className="text-white/40">Access Level</span>
+                      <span className="text-[#dfba73] font-cinzel font-bold text-right">
+                        {manager?.role === "SUPER_ADMIN" ? "Super Admin Authority" : "Event Planner Portfolio"}
+                      </span>
                     </div>
+                  </div>
 
-                    {/* Quick Shortcuts */}
-                    <div className="pt-2 border-t border-[#c5a059]/20 space-y-1.5">
-                      {manager?.role === "SUPER_ADMIN" && (
-                        <button
-                          onClick={() => {
-                            setActiveTab("managers");
-                            setShowProfileMenu(false);
-                          }}
-                          className="w-full px-3 py-2 rounded-xl bg-[#241a21] hover:bg-[#800020]/40 text-[#dfba73] text-xs font-cinzel font-semibold flex items-center justify-between transition cursor-pointer"
-                        >
-                          <span className="flex items-center gap-2">
-                            <Users className="w-3.5 h-3.5" /> Planners Directory
-                          </span>
-                          <span className="text-[10px] font-mono text-[#edd892]">{managers.length}</span>
-                        </button>
-                      )}
-
+                  {/* Quick Shortcuts */}
+                  <div className="pt-2 border-t border-[#c5a059]/20 space-y-1.5">
+                    {manager?.role === "SUPER_ADMIN" && (
                       <button
                         onClick={() => {
-                          setActiveTab("settings");
+                          setActiveTab("managers");
                           setShowProfileMenu(false);
                         }}
-                        className="w-full px-3 py-2 rounded-xl bg-[#241a21] hover:bg-[#c5a059]/15 text-[#dfba73] text-xs font-cinzel font-semibold flex items-center gap-2 transition cursor-pointer"
+                        className="w-full px-3 py-2 rounded-xl bg-[#241a21] hover:bg-[#800020]/40 text-[#dfba73] text-xs font-cinzel font-semibold flex items-center justify-between transition cursor-pointer"
                       >
-                        <Settings className="w-3.5 h-3.5" /> Wedding Suite Settings
+                        <span className="flex items-center gap-2">
+                          <Users className="w-3.5 h-3.5" /> Planners Directory
+                        </span>
+                        <span className="text-[10px] font-mono text-[#edd892]">{managers.length}</span>
                       </button>
+                    )}
 
-                      <button
-                        onClick={handleLogout}
-                        className="w-full px-3 py-2 rounded-xl bg-rose-950/30 hover:bg-rose-900/50 text-rose-300 text-xs font-cinzel font-semibold flex items-center gap-2 transition cursor-pointer border border-rose-900/40"
-                      >
-                        <LogOut className="w-3.5 h-3.5" /> Sign Out
-                      </button>
-                    </div>
+                    <button
+                      onClick={() => {
+                        setActiveTab("settings");
+                        setShowProfileMenu(false);
+                      }}
+                      className="w-full px-3 py-2 rounded-xl bg-[#241a21] hover:bg-[#c5a059]/15 text-[#dfba73] text-xs font-cinzel font-semibold flex items-center gap-2 transition cursor-pointer"
+                    >
+                      <Settings className="w-3.5 h-3.5" /> Wedding Suite Settings
+                    </button>
+
+                    <button
+                      onClick={handleLogout}
+                      className="w-full px-3 py-2 rounded-xl bg-rose-950/30 hover:bg-rose-900/50 text-rose-300 text-xs font-cinzel font-semibold flex items-center gap-2 transition cursor-pointer border border-rose-900/40"
+                    >
+                      <LogOut className="w-3.5 h-3.5" /> Sign Out
+                    </button>
                   </div>
-                </>
-              )}
-            </div>
-
-            {/* Wedding Title & Quick Details */}
-            <div className="space-y-1.5 flex-1 min-w-0">
-              <h1 className="font-cinzel text-xl sm:text-2xl md:text-3xl font-bold gold-foil-text tracking-tight break-words">
-                {currentEvent?.coupleNames || settings.coupleNames}
-              </h1>
-              <div className="flex flex-wrap items-center gap-2 text-xs">
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#22171f] border border-[#c5a059]/30 font-mono text-[11px] text-[#edd892] shadow-sm">
-                  <Link2 className="w-3 h-3 text-[#dfba73]" />
-                  <span>/e/{currentEvent?.slug || "wedding"}</span>
-                </span>
-
-                {currentEvent?.manager && manager?.role === "SUPER_ADMIN" && (
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#800020]/25 border border-[#dfba73]/35 text-[11px] text-[#dfba73] font-sans shadow-sm">
-                    <User className="w-3 h-3 text-[#edd892]" />
-                    <span>
-                      Planner: <strong>{currentEvent.manager.name}</strong> (
-                      {currentEvent.manager.company || currentEvent.manager.username})
-                    </span>
-                  </span>
-                )}
-
-                <a
-                  href={`/e/${currentEvent?.slug || "wedding"}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="btn-gold-shimmer px-3 py-1 rounded-lg text-[11px] font-cinzel font-bold inline-flex items-center gap-1.5 shadow-sm transition touch-manipulation cursor-pointer"
-                  title="Open guest invitation preview in new tab"
-                >
-                  <ExternalLink className="w-3 h-3" /> Preview Wedding
-                </a>
-              </div>
-            </div>
+                </div>
+              </>
+            )}
           </div>
 
-          {/* Right Column: Event Selector & Action Buttons */}
-          <div className="flex flex-col sm:flex-row lg:flex-row items-stretch lg:items-center gap-3 w-full lg:w-auto">
+          {/* Right: Wedding Switcher & Global Toolbar Actions */}
+          <div className="flex flex-wrap items-center gap-2 sm:gap-2.5 w-full md:w-auto justify-start md:justify-end">
             {/* Wedding Switcher Selector: Dropdown for Super Admin, Dedicated Badge for Event Manager */}
             {manager?.role === "SUPER_ADMIN" ? (
-              <div className="flex items-center gap-2 bg-[#1c161a] border border-[#c5a059]/60 rounded-xl px-3.5 py-2.5 shadow-md w-full sm:w-auto min-h-[44px]">
+              <div className="flex items-center gap-2 bg-[#1c161a] border border-[#c5a059]/60 rounded-xl px-3 py-2 shadow-md w-full sm:w-auto min-h-[42px]">
                 <Sparkles className="w-4 h-4 text-[#dfba73] shrink-0" />
                 <select
                   value={activeEventId}
                   onChange={(e) => handleSelectEvent(e.target.value)}
-                  className="bg-transparent text-xs font-cinzel font-semibold text-[#fdfbf7] focus:outline-none cursor-pointer w-full sm:max-w-[220px] md:max-w-[260px] truncate"
+                  className="bg-transparent text-xs font-cinzel font-semibold text-[#fdfbf7] focus:outline-none cursor-pointer w-full sm:max-w-[200px] md:max-w-[240px] truncate"
                 >
                   {events.map((ev) => (
                     <option key={ev.id} value={ev.id} className="bg-[#1c161a] text-white">
@@ -1700,9 +1664,9 @@ export default function AdminDashboard() {
                 </select>
               </div>
             ) : (
-              <div className="flex items-center gap-2 bg-[#1c161a] border border-[#c5a059]/40 rounded-xl px-3.5 py-2.5 shadow-md w-full sm:w-auto min-h-[44px]">
+              <div className="flex items-center gap-2 bg-[#1c161a] border border-[#c5a059]/40 rounded-xl px-3 py-2 shadow-md w-full sm:w-auto min-h-[42px]">
                 <Sparkles className="w-4 h-4 text-[#dfba73] shrink-0" />
-                <span className="text-xs font-cinzel font-semibold text-[#fdfbf7] truncate max-w-[220px]">
+                <span className="text-xs font-cinzel font-semibold text-[#fdfbf7] truncate max-w-[180px]">
                   {currentEvent?.coupleNames || settings.coupleNames}
                 </span>
                 <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-950/70 border border-emerald-500/40 text-emerald-300 font-mono shrink-0">
@@ -1711,63 +1675,144 @@ export default function AdminDashboard() {
               </div>
             )}
 
-            {/* Action Buttons Toolbar */}
-            <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 w-full sm:w-auto">
-              {/* Super Admin: + Add Event Manager Button */}
-              {manager?.role === "SUPER_ADMIN" && (
+            {/* Super Admin: + Add Event Manager Button */}
+            {manager?.role === "SUPER_ADMIN" && (
+              <button
+                onClick={() => setShowCreateManagerModal(true)}
+                className="px-3 py-2 rounded-xl bg-[#800020] hover:bg-[#6b0f24] text-white text-xs font-cinzel font-bold flex items-center justify-center gap-1.5 shadow border border-[#dfba73]/60 cursor-pointer min-h-[42px] touch-manipulation transition shrink-0"
+                title="Create a new Event Manager login"
+              >
+                <UserPlus className="w-3.5 h-3.5" /> <span className="truncate">+ Manager</span>
+              </button>
+            )}
+
+            {/* Super Admin: + New Wedding Button */}
+            {manager?.role === "SUPER_ADMIN" && (
+              <button
+                onClick={() => setShowCreateEventModal(true)}
+                className="btn-gold-shimmer px-3 py-2 rounded-xl text-xs font-cinzel font-bold flex items-center justify-center gap-1.5 shadow cursor-pointer min-h-[42px] touch-manipulation shrink-0"
+              >
+                <Plus className="w-3.5 h-3.5" /> <span className="truncate">New Wedding</span>
+              </button>
+            )}
+
+            <button
+              onClick={handleExportCSV}
+              className="px-3 py-2 rounded-xl bg-[#231a20] border border-[#c5a059]/40 text-[#dfba73] hover:bg-[#c5a059]/10 text-xs font-cinzel font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer min-h-[42px] touch-manipulation shrink-0"
+            >
+              <FileSpreadsheet className="w-3.5 h-3.5" /> <span>CSV</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                const current = getAppBaseUrl();
+                const custom = prompt(
+                  "Public Domain for WhatsApp Invites & QR Codes:\n\nDefault: https://wedding-invitation-app-silk.vercel.app\nEnter your custom or production URL:",
+                  current
+                );
+                if (custom !== null && custom.trim()) {
+                  const clean = custom.trim().replace(/\/+$/, "");
+                  localStorage.setItem("wedding_invitation_base_url", clean);
+                  setAppBaseUrl(clean);
+                  showToast(`Active invite domain set to: ${clean}`);
+                }
+              }}
+              className="px-3 py-2 rounded-xl bg-[#231a20] border border-[#c5a059]/40 text-[#dfba73] hover:bg-[#c5a059]/10 text-xs font-cinzel font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer min-h-[42px] touch-manipulation shrink-0"
+              title={`Active Public Domain: ${appBaseUrl} (Click to change)`}
+            >
+              <Link2 className="w-3.5 h-3.5 text-[#ffd700]" /> <span>Domain</span>
+            </button>
+
+            <button
+              onClick={handleLogout}
+              className="px-3 py-2 rounded-xl bg-[#800020]/20 border border-rose-800/60 text-rose-300 hover:bg-rose-950/40 text-xs font-cinzel font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer min-h-[42px] touch-manipulation shrink-0"
+            >
+              <LogOut className="w-3.5 h-3.5" /> <span>Exit</span>
+            </button>
+          </div>
+        </header>
+
+        {/* Tier 2: Active Wedding Showcase Hero Banner (Prominent, dedicated breathing room) */}
+        <div className="my-5 p-4 sm:p-5 md:p-6 rounded-2xl bg-gradient-to-br from-[#1c1519] via-[#22161f] to-[#181116] border border-[#c5a059]/35 shadow-xl relative overflow-hidden">
+          {/* Gilded atmospheric glow effect */}
+          <div className="absolute -top-10 -right-10 w-60 h-60 bg-[#c5a059]/5 rounded-full blur-3xl pointer-events-none" />
+
+          <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            {/* Wedding Title & Badges */}
+            <div className="space-y-2 flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] tracking-widest uppercase font-cinzel font-bold text-[#dfba73]/80 flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-[#edd892]" /> Active Wedding Suite
+                </span>
+                {currentEvent?.venueName && (
+                  <span className="text-[11px] text-[#fdfbf7]/50 font-sans hidden sm:inline-flex items-center gap-1">
+                    • <MapPin className="w-3 h-3 text-[#dfba73]" /> {currentEvent.venueName}
+                  </span>
+                )}
+              </div>
+
+              <h1 className="font-cinzel text-2xl sm:text-3xl lg:text-4xl font-bold gold-foil-text tracking-tight break-words">
+                {currentEvent?.coupleNames || settings.coupleNames}
+              </h1>
+
+              {/* Meta Badges Row */}
+              <div className="flex flex-wrap items-center gap-2 pt-1 text-xs">
+                {/* 1-Click Copy Public Invite Link */}
                 <button
-                  onClick={() => setShowCreateManagerModal(true)}
-                  className="col-span-1 px-3.5 py-2.5 rounded-xl bg-[#800020] hover:bg-[#6b0f24] text-white text-xs font-cinzel font-bold flex items-center justify-center gap-1.5 shadow border border-[#dfba73]/60 cursor-pointer min-h-[44px] touch-manipulation transition"
-                  title="Create a new Event Manager login"
+                  type="button"
+                  onClick={() => {
+                    const url = `${appBaseUrl}/e/${currentEvent?.slug || "wedding"}`;
+                    navigator.clipboard.writeText(url);
+                    showToast("Copied public invitation link to clipboard!");
+                  }}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#130d12] hover:bg-[#20151f] border border-[#c5a059]/35 font-mono text-[11px] text-[#edd892] shadow-sm transition cursor-pointer group"
+                  title="Click to copy public invitation URL"
                 >
-                  <UserPlus className="w-3.5 h-3.5" /> <span className="truncate">+ Manager</span>
+                  <Link2 className="w-3 h-3 text-[#dfba73] group-hover:scale-110 transition-transform" />
+                  <span>/e/{currentEvent?.slug || "wedding"}</span>
+                  <Copy className="w-3 h-3 text-[#dfba73]/60 group-hover:text-[#edd892] ml-1" />
                 </button>
-              )}
 
-              {/* Super Admin: + New Wedding Button (Architecture: 1 Manager = 1 Wedding) */}
-              {manager?.role === "SUPER_ADMIN" && (
-                <button
-                  onClick={() => setShowCreateEventModal(true)}
-                  className="col-span-1 btn-gold-shimmer px-3.5 py-2.5 rounded-xl text-xs font-cinzel font-bold flex items-center justify-center gap-1.5 shadow cursor-pointer min-h-[44px] touch-manipulation"
-                >
-                  <Plus className="w-3.5 h-3.5" /> <span className="truncate">New Wedding</span>
-                </button>
-              )}
+                {/* Planner Pill (Super Admin view) */}
+                {currentEvent?.manager && manager?.role === "SUPER_ADMIN" && (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#800020]/25 border border-[#dfba73]/35 text-[11px] text-[#dfba73] font-sans shadow-sm">
+                    <User className="w-3 h-3 text-[#edd892]" />
+                    <span>
+                      Planner: <strong className="text-white">{currentEvent.manager.name}</strong>
+                      {currentEvent.manager.company ? ` (${currentEvent.manager.company})` : ""}
+                    </span>
+                  </span>
+                )}
 
-              <button
-                onClick={handleExportCSV}
-                className="col-span-1 sm:col-auto px-3.5 py-2.5 rounded-xl bg-[#231a20] border border-[#c5a059]/40 text-[#dfba73] hover:bg-[#c5a059]/10 text-xs font-cinzel font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer min-h-[44px] touch-manipulation"
+                {/* Event Date Badge if set */}
+                {currentEvent?.eventDate && (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#191217] border border-[#c5a059]/25 text-[11px] text-[#edd892] font-sans shadow-sm">
+                    <Calendar className="w-3 h-3 text-[#dfba73]" />
+                    <span>
+                      {new Date(currentEvent.eventDate).toLocaleDateString(undefined, {
+                        weekday: "short",
+                        year: "numeric",
+                        month: "short",
+                        day: "numeric",
+                      })}
+                    </span>
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Quick Action: Preview Wedding in New Tab */}
+            <div className="flex items-center gap-2.5 shrink-0 pt-2 md:pt-0">
+              <a
+                href={`/e/${currentEvent?.slug || "wedding"}`}
+                target="_blank"
+                rel="noreferrer"
+                className="btn-gold-shimmer px-4 py-2.5 rounded-xl text-xs font-cinzel font-bold inline-flex items-center justify-center gap-2 shadow-lg transition touch-manipulation cursor-pointer w-full sm:w-auto min-h-[44px]"
+                title="Open guest invitation preview in new tab"
               >
-                <FileSpreadsheet className="w-4 h-4" /> <span>CSV</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  const current = getAppBaseUrl();
-                  const custom = prompt(
-                    "Public Domain for WhatsApp Invites & QR Codes:\n\nDefault: https://wedding-invitation-app-silk.vercel.app\nEnter your custom or production URL:",
-                    current
-                  );
-                  if (custom !== null && custom.trim()) {
-                    const clean = custom.trim().replace(/\/+$/, "");
-                    localStorage.setItem("wedding_invitation_base_url", clean);
-                    setAppBaseUrl(clean);
-                    showToast(`Active invite domain set to: ${clean}`);
-                  }
-                }}
-                className="col-span-1 sm:col-auto px-3.5 py-2.5 rounded-xl bg-[#231a20] border border-[#c5a059]/40 text-[#dfba73] hover:bg-[#c5a059]/10 text-xs font-cinzel font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer min-h-[44px] touch-manipulation"
-                title={`Active Public Domain: ${appBaseUrl} (Click to change)`}
-              >
-                <Link2 className="w-3.5 h-3.5 text-[#ffd700]" /> <span>Domain</span>
-              </button>
-
-              <button
-                onClick={handleLogout}
-                className="col-span-2 sm:col-auto px-3.5 py-2.5 rounded-xl bg-[#800020]/20 border border-rose-800/60 text-rose-300 hover:bg-rose-950/40 text-xs font-cinzel font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer min-h-[44px] touch-manipulation"
-              >
-                <LogOut className="w-4 h-4" /> <span>Exit</span>
-              </button>
+                <ExternalLink className="w-4 h-4" /> <span>Preview Wedding</span>
+              </a>
             </div>
           </div>
         </div>
@@ -1847,7 +1892,7 @@ export default function AdminDashboard() {
           </div>
 
           {/* Card 5: Open Rate */}
-          <div className="p-3.5 sm:p-4 rounded-2xl bg-gradient-to-br from-[#1c161a] to-[#251821] border border-[#c5a059]/40 backdrop-blur-sm shadow-md col-span-2 sm:col-span-1 flex flex-col justify-between">
+          <div className="p-3.5 sm:p-4 rounded-2xl bg-gradient-to-br from-[#1c161a] to-[#251821] border border-[#c5a059]/40 backdrop-blur-sm shadow-md col-span-2 sm:col-span-2 lg:col-span-1 flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between text-[#dfba73] mb-1">
                 <span className="text-[10px] uppercase tracking-wider font-cinzel font-semibold flex items-center gap-1.5">
@@ -1905,7 +1950,8 @@ export default function AdminDashboard() {
               }`}
             >
               <Users className="w-4 h-4 text-[#dfba73] shrink-0" />
-              <span className="truncate">Guest Directory</span>
+              <span className="truncate hidden sm:inline">Guest Directory</span>
+              <span className="truncate sm:hidden">Guests</span>
               <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-mono shrink-0 ${
                 activeTab === "guests" ? "bg-white/20 text-white" : "bg-[#181216] text-[#dfba73]"
               }`}>
@@ -1921,7 +1967,8 @@ export default function AdminDashboard() {
               }`}
             >
               <Camera className="w-4 h-4 text-[#dfba73] shrink-0" />
-              <span className="truncate">Photos Table</span>
+              <span className="truncate hidden sm:inline">Photos Table</span>
+              <span className="truncate sm:hidden">Photos</span>
               <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-mono shrink-0 ${
                 activeTab === "photos" ? "bg-white/20 text-white" : "bg-[#181216] text-[#dfba73]"
               }`}>
@@ -1937,7 +1984,8 @@ export default function AdminDashboard() {
               }`}
             >
               <Settings className="w-4 h-4 text-[#dfba73] shrink-0" />
-              <span className="truncate">Ceremony & Settings</span>
+              <span className="truncate hidden sm:inline">Ceremony & Settings</span>
+              <span className="truncate sm:hidden">Settings</span>
             </button>
             <button
               onClick={() => setActiveTab("tables")}
@@ -1948,7 +1996,8 @@ export default function AdminDashboard() {
               }`}
             >
               <Printer className="w-4 h-4 text-[#dfba73] shrink-0" />
-              <span className="truncate">Printable Cards & Invitations</span>
+              <span className="truncate hidden sm:inline">Printable Cards & Invitations</span>
+              <span className="truncate sm:hidden">Print Cards</span>
             </button>
             {manager?.role === "SUPER_ADMIN" && (
               <button
@@ -1960,7 +2009,8 @@ export default function AdminDashboard() {
                 }`}
               >
                 <Sparkles className="w-4 h-4 text-[#dfba73] shrink-0" />
-                <span className="truncate">Platform Weddings</span>
+                <span className="truncate hidden sm:inline">Platform Weddings</span>
+                <span className="truncate sm:hidden">Weddings</span>
                 <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-mono shrink-0 ${
                   activeTab === "events" ? "bg-white/20 text-white" : "bg-[#181216] text-[#dfba73]"
                 }`}>
@@ -1978,7 +2028,8 @@ export default function AdminDashboard() {
                 }`}
               >
                 <ShieldCheck className="w-4 h-4 text-[#dfba73] shrink-0" />
-                <span className="truncate">Event Managers</span>
+                <span className="truncate hidden sm:inline">Event Managers</span>
+                <span className="truncate sm:hidden">Managers</span>
                 <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-mono shrink-0 ${
                   activeTab === "managers" ? "bg-white/20 text-white" : "bg-[#181216] text-[#dfba73]"
                 }`}>
