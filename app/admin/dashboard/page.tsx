@@ -296,6 +296,11 @@ export function getAppBaseUrl(): string {
     if (custom && custom.trim()) {
       return custom.trim().replace(/\/+$/, "");
     }
+
+    // Default to current browser origin so localhost, local network IPs, and custom domains work seamlessly
+    if (window.location.origin) {
+      return window.location.origin.replace(/\/+$/, "");
+    }
   }
 
   if (process.env.NEXT_PUBLIC_APP_URL) {
@@ -303,13 +308,6 @@ export function getAppBaseUrl(): string {
   }
   if (process.env.NEXT_PUBLIC_SITE_URL) {
     return process.env.NEXT_PUBLIC_SITE_URL.trim().replace(/\/+$/, "");
-  }
-
-  if (typeof window !== "undefined") {
-    const origin = window.location.origin;
-    if (origin && !origin.includes("localhost") && !origin.includes("127.0.0.1") && !origin.includes("0.0.0.0")) {
-      return origin.replace(/\/+$/, "");
-    }
   }
 
   return DEFAULT_PRODUCTION_URL;
@@ -1322,6 +1320,10 @@ export default function AdminDashboard() {
     return `${base}/invite/${token}`;
   }
 
+  function previewInviteLink(token: string) {
+    return `/invite/${token}`;
+  }
+
   async function copyLink(guest: Guest) {
     await navigator.clipboard.writeText(inviteLink(guest.token));
     setCopiedId(guest.id);
@@ -2283,7 +2285,7 @@ export default function AdminDashboard() {
                       {copiedId === g.id ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
                     </button>
                     <a
-                      href={inviteLink(g.token)}
+                      href={previewInviteLink(g.token)}
                       target="_blank"
                       rel="noopener noreferrer"
                       title="Open and Preview Guest Invite"
@@ -2408,7 +2410,7 @@ export default function AdminDashboard() {
                         {copiedId === g.id ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
                       </button>
                       <a
-                        href={inviteLink(g.token)}
+                        href={previewInviteLink(g.token)}
                         target="_blank"
                         rel="noopener noreferrer"
                         title="Preview Guest Invite"
@@ -3870,7 +3872,7 @@ export default function AdminDashboard() {
 
                       <div className="flex items-center gap-1.5">
                         <a
-                          href={inviteLink(g.token)}
+                          href={previewInviteLink(g.token)}
                           target="_blank"
                           rel="noreferrer"
                           className="px-3 py-1.5 rounded-lg bg-[#800020]/10 hover:bg-[#800020]/20 text-[#800020] text-xs font-cinzel font-bold flex items-center gap-1 transition border border-[#c5a059]/30"
@@ -4034,7 +4036,7 @@ export default function AdminDashboard() {
                         <Printer className="w-3 h-3" /> Print This Card
                       </button>
                       <a
-                        href={inviteLink(g.token)}
+                        href={previewInviteLink(g.token)}
                         target="_blank"
                         rel="noreferrer"
                         className="text-[10px] font-cinzel text-[#8c6a2b] hover:underline"
