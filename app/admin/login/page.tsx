@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ShieldCheck, User, Lock, Eye, EyeOff, Sparkles, KeyRound, AlertCircle, ArrowRight } from "lucide-react";
+import { ShieldCheck, User, Lock, Eye, EyeOff, Sparkles, AlertCircle, ArrowRight } from "lucide-react";
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -39,12 +39,6 @@ export default function AdminLoginPage() {
     }
   }
 
-  // Helper function to fill default admin credentials in 1 click
-  function handleFillDefaults() {
-    setUsername("admin");
-    setPassword("admin");
-    setError("");
-  }
 
   return (
     <div className="relative min-h-screen flex items-center justify-center bg-[#121013] text-[#fdfbf7] px-3 sm:px-4 py-8 sm:py-12 overflow-hidden">
@@ -68,27 +62,6 @@ export default function AdminLoginPage() {
             </p>
           </div>
 
-          {/* Quick Default Fill Helper Banner */}
-          <div className="mb-6 p-3 rounded-2xl bg-[#c5a059]/10 border border-[#c5a059]/30 flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2 min-w-0">
-              <KeyRound className="w-4 h-4 text-[#dfba73] shrink-0" />
-              <div className="text-left min-w-0">
-                <span className="text-[11px] font-cinzel font-bold text-[#dfba73] block truncate">
-                  Default Credentials
-                </span>
-                <span className="text-[10px] text-[#fdfbf7]/70 font-mono">
-                  admin / admin
-                </span>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={handleFillDefaults}
-              className="px-3 py-1.5 rounded-lg bg-[#c5a059]/20 hover:bg-[#c5a059]/30 text-[#edd892] text-xs font-cinzel font-semibold border border-[#c5a059]/50 transition cursor-pointer flex items-center gap-1 shrink-0 min-h-[36px] touch-manipulation"
-            >
-              <Sparkles className="w-3 h-3" /> Auto-Fill
-            </button>
-          </div>
 
           {/* Error Alert */}
           {error && (
