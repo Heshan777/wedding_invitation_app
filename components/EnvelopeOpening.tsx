@@ -433,7 +433,7 @@ export default function EnvelopeOpening({
         <button
           onClick={handleOpenEnvelope}
           disabled={isOpening}
-          className="mt-6 btn-gold-shimmer px-8 sm:px-9 py-3.5 rounded-full font-cinzel text-xs sm:text-sm tracking-[0.15em] uppercase font-bold flex items-center justify-center gap-2.5 shadow-[0_10px_25px_rgba(197,160,89,0.35)] hover:scale-105 active:scale-95 transition cursor-pointer border border-[#fff2cf]/50 min-h-[48px] touch-manipulation"
+          className="mt-6 btn-gold-shimmer px-8 sm:px-9 py-3.5 rounded-full font-cinzel text-xs sm:text-sm tracking-[0.15em] uppercase font-bold flex items-center justify-center gap-2.5 shadow-[0_10px_25px_rgba(197,160,89,0.35)] hover:scale-105 active:scale-95 transition cursor-pointer border border-[#fff2cf]/50 min-h-[48px] touch-manipulation animate-pulse-subtle"
         >
           <Sparkles className="w-4 h-4 text-[#1a1517] flex-shrink-0" />
           <span className="text-center">{isOpening ? t.openingInvitation : t.tapToOpen}</span>

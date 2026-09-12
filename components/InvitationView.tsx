@@ -34,6 +34,9 @@ import {
   RotateCcw,
   Edit3,
   CheckCircle2,
+  ChevronUp,
+  Plus,
+  Minus,
 } from "lucide-react";
 import dynamic from "next/dynamic";
 import CountdownTimer from "./CountdownTimer";
@@ -196,6 +199,8 @@ export default function InvitationView({
   const [copiedLink, setCopiedLink] = useState(false);
   const [qrDataUrl, setQrDataUrl] = useState<string>("");
   const [envelopeOpened, setEnvelopeOpened] = useState(false);
+  const [showFloatingNav, setShowFloatingNav] = useState(false);
+  const [isQrPassModalOpen, setIsQrPassModalOpen] = useState(false);
 
   // Photo Gallery & Lightbox state
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
@@ -334,6 +339,39 @@ export default function InvitationView({
     sessionStorage.setItem("invite_locale", newLocale);
   };
 
+  // Monitor scroll for floating quick-navigation dock
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowFloatingNav(window.scrollY > 340);
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  const scrollToSection = (id: string) => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
+
+  const quickBlessingPresets = [
+    "Warmest congratulations! 🥂",
+    "Wishing you endless love & joy! 💕",
+    "Can't wait to celebrate! ✨",
+    "Deeply blessed marriage! 🙏",
+  ];
+
+  const handleApplyBlessingPreset = (preset: string) => {
+    setRsvpWish((prev) => (prev ? `${prev} ${preset}` : preset));
+    confetti({
+      particleCount: 18,
+      spread: 50,
+      origin: { y: 0.8 },
+      colors: ["#ffd700", "#dfba73", "#ffccd5", "#800020"],
+    });
+  };
+
   const t = translations[locale] || translations.en;
 
   function handleToggleVideoAudio(e?: React.MouseEvent) {
@@ -416,6 +454,15 @@ export default function InvitationView({
     setWishes((prev) =>
       prev.map((w) => (w.id === wishId ? { ...w, likes: w.likes + 1 } : w))
     );
+
+    try {
+      confetti({
+        particleCount: 20,
+        spread: 45,
+        origin: { y: 0.78 },
+        colors: ["#ffd700", "#dfba73", "#ffccd5", "#800020"],
+      });
+    } catch {}
 
     try {
       await fetch(`/api/wishes`, {
@@ -1200,10 +1247,13 @@ export default function InvitationView({
 
           {/* VIRTUAL LUXURY TABLE SEATING PLACE CARD with Scroll Reveal */}
           <ScrollReveal variant="scale-up" duration={850}>
-            <div className="my-8 rounded-2xl border border-[#bda06d]/30 bg-[#fbf8f3] p-5 sm:p-7 shadow-lg relative overflow-hidden text-[#1a1517]">
+            <div id="vip-pass" className="my-8 rounded-2xl border border-[#bda06d]/30 bg-[#fbf8f3] p-5 sm:p-7 shadow-lg relative overflow-hidden text-[#1a1517] scroll-mt-8 transition-all hover:shadow-xl hover:border-[#dfba73]">
+              {/* Top ambient gold highlight */}
+              <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-[#dfba73]/60 to-transparent" />
+
               {/* Header Couple Cameo & Title */}
               <div className="flex flex-col items-center text-center pb-4 border-b border-[#bda06d]/25">
-                <div className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-full overflow-hidden border border-[#bda06d]/60 shadow-xs mb-2 bg-[#661022]/10">
+                <div className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-full overflow-hidden border-2 border-[#bda06d]/60 shadow-xs mb-2 bg-[#661022]/10 transition-transform hover:scale-105">
                   <Image
                     src={placeCardImageSrc}
                     alt={settings.coupleNames}
@@ -1236,27 +1286,37 @@ export default function InvitationView({
                   </div>
                   <div className="mt-3 flex items-center justify-center sm:justify-start gap-2">
                     <span className="text-xs text-[#5a483e] font-sans font-medium">{t.tablePrefix}:</span>
-                    <div className="px-4 py-1.5 rounded-xl bg-[#661022] text-[#fdfbf7] font-cinzel font-bold text-sm sm:text-base shadow-sm">
+                    <div className="px-4 py-1.5 rounded-xl bg-[#661022] text-[#fdfbf7] font-cinzel font-bold text-sm sm:text-base shadow-sm border border-[#dfba73]/40">
                       {t.tableNumber(guest.tableNumber)}
                     </div>
                   </div>
                 </div>
 
-                {/* QR Code Scannable Reception Pass */}
+                {/* QR Code Scannable Reception Pass (Tap to Enlarge) */}
                 {qrDataUrl && (
-                  <div className="flex flex-col items-center bg-white p-2.5 rounded-xl border border-[#bda06d]/30 shadow-xs">
-                    <Image
-                      src={qrDataUrl}
-                      alt="Guest Reception QR Code"
-                      width={100}
-                      height={100}
-                      loading="lazy"
-                      className="w-20 h-20 sm:w-24 sm:h-24"
-                    />
-                    <span className="text-[9px] uppercase tracking-wider text-[#661022] font-cinzel font-semibold mt-1 text-center max-w-[110px]">
-                      {t.scanAtEntrance}
+                  <button
+                    type="button"
+                    onClick={() => setIsQrPassModalOpen(true)}
+                    className="group flex flex-col items-center bg-white p-2.5 rounded-xl border border-[#bda06d]/35 shadow-xs hover:shadow-md hover:border-[#dfba73] hover:scale-105 active:scale-95 transition-all cursor-pointer text-center touch-manipulation"
+                    title="Tap to enlarge QR Pass"
+                  >
+                    <div className="relative">
+                      <Image
+                        src={qrDataUrl}
+                        alt="Guest Reception QR Code"
+                        width={100}
+                        height={100}
+                        loading="lazy"
+                        className="w-20 h-20 sm:w-24 sm:h-24"
+                      />
+                      <div className="absolute inset-0 bg-[#661022]/0 group-hover:bg-[#661022]/10 rounded-lg flex items-center justify-center transition-colors">
+                        <ZoomIn className="w-5 h-5 text-[#661022] opacity-0 group-hover:opacity-100 transition-opacity drop-shadow" />
+                      </div>
+                    </div>
+                    <span className="text-[9px] uppercase tracking-wider text-[#661022] font-cinzel font-semibold mt-1.5 text-center max-w-[110px] flex items-center justify-center gap-1 group-hover:text-[#800020]">
+                      <ZoomIn className="w-3 h-3 text-[#8c6a2b]" /> {t.scanAtEntrance}
                     </span>
-                  </div>
+                  </button>
                 )}
               </div>
 
@@ -1274,7 +1334,7 @@ export default function InvitationView({
 
           {/* Live Countdown Section with Scroll Reveal */}
           <ScrollReveal variant="fade-up" duration={750}>
-            <div className="my-8">
+            <div id="countdown" className="my-8 scroll-mt-8">
               <CountdownTimer targetDate={settings.eventDate} locale={locale} />
             </div>
           </ScrollReveal>
@@ -1283,7 +1343,7 @@ export default function InvitationView({
           <FloralDivider />
 
           {/* Programme / Event Itinerary Timeline with Staggered Scroll Reveal */}
-          <div className="my-10">
+          <div id="timeline" className="my-10 scroll-mt-8">
             <ScrollReveal variant="fade-up" duration={750}>
               <div className="text-center mb-6">
                 <span className="text-[11px] uppercase tracking-[0.25em] text-[#8c6a2b] font-cinzel font-semibold">
@@ -1295,25 +1355,35 @@ export default function InvitationView({
               </div>
             </ScrollReveal>
 
-            <div className="space-y-3">
-              {parsedTimeline.map((evt: any, idx: number) => (
+            <div className="relative pl-5 sm:pl-7 space-y-3.5">
+              {/* Continuous Vertical Golden Timeline Ribbon Line */}
+              <div className="absolute left-2 sm:left-3 top-3 bottom-3 w-0.5 bg-gradient-to-b from-[#bda06d]/20 via-[#dfba73] to-[#bda06d]/20 pointer-events-none" />
+
+              {parsedTimeline.map((evt: { time?: string; title?: string; desc?: string }, idx: number) => (
                 <ScrollReveal
                   key={idx}
                   variant="fade-up"
                   delay={idx * 80}
                   duration={650}
                 >
-                  <div className="flex items-start gap-3.5 p-3.5 rounded-2xl bg-[#fbf7ee] border border-[#c5a059]/30 hover:border-[#c5a059] shadow-sm transition duration-200">
-                    <div className="min-w-[85px] px-2.5 py-1.5 rounded-xl bg-[#800020]/10 text-[#800020] font-cinzel text-xs font-bold text-center border border-[#800020]/20 shadow-xs">
-                      {evt.time}
+                  <div className="relative group">
+                    {/* Milestone Illuminated Node Pin */}
+                    <div className="absolute -left-5 sm:-left-7 top-4 w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full bg-[#fffdfa] border-2 border-[#dfba73] shadow-xs flex items-center justify-center -translate-x-1/2 group-hover:scale-125 group-hover:border-[#800020] transition-all duration-300">
+                      <div className="w-1.5 h-1.5 rounded-full bg-[#800020] group-hover:bg-[#dfba73] transition-colors" />
                     </div>
-                    <div>
-                      <h4 className="font-cinzel text-xs sm:text-sm font-bold text-[#1a1517]">
-                        {evt.title}
-                      </h4>
-                      <p className="text-[11px] sm:text-xs text-[#5a483e] font-sans mt-0.5">
-                        {evt.desc}
-                      </p>
+
+                    <div className="flex items-start gap-3.5 p-3.5 rounded-2xl bg-[#fbf7ee] border border-[#c5a059]/30 hover:border-[#c5a059] shadow-sm hover:shadow-md hover:scale-[1.01] transition-all duration-200">
+                      <div className="min-w-[85px] px-2.5 py-1.5 rounded-xl bg-[#800020]/10 text-[#800020] font-cinzel text-xs font-bold text-center border border-[#800020]/20 shadow-xs group-hover:bg-[#800020] group-hover:text-[#ffd700] transition-colors">
+                        {evt.time}
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="font-cinzel text-xs sm:text-sm font-bold text-[#1a1517] group-hover:text-[#800020] transition-colors">
+                          {evt.title}
+                        </h4>
+                        <p className="text-[11px] sm:text-xs text-[#5a483e] font-sans mt-0.5 leading-relaxed">
+                          {evt.desc}
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </ScrollReveal>
@@ -1326,7 +1396,7 @@ export default function InvitationView({
 
           {/* DRESS CODE & STYLE PALETTE SECTION with Scroll Reveal */}
           <ScrollReveal variant="fade-up" duration={800}>
-            <div className="my-10 p-6 rounded-3xl bg-gradient-to-b from-[#fffdfa] to-[#fbf6eb] border-2 border-[#c5a059]/40 shadow-xl text-center">
+            <div id="dress-code" className="my-10 p-6 rounded-3xl bg-gradient-to-b from-[#fffdfa] to-[#fbf6eb] border-2 border-[#c5a059]/40 shadow-xl text-center scroll-mt-8">
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#800020]/10 text-[#800020] text-xs font-cinzel font-semibold mb-2">
                 <Sparkles className="w-3.5 h-3.5 text-[#c5a059]" /> {t.dressCodeGuideTitle}
               </div>
@@ -1368,7 +1438,7 @@ export default function InvitationView({
 
           {/* Moments of Love & Pre-Wedding Gallery Section with Scroll Reveal */}
           <ScrollReveal variant="scale-up" duration={850}>
-            <div className="my-10 p-5 sm:p-6 rounded-3xl bg-gradient-to-b from-[#fffdfa] to-[#fbf6eb] border-2 border-[#c5a059]/50 shadow-xl">
+            <div id="gallery" className="my-10 p-5 sm:p-6 rounded-3xl bg-gradient-to-b from-[#fffdfa] to-[#fbf6eb] border-2 border-[#c5a059]/50 shadow-xl scroll-mt-8">
               <div className="text-center mb-6">
                 <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#800020]/10 text-[#800020] text-xs font-cinzel font-semibold mb-2">
                   <Camera className="w-3.5 h-3.5 text-[#c5a059]" /> {t.momentsOfLoveTitle}
@@ -1587,7 +1657,7 @@ export default function InvitationView({
 
           {/* Venue & Location Suite with Scroll Reveal */}
           <ScrollReveal variant="fade-up" duration={800}>
-            <div className="my-10">
+            <div id="venue" className="my-10 scroll-mt-8">
               <div className="text-center mb-4">
                 <span className="text-[11px] uppercase tracking-[0.25em] text-[#8c6a2b] font-cinzel font-semibold">
                   {t.venueSubtitle}
@@ -1716,7 +1786,7 @@ export default function InvitationView({
 
           {/* Interactive Production RSVP Suite with Scroll Reveal */}
           <ScrollReveal variant="scale-up" duration={850}>
-            <div className="my-10 p-5 sm:p-7 rounded-3xl bg-gradient-to-b from-[#fffdfa] to-[#f7f2e7] border-2 border-[#c5a059]/60 shadow-2xl">
+            <div id="rsvp" className="my-10 p-5 sm:p-7 rounded-3xl bg-gradient-to-b from-[#fffdfa] to-[#f7f2e7] border-2 border-[#c5a059]/60 shadow-2xl scroll-mt-8">
               <div className="text-center mb-5">
                 <div className="inline-flex items-center gap-1.5 text-[#800020] text-xs font-cinzel font-semibold mb-1">
                   <Sparkles className="w-4 h-4 text-[#c5a059]" /> {t.rsvpTitle}
@@ -1762,12 +1832,12 @@ export default function InvitationView({
                     {/* Current recorded response status badge */}
                     <div>
                       {rsvpStatus === "attending" ? (
-                        <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-cinzel font-bold text-emerald-900 bg-emerald-500/15 border border-emerald-600/40 shadow-sm">
+                        <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-cinzel font-bold text-emerald-900 bg-emerald-500/15 border border-emerald-600/40 shadow-sm animate-modal-in">
                           <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700" />
                           <span>{t.joyfullyAccept} • {rsvpCount} {rsvpCount === 1 ? t.guestSingle : t.guestPlural}</span>
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-cinzel font-bold text-stone-800 bg-stone-500/15 border border-stone-600/30 shadow-xs">
+                        <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-cinzel font-bold text-stone-800 bg-stone-500/15 border border-stone-600/30 shadow-xs animate-modal-in">
                           <span>{t.regretfullyDecline}</span>
                         </span>
                       )}
@@ -1793,7 +1863,7 @@ export default function InvitationView({
                     <button
                       type="button"
                       onClick={() => setRsvpSubmitted(false)}
-                      className="group relative w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl bg-[#661022] hover:bg-[#4d0c19] text-[#fdfbf7] border border-[#bda06d]/40 shadow-md transition duration-200 cursor-pointer min-h-[46px] touch-manipulation font-cinzel font-semibold text-xs tracking-wider uppercase"
+                      className="group relative w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl bg-[#661022] hover:bg-[#4d0c19] text-[#fdfbf7] border border-[#bda06d]/40 shadow-md transition duration-200 cursor-pointer min-h-[46px] touch-manipulation font-cinzel font-semibold text-xs tracking-wider uppercase active:scale-95"
                     >
                       <RotateCcw className="w-3.5 h-3.5 text-[#dfba73] group-hover:-rotate-90 transition-transform duration-300 shrink-0" />
                       <span>{t.modifyRsvp}</span>
@@ -1805,93 +1875,173 @@ export default function InvitationView({
                   </div>
                 </div>
               ) : (
-                <form onSubmit={handleRsvpSubmit} className="space-y-4">
+                <form onSubmit={handleRsvpSubmit} className="space-y-5">
                   {/* Attending / Decline Options */}
                   <div className="grid grid-cols-2 gap-3">
                     <button
                       type="button"
                       onClick={() => setRsvpStatus("attending")}
-                      className={`py-3.5 px-3 rounded-xl font-cinzel text-xs font-semibold border transition cursor-pointer flex items-center justify-center gap-1.5 min-h-[48px] touch-manipulation ${
+                      className={`py-3.5 px-3 rounded-xl font-cinzel text-xs font-semibold border transition-all duration-200 cursor-pointer flex items-center justify-center gap-1.5 min-h-[48px] touch-manipulation active:scale-95 ${
                         rsvpStatus === "attending"
-                          ? "bg-[#661022] text-[#fdfbf7] border-[#661022] shadow-sm"
+                          ? "bg-[#661022] text-[#fdfbf7] border-[#661022] shadow-md scale-[1.02]"
                           : "bg-white text-[#1a1517] border-[#bda06d]/40 hover:bg-[#661022]/5"
                       }`}
                     >
-                      <Check className="w-3.5 h-3.5" />
+                      {rsvpStatus === "attending" ? (
+                        <Check className="w-3.5 h-3.5 text-[#dfba73] animate-checkmark-pop" />
+                      ) : (
+                        <Check className="w-3.5 h-3.5 text-[#661022]" />
+                      )}
                       <span>{t.joyfullyAccept}</span>
                     </button>
 
                     <button
                       type="button"
                       onClick={() => setRsvpStatus("declined")}
-                      className={`py-3.5 px-3 rounded-xl font-cinzel text-xs font-semibold border transition cursor-pointer flex items-center justify-center gap-1.5 min-h-[48px] touch-manipulation ${
+                      className={`py-3.5 px-3 rounded-xl font-cinzel text-xs font-semibold border transition-all duration-200 cursor-pointer flex items-center justify-center gap-1.5 min-h-[48px] touch-manipulation active:scale-95 ${
                         rsvpStatus === "declined"
-                          ? "bg-[#3d3238] text-[#fdfbf7] border-[#3d3238] shadow-sm"
+                          ? "bg-[#3d3238] text-[#fdfbf7] border-[#3d3238] shadow-md scale-[1.02]"
                           : "bg-white text-[#1a1517] border-[#bda06d]/40 hover:bg-[#661022]/5"
                       }`}
                     >
-                      <X className="w-3.5 h-3.5" />
+                      {rsvpStatus === "declined" ? (
+                        <X className="w-3.5 h-3.5 text-[#edd892] animate-checkmark-pop" />
+                      ) : (
+                        <X className="w-3.5 h-3.5 text-[#3d3238]" />
+                      )}
                       <span>{t.regretfullyDecline}</span>
                     </button>
                   </div>
 
                   {/* Headcount & Dietary if attending */}
                   {rsvpStatus === "attending" && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-                      <div>
-                        <label className="block text-xs font-cinzel font-semibold text-[#1a1517] mb-1">
+                    <div className="space-y-4 pt-1 animate-modal-in">
+                      {/* Interactive Headcount Stepper */}
+                      <div className="p-3.5 rounded-2xl bg-[#f8f4ed] border border-[#bda06d]/30">
+                        <label className="block text-xs font-cinzel font-semibold text-[#1a1517] mb-2 text-center sm:text-left">
                           {t.numberOfGuests}
                         </label>
-                        <select
-                          value={rsvpCount}
-                          onChange={(e) => setRsvpCount(Number(e.target.value))}
-                          className="w-full px-3 py-2.5 rounded-xl bg-white border border-[#c5a059]/60 text-xs text-[#1a1517] focus:outline-none focus:ring-2 focus:ring-[#800020] min-h-[42px]"
-                        >
-                          {Array.from({ length: maxAttendees }, (_, i) => i + 1).map((num) => (
-                            <option key={num} value={num}>
-                              {num} {num === 1 ? t.guestSingle : t.guestPlural}
-                            </option>
-                          ))}
-                        </select>
+                        <div className="flex items-center gap-3">
+                          <button
+                            type="button"
+                            onClick={() => setRsvpCount((c) => Math.max(1, c - 1))}
+                            disabled={rsvpCount <= 1}
+                            className="w-10 h-10 rounded-xl bg-white border border-[#bda06d]/40 text-[#661022] font-bold text-lg flex items-center justify-center hover:bg-[#661022]/10 disabled:opacity-30 disabled:pointer-events-none transition cursor-pointer shadow-xs active:scale-95 touch-manipulation"
+                            title="Decrease guest count"
+                          >
+                            <Minus className="w-4 h-4" />
+                          </button>
+                          <div className="flex-1 py-2 px-3 rounded-xl bg-white border border-[#bda06d]/40 text-center shadow-xs">
+                            <span className="font-cinzel text-lg font-bold text-[#661022]">
+                              {rsvpCount}
+                            </span>{" "}
+                            <span className="text-xs text-[#5a483e] font-sans font-medium">
+                              {rsvpCount === 1 ? t.guestSingle : t.guestPlural}
+                            </span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setRsvpCount((c) => Math.min(maxAttendees, c + 1))}
+                            disabled={rsvpCount >= maxAttendees}
+                            className="w-10 h-10 rounded-xl bg-white border border-[#bda06d]/40 text-[#661022] font-bold text-lg flex items-center justify-center hover:bg-[#661022]/10 disabled:opacity-30 disabled:pointer-events-none transition cursor-pointer shadow-xs active:scale-95 touch-manipulation"
+                            title="Increase guest count"
+                          >
+                            <Plus className="w-4 h-4" />
+                          </button>
+                        </div>
+
+                        {/* Quick numbered buttons if multiple attendees allowed */}
+                        {maxAttendees > 1 && (
+                          <div className="flex items-center gap-1.5 mt-2.5">
+                            {Array.from({ length: maxAttendees }, (_, i) => i + 1).map((n) => (
+                              <button
+                                key={n}
+                                type="button"
+                                onClick={() => setRsvpCount(n)}
+                                className={`flex-1 py-1.5 rounded-lg text-[11px] font-cinzel font-bold transition-all cursor-pointer ${
+                                  rsvpCount === n
+                                    ? "bg-[#661022] text-[#fdfbf7] shadow-xs scale-102"
+                                    : "bg-white/80 text-[#5a483e] border border-[#bda06d]/30 hover:bg-[#661022]/5"
+                                }`}
+                              >
+                                {n} {n === 1 ? t.guestSingle : t.guestPlural}
+                              </button>
+                            ))}
+                          </div>
+                        )}
                       </div>
 
-                      <div>
-                        <label className="block text-xs font-cinzel font-semibold text-[#1a1517] mb-1">
+                      {/* Dietary Preference Interactive Selectable Chips */}
+                      <div className="p-3.5 rounded-2xl bg-[#f8f4ed] border border-[#bda06d]/30">
+                        <label className="block text-xs font-cinzel font-semibold text-[#1a1517] mb-2">
                           {t.dietaryTitle}
                         </label>
-                        <select
-                          value={dietary}
-                          onChange={(e) => setDietary(e.target.value)}
-                          className="w-full px-3 py-2.5 rounded-xl bg-white border border-[#c5a059]/60 text-xs text-[#1a1517] focus:outline-none focus:ring-2 focus:ring-[#800020] min-h-[42px]"
-                        >
-                          {t.dietaryOptions.map((opt) => (
-                            <option key={opt.key} value={opt.key}>
-                              {opt.label}
-                            </option>
-                          ))}
-                        </select>
+                        <div className="flex flex-wrap gap-2">
+                          {t.dietaryOptions.map((opt) => {
+                            const isSelected = dietary === opt.key;
+                            return (
+                              <button
+                                key={opt.key}
+                                type="button"
+                                onClick={() => setDietary(opt.key)}
+                                className={`px-3 py-2 rounded-xl text-xs font-sans font-medium transition-all duration-200 cursor-pointer flex items-center gap-1.5 touch-manipulation active:scale-95 ${
+                                  isSelected
+                                    ? "bg-[#661022] text-[#fdfbf7] border border-[#661022] shadow-sm scale-102 font-semibold"
+                                    : "bg-white text-[#5a483e] border border-[#bda06d]/40 hover:bg-[#661022]/5"
+                                }`}
+                              >
+                                {isSelected && (
+                                  <Check className="w-3 h-3 text-[#dfba73] animate-checkmark-pop" />
+                                )}
+                                <span>{opt.label}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
                       </div>
                     </div>
                   )}
 
-                  {/* Blessing Message directly linked to Digital Guestbook */}
-                  <div>
-                    <label className="block text-xs font-cinzel font-semibold text-[#1a1517] mb-1">
-                      {t.leaveBlessingPrompt}
-                    </label>
+                  {/* Blessing Message with 1-Tap Quick Presets */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between flex-wrap gap-1">
+                      <label className="block text-xs font-cinzel font-semibold text-[#1a1517]">
+                        {t.leaveBlessingPrompt}
+                      </label>
+                      <span className="text-[10px] text-[#8c6a2b] font-sans">
+                        Quick tap to add:
+                      </span>
+                    </div>
+
+                    {/* Quick Preset Blessing Chips */}
+                    <div className="flex flex-wrap gap-1.5 pb-1">
+                      {quickBlessingPresets.map((preset, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => handleApplyBlessingPreset(preset)}
+                          className="px-2.5 py-1 rounded-full bg-white text-[#661022] hover:bg-[#661022] hover:text-[#fdfbf7] border border-[#bda06d]/35 text-[11px] font-sans transition-all duration-200 cursor-pointer shadow-xs active:scale-95 touch-manipulation"
+                        >
+                          + {preset}
+                        </button>
+                      ))}
+                    </div>
+
                     <textarea
                       rows={3}
                       placeholder={t.blessingPlaceholder}
                       value={rsvpWish}
                       onChange={(e) => setRsvpWish(e.target.value)}
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#c5a059]/60 text-xs text-[#1a1517] focus:outline-none focus:ring-2 focus:ring-[#800020] resize-none"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#c5a059]/60 text-xs text-[#1a1517] focus:outline-none focus:ring-2 focus:ring-[#800020] resize-none shadow-xs"
                     />
                   </div>
 
                   <button
                     type="submit"
                     disabled={!rsvpStatus || submittingRsvp}
-                    className="w-full py-3.5 rounded-xl btn-gold-shimmer text-xs font-cinzel font-bold uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg disabled:opacity-50 cursor-pointer min-h-[46px] touch-manipulation"
+                    className={`w-full py-3.5 rounded-xl btn-gold-shimmer text-xs font-cinzel font-bold uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg disabled:opacity-50 cursor-pointer min-h-[46px] touch-manipulation transition-all duration-200 ${
+                      rsvpStatus ? "animate-pulse-subtle" : ""
+                    }`}
                   >
                     <Send className="w-3.5 h-3.5" />
                     {submittingRsvp ? t.submittingRsvp : t.submitRsvp}
@@ -1906,7 +2056,7 @@ export default function InvitationView({
 
           {/* DIGITAL WISHES GUESTBOOK STREAM with Scroll Reveal */}
           <ScrollReveal variant="fade-up" duration={800}>
-            <div className="my-8 sm:my-10 p-5 sm:p-7 rounded-2xl bg-[#fbf8f3] border border-[#bda06d]/30 shadow-md">
+            <div id="guestbook" className="my-8 sm:my-10 p-5 sm:p-7 rounded-2xl bg-[#fbf8f3] border border-[#bda06d]/30 shadow-md scroll-mt-8">
               <div className="text-center mb-5">
                 <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#661022]/8 text-[#661022] text-xs font-cinzel font-semibold mb-2 border border-[#bda06d]/20">
                   <Heart className="w-3 h-3 text-[#8c6a2b]" /> {t.guestbookTitle}
@@ -2162,6 +2312,138 @@ export default function InvitationView({
             <p className="text-xs sm:text-sm text-[#edd892] font-cinzel font-semibold mt-1">
               {t.foreverBegins}
             </p>
+          </div>
+        </div>
+      )}
+
+      {/* Floating Quick Navigation Capsule */}
+      {envelopeOpened && showFloatingNav && !isLightboxOpen && !showCinemaModal && !isQrPassModalOpen && (
+        <aside aria-label="Quick invitation navigation" className="fixed bottom-4 sm:bottom-6 inset-x-0 z-40 flex justify-center pointer-events-none px-3 animate-modal-in">
+          <nav
+            className="pointer-events-auto glass-dock px-2 sm:px-3 py-1.5 rounded-full flex items-center gap-1 sm:gap-1.5 shadow-[0_12px_36px_rgba(0,0,0,0.85)] border border-[#dfba73]/40"
+          >
+            <button
+              type="button"
+              onClick={() => scrollToSection("vip-pass")}
+              className="px-2.5 py-1.5 rounded-full text-[11px] font-cinzel font-semibold text-[#edd892]/80 hover:text-[#ffd700] hover:bg-white/10 transition flex items-center gap-1 cursor-pointer touch-manipulation active:scale-95"
+              title="VIP Table Pass"
+            >
+              <QrCode className="w-3.5 h-3.5 text-[#dfba73]" />
+              <span className="hidden sm:inline">Pass</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => scrollToSection("timeline")}
+              className="px-2.5 py-1.5 rounded-full text-[11px] font-cinzel font-semibold text-[#edd892]/80 hover:text-[#ffd700] hover:bg-white/10 transition flex items-center gap-1 cursor-pointer touch-manipulation active:scale-95"
+              title="Event Schedule"
+            >
+              <Clock className="w-3.5 h-3.5 text-[#dfba73]" />
+              <span className="hidden sm:inline">Schedule</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => scrollToSection("venue")}
+              className="px-2.5 py-1.5 rounded-full text-[11px] font-cinzel font-semibold text-[#edd892]/80 hover:text-[#ffd700] hover:bg-white/10 transition flex items-center gap-1 cursor-pointer touch-manipulation active:scale-95"
+              title="Venue & Maps"
+            >
+              <MapPin className="w-3.5 h-3.5 text-[#dfba73]" />
+              <span className="hidden sm:inline">Venue</span>
+            </button>
+
+            {/* Prominent RSVP CTA */}
+            <button
+              type="button"
+              onClick={() => scrollToSection("rsvp")}
+              className="px-3.5 py-1.5 rounded-full text-xs font-cinzel font-bold bg-gradient-to-r from-[#800020] to-[#6b0f24] text-[#ffd700] border border-[#ffd700]/80 shadow-[0_0_15px_rgba(223,186,115,0.45)] hover:scale-105 active:scale-95 transition flex items-center gap-1.5 cursor-pointer animate-pulse-subtle touch-manipulation"
+              title="RSVP Attendance"
+            >
+              <Send className="w-3 h-3 text-[#ffd700]" />
+              <span>RSVP</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => scrollToSection("guestbook")}
+              className="px-2.5 py-1.5 rounded-full text-[11px] font-cinzel font-semibold text-[#edd892]/80 hover:text-[#ffd700] hover:bg-white/10 transition flex items-center gap-1 cursor-pointer touch-manipulation active:scale-95"
+              title="Guestbook Wishes"
+            >
+              <Heart className="w-3.5 h-3.5 text-[#dfba73]" />
+              <span className="hidden sm:inline">Wishes</span>
+            </button>
+
+            {/* Back to top */}
+            <div className="w-px h-4 bg-white/20 mx-0.5" />
+            <button
+              type="button"
+              onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+              className="p-1.5 rounded-full text-[#edd892]/70 hover:text-[#ffd700] hover:bg-white/10 transition cursor-pointer touch-manipulation active:scale-95"
+              title="Back to Top"
+            >
+              <ChevronUp className="w-4 h-4" />
+            </button>
+          </nav>
+        </aside>
+      )}
+
+      {/* Fullscreen High-Contrast VIP Reception Pass Modal */}
+      {isQrPassModalOpen && qrDataUrl && (
+        <div
+          className="fixed inset-0 z-[1000] bg-black/85 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200"
+          onClick={() => setIsQrPassModalOpen(false)}
+        >
+          <div
+            className="relative w-full max-w-sm rounded-3xl bg-gradient-to-b from-[#fffdfa] via-[#fcf8f0] to-[#f6efe1] p-6 text-[#1a1517] border-2 border-[#dfba73] shadow-2xl animate-modal-in"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setIsQrPassModalOpen(false)}
+              className="absolute top-4 right-4 p-2 rounded-full bg-black/5 hover:bg-[#661022] hover:text-white transition text-[#1a1517] cursor-pointer"
+              title="Close Pass"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            <div className="text-center space-y-3 pt-1">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#661022]/10 text-[#661022] text-xs font-cinzel font-bold border border-[#bda06d]/30">
+                <QrCode className="w-3.5 h-3.5 text-[#8c6a2b]" />
+                <span>{t.vipCheckinPass}</span>
+              </div>
+
+              <div>
+                <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.2em] text-[#8c6a2b] font-cinzel font-semibold">
+                  {settings.coupleNames}
+                </p>
+                <h3 className="font-serif italic text-2xl text-[#661022] font-bold mt-0.5">
+                  {formatInviteLine(guest)}
+                </h3>
+              </div>
+
+              {/* High Contrast Scannable QR Pass */}
+              <div className="p-3 sm:p-4 bg-white rounded-2xl border-2 border-[#dfba73] shadow-inner inline-block mx-auto">
+                <Image
+                  src={qrDataUrl}
+                  alt="VIP Reception QR Code"
+                  width={240}
+                  height={240}
+                  className="w-48 h-48 sm:w-56 sm:h-56 mx-auto"
+                  priority
+                />
+              </div>
+
+              <div className="flex items-center justify-center gap-2">
+                <span className="text-xs text-[#5a483e] font-sans font-medium">{t.tablePrefix}:</span>
+                <span className="px-4 py-1.5 rounded-xl bg-[#661022] text-[#fdfbf7] font-cinzel font-bold text-base shadow-sm border border-[#dfba73]/40">
+                  {t.tableNumber(guest.tableNumber)}
+                </span>
+              </div>
+
+              <p className="text-[11px] text-[#8c6a2b] font-sans">
+                {t.scanAtEntrance}
+              </p>
+            </div>
           </div>
         </div>
       )}
