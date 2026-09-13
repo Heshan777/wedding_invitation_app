@@ -163,10 +163,23 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         Boolean(process.env.VERCEL);
 
       if (isReadOnly) {
+        // High-compatibility serverless fallback: If it's an image under 5MB, return Data URL directly so user can upload without Cloudinary!
+        if (isImage && buffer.length <= 5 * 1024 * 1024) {
+          const resolvedMime = mimeType || "image/jpeg";
+          const dataUrl = `data:${resolvedMime};base64,${buffer.toString("base64")}`;
+          return NextResponse.json({
+            success: true,
+            url: dataUrl,
+            filename: file.name,
+            size: file.size,
+            mimeType: resolvedMime,
+          });
+        }
+
         return NextResponse.json(
           {
             error:
-              "Server filesystem is read-only. Please configure NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME and NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET to enable media uploads, or paste an external media URL directly.",
+              "Server filesystem is read-only. For video or audio files, please configure NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME and NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET to enable media uploads, or paste an external media URL directly.",
           },
           { status: 507 }
         );

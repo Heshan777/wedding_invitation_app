@@ -870,18 +870,35 @@ export default function AdminDashboard() {
 
         const data = await res.json().catch(() => ({}));
         if (!res.ok) {
-          if (res.status === 413) {
-            throw new Error(
-              `File is too large for this upload path (${(file.size / (1024 * 1024)).toFixed(1)} MB). Please configure NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME and NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET.`
-            );
+          // If server filesystem is read-only and it's an image, read directly as Data URL on client!
+          if (!isVid && !isAudio && file.size <= 5 * 1024 * 1024) {
+            try {
+              const dataUrl = await new Promise<string>((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result as string);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+              });
+              finalUrl = dataUrl;
+            } catch (readErr) {
+              console.warn("Client data URL read failed:", readErr);
+            }
           }
-          if (data.error) {
-            throw new Error(data.error);
-          }
-          throw new Error(`Upload failed (${res.status})`);
-        }
 
-        finalUrl = data.url;
+          if (!finalUrl) {
+            if (res.status === 413) {
+              throw new Error(
+                `File is too large for this upload path (${(file.size / (1024 * 1024)).toFixed(1)} MB). Please configure NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME and NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET.`
+              );
+            }
+            if (data.error) {
+              throw new Error(data.error);
+            }
+            throw new Error(`Upload failed (${res.status})`);
+          }
+        } else {
+          finalUrl = data.url;
+        }
       }
 
       if (!finalUrl) {
@@ -2658,6 +2675,11 @@ export default function AdminDashboard() {
                             <div className="p-2 text-center text-[10px] text-[#dfba73] font-cinzel">
                               <Film className="w-5 h-5 mx-auto mb-1 text-[#ffd700]" />
                               YouTube Embed Ready
+                            </div>
+                          ) : settings.heroVideoUrl.includes("preshoot-video-0903") ? (
+                            <div className="p-2 text-center text-[10px] text-white/50 font-cinzel">
+                              <Film className="w-5 h-5 mx-auto mb-1 text-[#dfba73]/60" />
+                              No Video Set (Photo Mode)
                             </div>
                           ) : (
                             <video

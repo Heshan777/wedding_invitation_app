@@ -69,6 +69,9 @@ export async function GET(request: NextRequest) {
   }
 
   if (!fs.existsSync(filePath)) {
+    if (cleanPath.includes("preshoot-video-0903")) {
+      return new NextResponse(null, { status: 204, headers: { "Cache-Control": "no-store" } });
+    }
     return NextResponse.json(
       { error: "File not found", file: cleanPath },
       { status: 404, headers: { "Cache-Control": "no-store" } }
