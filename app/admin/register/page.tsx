@@ -79,6 +79,25 @@ export default function AdminRegisterPage() {
       <div className="absolute top-1/4 -left-32 w-96 h-96 bg-[#800020]/25 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-1/4 -right-32 w-96 h-96 bg-[#c5a059]/15 rounded-full blur-3xl pointer-events-none" />
 
+      {/* Floating Gold Sparkles Overlay */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden z-0" aria-hidden="true">
+        {[...Array(12)].map((_, i) => (
+          <div
+            key={i}
+            className="absolute text-[#dfba73] opacity-20 select-none animate-fall"
+            style={{
+              left: `${5 + (i * 7.8) % 92}%`,
+              top: `-10px`,
+              fontSize: `${10 + (i % 4) * 4}px`,
+              animationDuration: `${8 + (i % 5) * 2.5}s`,
+              animationDelay: `${(i * 0.7) % 6}s`,
+            }}
+          >
+            {['✦', '✧', '◇', '❋', '✦', '◆', '✧', '❖', '✦', '◇', '❋', '✧'][i % 12]}
+          </div>
+        ))}
+      </div>
+
       {/* Floating Theme Switcher */}
       <div className="absolute top-4 right-4 z-20">
         <RoyalThemeToggle variant="floating" />
@@ -217,7 +236,8 @@ export default function AdminRegisterPage() {
                   <input
                     type={showPassword ? "text" : "password"}
                     required
-                    placeholder="At least 4 characters"
+                    minLength={8}
+                    placeholder="Minimum 8 characters"
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                     className="w-full pl-10 pr-10 py-2.5 rounded-xl bg-[#231a20]/90 border border-[#c5a059]/40 text-sm text-[#fdfbf7] placeholder-[#fdfbf7]/30 focus:outline-none focus:border-[#dfba73] focus:ring-1 focus:ring-[#dfba73]"
@@ -230,6 +250,31 @@ export default function AdminRegisterPage() {
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
+                {/* Password Strength Indicator */}
+                {formData.password.length > 0 && (
+                  <div className="mt-1.5">
+                    <div className="flex gap-1">
+                      {[1, 2, 3, 4].map((level) => {
+                        const strength = formData.password.length >= 12 ? 4 : formData.password.length >= 10 ? 3 : formData.password.length >= 8 ? 2 : formData.password.length >= 4 ? 1 : 0;
+                        return (
+                          <div
+                            key={level}
+                            className={`h-1 flex-1 rounded-full transition-all duration-300 ${
+                              level <= strength
+                                ? strength >= 4 ? 'bg-emerald-500' : strength >= 3 ? 'bg-[#dfba73]' : strength >= 2 ? 'bg-amber-500' : 'bg-rose-500'
+                                : 'bg-[#c5a059]/20'
+                            }`}
+                          />
+                        );
+                      })}
+                    </div>
+                    <p className={`text-[10px] mt-0.5 font-cinzel font-semibold ${
+                      formData.password.length >= 12 ? 'text-emerald-400' : formData.password.length >= 10 ? 'text-[#dfba73]' : formData.password.length >= 8 ? 'text-amber-400' : 'text-rose-400'
+                    }`}>
+                      {formData.password.length >= 12 ? '✦ Royal Secure' : formData.password.length >= 10 ? '◇ Strong' : formData.password.length >= 8 ? '◈ Acceptable' : '⚠ Too Short (min 8)'}
+                    </p>
+                  </div>
+                )}
               </div>
 
               <div>

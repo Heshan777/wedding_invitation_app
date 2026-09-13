@@ -8,9 +8,12 @@ export default function MusicPlayer({ src }: { src: string }) {
   const [playing, setPlaying] = useState(false);
   const [muted, setMuted] = useState(false);
 
+  const playingRef = useRef(false);
+  playingRef.current = playing;
+
   useEffect(() => {
     function handleStartAudio() {
-      if (audioRef.current && !playing) {
+      if (audioRef.current && !playingRef.current) {
         audioRef.current
           .play()
           .then(() => setPlaying(true))
@@ -21,14 +24,14 @@ export default function MusicPlayer({ src }: { src: string }) {
     }
 
     function handleVideoPlay() {
-      if (audioRef.current && playing) {
+      if (audioRef.current && playingRef.current) {
         audioRef.current.pause();
         setPlaying(false);
       }
     }
 
     function handleVideoPause() {
-      if (audioRef.current && !playing) {
+      if (audioRef.current && !playingRef.current) {
         audioRef.current
           .play()
           .then(() => setPlaying(true))
@@ -49,7 +52,7 @@ export default function MusicPlayer({ src }: { src: string }) {
       window.removeEventListener("wedding_video_pause", handleVideoPause);
       events.forEach((evt) => window.removeEventListener(evt, handleStartAudio));
     };
-  }, [playing]);
+  }, []);
 
 
   function togglePlay() {

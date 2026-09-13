@@ -80,6 +80,7 @@ function FloralDivider({ className = "" }: { className?: string }) {
 
 type Guest = {
   id?: string;
+  eventId?: string | null;
   token: string;
   displayName: string;
   salutation: string;
@@ -95,6 +96,7 @@ type Guest = {
 };
 
 type Settings = {
+  id?: string;
   coupleNames: string;
   hostIntro: string;
   invitationBody: string;
@@ -144,32 +146,6 @@ type GuestbookWish = {
   createdAt: string;
 };
 
-const coupleGallery = [
-  {
-    src: "/uploads/preshoot-photo-OIP1-1788547193363-824.webp",
-    title: "A Timeless Bond",
-    subtitle: "Two souls, one sacred journey under the stars",
-    tag: "Pre-Wedding Shoot",
-  },
-  {
-    src: "/uploads/preshoot-photo-OIP-1788547202839-374.webp",
-    title: "Golden Hour Romance",
-    subtitle: "Embracing a lifetime of love and shared dreams",
-    tag: "Tender Moments",
-  },
-  {
-    src: "/uploads/preshoot-photo-59eb71b052447c093b9c-1788547231474-321.jpg",
-    title: "Walking into Forever",
-    subtitle: "Hand in hand towards a bright new chapter",
-    tag: "Celebration",
-  },
-  {
-    src: "/uploads/preshoot-photo-pre-wedding-shoot-gu-1788547212295-734.jpg",
-    title: "The Sacred Promise",
-    subtitle: "Tokens of love and eternal devotion",
-    tag: "Wedding Rings",
-  },
-];
 
 
 function formatInviteLine(guest: Guest) {
@@ -433,7 +409,8 @@ export default function InvitationView({
   async function loadWishes() {
     try {
       setLoadingWishes(true);
-      const res = await fetch("/api/wishes");
+      const eventId = (settings.id && settings.id !== "singleton" ? settings.id : (guest.eventId || settings.id || "")) || "";
+      const res = await fetch(`/api/wishes${eventId ? `?eventId=${eventId}` : ""}`);
       if (res.ok) {
         const data = await res.json();
         setWishes(Array.isArray(data) ? data : []);
@@ -466,13 +443,16 @@ export default function InvitationView({
     } catch {}
 
     try {
-      await fetch(`/api/wishes`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: wishId }),
+      const res = await fetch(`/api/wishes`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'like', id: wishId }),
       });
+      if (!res.ok) throw new Error('Like failed');
     } catch {
-      // rollback if failed
+      // Rollback optimistic update on failure
+      setLikedWishIds((prev) => prev.filter((id) => id !== wishId));
+      setWishes((prev) => prev.map((w) => (w.id === wishId ? { ...w, likes: Math.max(0, w.likes - 1) } : w)));
     }
   }
 
@@ -508,7 +488,7 @@ export default function InvitationView({
   }, [photos, settings.galleryJson]);
 
   // Parse Timeline items if customized in settings
-  const parsedTimeline = (() => {
+  const parsedTimeline = useMemo(() => {
     if (settings.timelineJson) {
       try {
         const parsed = JSON.parse(settings.timelineJson);
@@ -516,7 +496,7 @@ export default function InvitationView({
       } catch {}
     }
     return t.defaultTimeline;
-  })();
+  }, [settings.timelineJson, t.defaultTimeline]);
 
   const date = formatEventDate(settings.eventDate);
 
@@ -782,6 +762,24 @@ export default function InvitationView({
       typeof window !== "undefined" ? window.location.href : ""
     }`;
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
+  };
+
+  const handleShareInvite = async () => {
+    const shareUrl = typeof window !== "undefined" ? window.location.href : "";
+    const shareData = {
+      title: `${settings.coupleNames} — ${t.homecomingCelebration}`,
+      text: `✨ ${t.cordiallyInvited}\n\n*${settings.coupleNames}* — ${t.homecomingCelebration}! 🥂🍾`,
+      url: shareUrl,
+    };
+    if (typeof navigator !== "undefined" && navigator.share) {
+      try {
+        await navigator.share(shareData);
+        return;
+      } catch {
+        // Fallback to WhatsApp if dismissed or unsupported
+      }
+    }
+    handleShareWhatsApp();
   };
 
   const handleDownloadICS = () => {
@@ -1855,6 +1853,34 @@ export default function InvitationView({
                       : t.rsvpSuccessDeclined}
                   </p>
 
+                  {/* Highlighted VIP Table Seating Card */}
+                  {rsvpStatus === "attending" && guest.tableNumber && (
+                    <div className="my-3 p-4 rounded-2xl bg-gradient-to-r from-[#800020]/10 via-[#dfba73]/15 to-[#800020]/10 border border-[#dfba73]/50 flex items-center justify-between gap-3 text-left shadow-xs">
+                      <div>
+                        <p className="text-[10px] uppercase tracking-widest font-cinzel font-semibold text-[#8c6a2b]">
+                          {t.vipSeatingTitle}
+                        </p>
+                        <h5 className="font-serif italic text-base sm:text-lg font-bold text-[#661022]">
+                          {t.tableNumber(guest.tableNumber)}
+                        </h5>
+                        <p className="text-[11px] text-[#5a483e] font-sans">
+                          {guest.inviteType === "COUPLE"
+                            ? "Reserved for 2 Persons"
+                            : guest.inviteType === "FAMILY"
+                            ? "Reserved for Family Group"
+                            : "Reserved for 1 Person"}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => scrollToSection("vip-pass")}
+                        className="px-3.5 py-2 rounded-xl bg-[#661022] hover:bg-[#800020] text-[#ffd700] text-xs font-cinzel font-bold border border-[#dfba73]/60 shadow-sm transition active:scale-95 cursor-pointer whitespace-nowrap"
+                      >
+                        View Pass ➔
+                      </button>
+                    </div>
+                  )}
+
                   {/* Subtle Hairline Divider */}
                   <div className="flex items-center justify-center gap-3 pt-1">
                     <div className="h-px w-10 bg-gradient-to-r from-transparent to-[#bda06d]/30" />
@@ -2152,10 +2178,16 @@ export default function InvitationView({
             {/* Social Share & Link Actions */}
             <div className="pt-6 border-t border-[#c5a059]/30 flex flex-col sm:flex-row items-center justify-center gap-3">
               <button
+                onClick={handleShareInvite}
+                className="w-full sm:w-auto px-5 py-2.5 rounded-full bg-[#800020] text-[#ffd700] hover:bg-[#6b0f24] border border-[#dfba73]/60 text-xs font-cinzel font-bold flex items-center justify-center gap-2 shadow-md hover:scale-[1.02] transition cursor-pointer min-h-[44px] touch-manipulation"
+              >
+                <Share2 className="w-3.5 h-3.5 text-[#ffd700]" /> Share Invitation
+              </button>
+              <button
                 onClick={handleShareWhatsApp}
                 className="w-full sm:w-auto px-5 py-2.5 rounded-full bg-[#25D366] text-white hover:bg-[#20ba59] text-xs font-sans font-semibold flex items-center justify-center gap-2 shadow transition cursor-pointer min-h-[44px] touch-manipulation"
               >
-                <Share2 className="w-3.5 h-3.5" /> Share on WhatsApp
+                <Share2 className="w-3.5 h-3.5" /> WhatsApp
               </button>
               <button
                 onClick={handleCopyLink}

@@ -71,6 +71,8 @@ import {
   ArrowUpDown,
   ChevronDown,
   Pencil,
+  AlertCircle,
+  RefreshCw,
 } from "lucide-react";
 
 export type WeddingEventItem = {
@@ -777,7 +779,7 @@ export default function AdminDashboard() {
       }
 
       if (parsedGuests.length === 0) {
-        alert("No valid guest rows found. Format: Salutation, Full Name, Category, Table Number, Phone");
+        showToast("No valid guest rows found. Format: Salutation, Full Name, Category, Table Number, Phone", "error");
         setBulkImporting(false);
         return;
       }
@@ -803,7 +805,7 @@ export default function AdminDashboard() {
         loadData(activeEventId);
       }
     } catch (err: any) {
-      alert(err.message || "Failed to import guests");
+      showToast(err.message || "Failed to import guests", "error");
     } finally {
       setBulkImporting(false);
     }
@@ -811,14 +813,14 @@ export default function AdminDashboard() {
 
 
 
-  // Toast notification
-  const [toastMsg, setToastMsg] = useState<string | null>(null);
+  // Luxury in-app toast notification state
+  const [toast, setToast] = useState<{ msg: string; type: "success" | "error" | "info" } | null>(null);
   const [uploadingField, setUploadingField] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
 
-  function showToast(msg: string) {
-    setToastMsg(msg);
-    setTimeout(() => setToastMsg(null), 3000);
+  function showToast(msg: string, type: "success" | "error" | "info" = "success") {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 3500);
   }
 
   async function handleImageUpload(
@@ -912,7 +914,7 @@ export default function AdminDashboard() {
       console.error("Upload error:", err);
       const errMsg = err.message || "Failed to upload media file";
       showToast(`Upload failed: ${errMsg}`);
-      alert(errMsg);
+      showToast(errMsg, "error");
     } finally {
       setUploadingField(null);
       setUploadProgress(null);
@@ -1018,10 +1020,10 @@ export default function AdminDashboard() {
         loadManagers();
         loadData();
       } else {
-        alert(data.error || "Failed to create Event Manager");
+        showToast(data.error || "Failed to create Event Manager", "error");
       }
     } catch {
-      alert("Network error creating Event Manager");
+      showToast("Network error creating Event Manager", "error");
     } finally {
       setCreatingManager(false);
     }
@@ -1066,10 +1068,10 @@ export default function AdminDashboard() {
         loadManagers();
         loadData();
       } else {
-        alert(data.error || "Failed to update Event Manager");
+        showToast(data.error || "Failed to update Event Manager", "error");
       }
     } catch {
-      alert("Network error updating Event Manager");
+      showToast("Network error updating Event Manager", "error");
     } finally {
       setUpdatingManager(false);
     }
@@ -1098,10 +1100,10 @@ export default function AdminDashboard() {
         loadManagers();
         loadData();
       } else {
-        alert(data.error || "Failed to delete Event Manager");
+        showToast(data.error || "Failed to delete Event Manager", "error");
       }
     } catch {
-      alert("Network error deleting Event Manager");
+      showToast("Network error deleting Event Manager", "error");
     } finally {
       setDeletingManager(false);
     }
@@ -1197,10 +1199,10 @@ export default function AdminDashboard() {
         loadData(data.event?.id);
       } else {
         const errData = await res.json();
-        alert(errData.error || "Failed to create event");
+        showToast(errData.error || "Failed to create event", "error");
       }
     } catch {
-      alert("Network error creating event");
+      showToast("Network error creating event", "error");
     } finally {
       setCreatingEvent(false);
     }
@@ -1229,10 +1231,10 @@ export default function AdminDashboard() {
           setEventPhotos((prev) => [...prev, data.photo]);
         }
       } else {
-        alert(data.error || "Failed to add photo");
+        showToast(data.error || "Failed to add photo", "error");
       }
     } catch {
-      alert("Network error adding photo");
+      showToast("Network error adding photo", "error");
     } finally {
       setAddingPhoto(false);
     }
@@ -1247,7 +1249,7 @@ export default function AdminDashboard() {
         setEventPhotos((prev) => prev.filter((p) => p.id !== photoId));
       }
     } catch {
-      alert("Failed to delete photo");
+      showToast("Failed to delete photo", "error");
     }
   }
 
@@ -1297,7 +1299,7 @@ export default function AdminDashboard() {
       setForm(emptyForm);
       setShowAddModal(false);
     } catch (err: any) {
-      alert(err.message || "Failed to save guest");
+      showToast(err.message || "Failed to save guest", "error");
     }
   }
 
@@ -1326,10 +1328,10 @@ export default function AdminDashboard() {
         setGuests((prev) => prev.filter((g) => g.id !== id));
       } else {
         const err = await res.json().catch(() => ({}));
-        alert(err.error || "Failed to remove guest");
+        showToast(err.error || "Failed to remove guest", "error");
       }
     } catch {
-      alert("Network error removing guest");
+      showToast("Network error removing guest", "error");
     }
   }
 
@@ -1385,7 +1387,7 @@ export default function AdminDashboard() {
         const errData = await res.json().catch(() => ({}));
         const msg = errData.error || "Failed to update event settings";
         showToast(msg);
-        alert(msg);
+        showToast(msg, "error");
       }
     } catch {
       showToast("Network error updating settings");
@@ -1461,10 +1463,22 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-[#121013] text-[#fdfbf7] selection:bg-[#c5a059]/30 selection:text-[#f7e4be] px-3 sm:px-6 lg:px-8 py-4 sm:py-8">
-      {toastMsg && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl bg-[#800020] text-[#fdfbf7] text-xs font-cinzel font-semibold shadow-2xl border border-[#dfba73] flex items-center gap-2 animate-bounce">
-          <Sparkles className="w-4 h-4 text-[#edd892]" />
-          <span>{toastMsg}</span>
+      {toast && (
+        <div
+          className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl text-xs font-cinzel font-semibold shadow-2xl flex items-center gap-2.5 backdrop-blur-md border transition-all duration-300 ${
+            toast.type === "error"
+              ? "bg-rose-950/95 text-rose-100 border-rose-600/80 shadow-rose-950/50"
+              : toast.type === "info"
+              ? "bg-[#1f1724]/95 text-[#edd892] border-[#c5a059]/60 shadow-black/60"
+              : "bg-[#800020]/95 text-[#fdfbf7] border-[#dfba73] shadow-amber-950/40"
+          }`}
+        >
+          {toast.type === "error" ? (
+            <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+          ) : (
+            <Sparkles className="w-4 h-4 text-[#edd892] shrink-0" />
+          )}
+          <span>{toast.msg}</span>
         </div>
       )}
 
@@ -1718,6 +1732,17 @@ export default function AdminDashboard() {
             )}
 
             <button
+              onClick={() => {
+                loadData(activeEventId);
+                showToast("Refreshed wedding suite data", "info");
+              }}
+              className="royal-action-btn px-3 py-2 rounded-xl bg-[#231a20] border border-[#c5a059]/40 text-[#dfba73] hover:bg-[#c5a059]/10 text-xs font-cinzel font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer min-h-[42px] touch-manipulation shrink-0"
+              title="Refresh live data"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} /> <span>Refresh</span>
+            </button>
+
+            <button
               onClick={handleExportCSV}
               className="royal-action-btn px-3 py-2 rounded-xl bg-[#231a20] border border-[#c5a059]/40 text-[#dfba73] hover:bg-[#c5a059]/10 text-xs font-cinzel font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer min-h-[42px] touch-manipulation shrink-0"
             >
@@ -1839,7 +1864,24 @@ export default function AdminDashboard() {
         </div>
 
         {/* Executive Stats & Live RSVP Analytics Hub */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-4 mb-6">
+        {loading ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-4 mb-6">
+            {[...Array(5)].map((_, i) => (
+              <div
+                key={i}
+                className="p-3.5 sm:p-4 rounded-2xl royal-stat-card bg-[#1c161a]/70 border border-[#c5a059]/20 animate-pulse h-28 flex flex-col justify-between"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="h-2.5 w-16 bg-[#c5a059]/25 rounded-full" />
+                  <div className="w-3.5 h-3.5 rounded-full bg-[#c5a059]/20" />
+                </div>
+                <div className="h-7 w-12 bg-[#dfba73]/30 rounded-lg" />
+                <div className="h-2 w-20 bg-[#c5a059]/15 rounded-full" />
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-4 mb-6">
           {/* Card 1: Total Invited */}
           <div className="p-3.5 sm:p-4 rounded-2xl royal-stat-card bg-[#1c161a] border border-[#c5a059]/30 backdrop-blur-sm shadow-md flex flex-col justify-between">
             <div>
@@ -1939,6 +1981,7 @@ export default function AdminDashboard() {
             </div>
           </div>
         </div>
+      )}
 
         {/* Dietary Preferences Overview Bar */}
         {Object.keys(rsvpStats.dietaryCounts).length > 0 && (

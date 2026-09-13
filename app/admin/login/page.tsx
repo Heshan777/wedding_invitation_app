@@ -50,6 +50,25 @@ export default function AdminLoginPage() {
       <div className="absolute top-1/4 -left-32 w-96 h-96 bg-[#800020]/25 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-1/4 -right-32 w-96 h-96 bg-[#c5a059]/15 rounded-full blur-3xl pointer-events-none" />
 
+      {/* Floating Gold Sparkles Overlay */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden z-0" aria-hidden="true">
+        {[...Array(12)].map((_, i) => (
+          <div
+            key={i}
+            className="absolute text-[#dfba73] opacity-20 select-none animate-fall"
+            style={{
+              left: `${5 + (i * 7.8) % 92}%`,
+              top: `-10px`,
+              fontSize: `${10 + (i % 4) * 4}px`,
+              animationDuration: `${8 + (i % 5) * 2.5}s`,
+              animationDelay: `${(i * 0.7) % 6}s`,
+            }}
+          >
+            {['✦', '✧', '◇', '❋', '✦', '◆', '✧', '❖', '✦', '◇', '❋', '✧'][i % 12]}
+          </div>
+        ))}
+      </div>
+
       {/* Floating Theme Switcher */}
       <div className="absolute top-4 right-4 z-20">
         <RoyalThemeToggle variant="floating" />

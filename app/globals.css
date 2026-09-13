@@ -1177,3 +1177,27 @@ main,
 footer {
   transition: background-color 0.35s ease, color 0.35s ease, border-color 0.35s ease;
 }
+
+/* Shimmer Skeleton Animation */
+@keyframes shimmer-skeleton {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.animate-skeleton-shimmer {
+  background: linear-gradient(90deg, rgba(197, 160, 89, 0.08) 25%, rgba(197, 160, 89, 0.22) 50%, rgba(197, 160, 89, 0.08) 75%);
+  background-size: 200% 100%;
+  animation: shimmer-skeleton 1.8s infinite;
+}
+
+html.light .royal-stat-card {
+  background-color: #ffffff !important;
+  background-image: none !important;
+  border-color: rgba(197, 160, 89, 0.35) !important;
+  box-shadow: 0 4px 16px rgba(189, 160, 109, 0.12) !important;
+}
+
