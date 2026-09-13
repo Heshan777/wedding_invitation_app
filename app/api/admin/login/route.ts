@@ -26,6 +26,13 @@ export async function POST(req: NextRequest) {
     });
   } catch (err: any) {
     console.error("Login error:", err);
-    return NextResponse.json({ error: "Authentication failed" }, { status: 500 });
+    return NextResponse.json(
+      {
+        error: "Authentication failed",
+        details: err?.message || String(err),
+        code: err?.code || "INTERNAL_ERROR",
+      },
+      { status: 500 }
+    );
   }
 }

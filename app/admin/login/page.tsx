@@ -30,8 +30,11 @@ export default function AdminLoginPage() {
         router.push("/admin/dashboard");
         router.refresh();
       } else {
-        const data = await res.json();
-        setError(data.error || "Invalid username or password");
+        const data = await res.json().catch(() => ({}));
+        const displayError = data.details
+          ? `${data.error || "Authentication error"}: ${data.details}`
+          : (data.error || "Invalid username or password");
+        setError(displayError);
       }
     } catch {
       setLoading(false);
