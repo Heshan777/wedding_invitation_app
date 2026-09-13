@@ -1709,9 +1709,11 @@ export default function InvitationView({
                   href={uberUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="bg-black text-white hover:bg-neutral-900 py-2.5 px-3 rounded-xl text-center text-xs font-cinzel font-semibold flex items-center justify-center gap-1.5 shadow-md hover:scale-[1.02] transition border border-[#c5a059]/40 min-h-[42px] touch-manipulation"
+                  className="royal-uber-btn bg-black text-white hover:bg-neutral-900 py-2.5 px-3 rounded-xl text-center text-xs font-cinzel font-semibold flex items-center justify-center gap-1.5 shadow-md hover:scale-[1.02] transition border border-[#c5a059]/40 min-h-[42px] touch-manipulation"
+                  title="Reserve Uber Ride"
                 >
-                  <Navigation className="w-3.5 h-3.5 text-emerald-400" /> {t.uberRide}
+                  <Navigation className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                  <span className="text-white font-semibold">{t.uberRide}</span>
                 </a>
               </div>
 

@@ -852,7 +852,7 @@ html.light .text-\[\#fdfbf7\]\/40 {
 html.light .text-\[\#fdfbf7\]\/30 {
   color: #a8949f !important;
 }
-html.light .text-white {
+html.light .text-white:not(.royal-uber-btn):not(.royal-uber-btn *):not(a[href*="uber.com"]):not(a[href*="uber.com"] *):not([class*="bg-[#25D366]"]):not([class*="bg-[#25D366]"] *):not([class*="bg-[#0078d4]"]):not([class*="bg-[#0078d4]"] *):not([class*="bg-[#5f01d1]"]):not([class*="bg-[#5f01d1]"] *):not([class*="bg-[#800020]"]):not([class*="bg-[#800020]"] *):not([class*="bg-[#6b0f24]"]):not([class*="bg-[#6b0f24]"] *):not(.bg-black):not(.bg-black *) {
   color: #1f1217 !important;
 }
 html.light .text-white\/80 {
@@ -1199,5 +1199,50 @@ html.light .royal-stat-card {
   background-image: none !important;
   border-color: rgba(197, 160, 89, 0.35) !important;
   box-shadow: 0 4px 16px rgba(189, 160, 109, 0.12) !important;
+}
+
+/* 7. Uber & Branded Navigation Buttons in Daylight Palace (Light Mode) */
+html.light .royal-uber-btn,
+html.light a.royal-uber-btn,
+html.light a[href*="uber.com"] {
+  background-color: #121013 !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(197, 160, 89, 0.65) !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.28) !important;
+}
+
+html.light .royal-uber-btn *,
+html.light .royal-uber-btn span,
+html.light a.royal-uber-btn *,
+html.light a.royal-uber-btn span,
+html.light a[href*="uber.com"] *,
+html.light a[href*="uber.com"] span {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  opacity: 1 !important;
+}
+
+html.light .royal-uber-btn svg,
+html.light a[href*="uber.com"] svg {
+  color: #34d399 !important;
+}
+
+html.light .royal-uber-btn:hover,
+html.light a[href*="uber.com"]:hover {
+  background-color: #23161f !important;
+  border-color: #dfba73 !important;
+}
+
+/* Ensure Calendar Brand Buttons (Outlook, Yahoo) & WhatsApp maintain white text */
+html.light a[href*="outlook.live.com"],
+html.light a[href*="outlook.live.com"] *,
+html.light a[href*="calendar.yahoo.com"],
+html.light a[href*="calendar.yahoo.com"] *,
+html.light button[class*="bg-[#25D366]"],
+html.light button[class*="bg-[#25D366]"] *,
+html.light [class*="bg-[#25D366]"],
+html.light [class*="bg-[#25D366]"] * {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
 }
 
