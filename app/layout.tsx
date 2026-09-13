@@ -65,10 +65,28 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className="h-full antialiased scroll-smooth">
+    <html lang="en" suppressHydrationWarning className="h-full antialiased scroll-smooth">
       <head>
         <link rel="preconnect" href="https://res.cloudinary.com" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://res.cloudinary.com" />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              try {
+                const storedTheme = localStorage.getItem('royal-wedding-theme');
+                if (storedTheme === 'light') {
+                  document.documentElement.classList.add('light');
+                  document.documentElement.classList.remove('dark');
+                  document.documentElement.setAttribute('data-theme', 'light');
+                } else {
+                  document.documentElement.classList.add('dark');
+                  document.documentElement.classList.remove('light');
+                  document.documentElement.setAttribute('data-theme', 'dark');
+                }
+              } catch (e) {}
+            `,
+          }}
+        />
       </head>
       <body className={`${cinzel.variable} ${playfair.variable} ${alex.variable} ${plusJakarta.variable} min-h-full flex flex-col bg-[#121013] text-[#fdfbf7] selection:bg-[#c5a059]/30 selection:text-[#f7e4be]`}>
         {children}

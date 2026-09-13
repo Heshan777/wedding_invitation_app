@@ -15,6 +15,17 @@
   --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
+html.light {
+  --background: #fbf9f5;
+  --foreground: #22141a;
+  --gold-primary: #a87e2e;
+  --gold-light: #f5edd6;
+  --gold-dark: #6e4e16;
+  --burgundy-primary: #750d24;
+  --burgundy-dark: #400412;
+  --cream-paper: #ffffff;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -780,6 +791,389 @@
   }
 }
 
+/* ==========================================================
+   ROYAL DAYLIGHT PALETTE & THEME SYSTEM (LIGHT MODE)
+   "Daylight Palace" - Royal Champagne & Alabaster Silk
+   Crafted with Senior Developer Design System Architecture
+   ========================================================== */
 
+/* 1. Base Canvas & Viewport Canvas */
+html.light {
+  color-scheme: light !important;
+}
 
+html.light body {
+  background-color: #fbf9f5 !important;
+  color: #22141a !important;
+}
 
+/* Base dark background utility overrides */
+html.light .bg-\[\#121013\] {
+  background-color: #fbf9f5 !important;
+  color: #22141a !important;
+}
+
+/* 2. Senior Typography & Metallic Foil Enhancements (WCAG High Contrast) */
+html.light .gold-foil-text {
+  background: linear-gradient(135deg, #6b4710 0%, #b88628 35%, #593506 70%, #946819 100%) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  filter: drop-shadow(0 1px 1px rgba(255, 255, 255, 0.7));
+}
+
+html.light .gold-foil-subtle {
+  background: linear-gradient(135deg, #7a521a 0%, #a87e2e 50%, #633f0e 100%) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+}
+
+/* High-Contrast Luxury Text Overrides */
+html.light .text-\[\#fdfbf7\] {
+  color: #23161c !important;
+}
+html.light .text-\[\#fdfbf7\]\/90 {
+  color: #332029 !important;
+}
+html.light .text-\[\#fdfbf7\]\/80 {
+  color: #45303a !important;
+}
+html.light .text-\[\#fdfbf7\]\/70 {
+  color: #583f4b !important;
+}
+html.light .text-\[\#fdfbf7\]\/60 {
+  color: #68505c !important;
+}
+html.light .text-\[\#fdfbf7\]\/50 {
+  color: #7b626f !important;
+}
+html.light .text-\[\#fdfbf7\]\/40 {
+  color: #8c737f !important;
+}
+html.light .text-\[\#fdfbf7\]\/30 {
+  color: #a8949f !important;
+}
+html.light .text-white {
+  color: #1f1217 !important;
+}
+html.light .text-white\/80 {
+  color: #38242f !important;
+}
+html.light .text-white\/40 {
+  color: #8c737f !important;
+}
+
+/* Antique Burnished Gold Text on Light Surfaces */
+html.light .text-\[\#edd892\] {
+  color: #7e5917 !important;
+}
+html.light .text-\[\#edd892\]\/70 {
+  color: #8c6a2b !important;
+}
+html.light .text-\[\#edd892\]\/75 {
+  color: #7e5917 !important;
+}
+html.light .text-\[\#dfba73\] {
+  color: #6e490b !important;
+}
+html.light .text-\[\#dfba73\]\/80 {
+  color: #7a5416 !important;
+}
+html.light .text-\[\#dfba73\]\/70 {
+  color: #8c631e !important;
+}
+html.light .text-\[\#dfba73\]\/60 {
+  color: #996e24 !important;
+}
+html.light .text-\[\#ffd700\] {
+  color: #946200 !important;
+}
+html.light .text-\[\#c5a059\] {
+  color: #855f1c !important;
+}
+html.light .text-\[\#f7e4be\] {
+  color: #7a5416 !important;
+}
+
+/* 3. Dedicated Semantic Components (Targeting Dashboard Elements) */
+
+/* Profile Hub (Manager Identity Button) */
+html.light .royal-profile-button {
+  background: #ffffff !important;
+  background-image: none !important;
+  border-color: rgba(197, 160, 89, 0.45) !important;
+  box-shadow: 0 4px 20px rgba(189, 160, 109, 0.16) !important;
+}
+html.light .royal-profile-button:hover {
+  background: #fffdf8 !important;
+  border-color: #c5a059 !important;
+  box-shadow: 0 8px 30px rgba(189, 160, 109, 0.28) !important;
+}
+html.light .royal-profile-button .border-\[\#1c1519\] {
+  border-color: #ffffff !important;
+}
+
+/* Action Buttons (CSV, Domain, Exit) */
+html.light .royal-action-btn {
+  background: #ffffff !important;
+  background-image: none !important;
+  border-color: rgba(197, 160, 89, 0.45) !important;
+  color: #7a581e !important;
+  box-shadow: 0 2px 10px rgba(189, 160, 109, 0.12) !important;
+}
+html.light .royal-action-btn:hover {
+  background: #faf4e8 !important;
+  border-color: #a87e2e !important;
+  color: #5c3f10 !important;
+}
+html.light .royal-btn-exit {
+  background: #fff1f2 !important;
+  border-color: rgba(225, 29, 72, 0.35) !important;
+  color: #be123c !important;
+}
+html.light .royal-btn-exit:hover {
+  background: #ffe4e6 !important;
+  border-color: #e11d48 !important;
+  color: #9f1239 !important;
+}
+
+/* Active Wedding Suite Hero Showcase Banner */
+html.light .royal-hero-banner {
+  background: linear-gradient(135deg, #fffdf8 0%, #faf3e5 45%, #f4e9d4 100%) !important;
+  background-image: linear-gradient(135deg, #fffdf8 0%, #faf3e5 45%, #f4e9d4 100%) !important;
+  border-color: rgba(197, 160, 89, 0.55) !important;
+  box-shadow: 0 14px 40px -8px rgba(189, 160, 109, 0.25), 0 0 0 1px rgba(197, 160, 89, 0.2) !important;
+}
+html.light .royal-hero-banner .gold-foil-text {
+  background: linear-gradient(135deg, #6c460d 0%, #a87a20 35%, #593506 70%, #8c6014 100%) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  filter: drop-shadow(0 1px 1px rgba(255, 255, 255, 0.9));
+}
+
+/* Executive Stat Cards */
+html.light .royal-stat-card {
+  background: #ffffff !important;
+  background-image: none !important;
+  border-color: rgba(197, 160, 89, 0.35) !important;
+  box-shadow: 0 4px 18px rgba(189, 160, 109, 0.12) !important;
+}
+html.light .royal-stat-attending {
+  background: linear-gradient(180deg, #f0fdf4 0%, #dcfce7 100%) !important;
+  background-image: linear-gradient(180deg, #f0fdf4 0%, #dcfce7 100%) !important;
+  border-color: rgba(34, 197, 94, 0.4) !important;
+}
+html.light .royal-stat-attending .text-emerald-300 {
+  color: #14532d !important;
+}
+html.light .royal-stat-attending .text-emerald-400,
+html.light .royal-stat-attending .text-emerald-400\/90 {
+  color: #166534 !important;
+}
+html.light .royal-stat-declined {
+  background: linear-gradient(180deg, #fff1f2 0%, #ffe4e6 100%) !important;
+  background-image: linear-gradient(180deg, #fff1f2 0%, #ffe4e6 100%) !important;
+  border-color: rgba(244, 63, 94, 0.35) !important;
+}
+html.light .royal-stat-declined .text-rose-300 {
+  color: #9f1239 !important;
+}
+html.light .royal-stat-declined .text-rose-400,
+html.light .royal-stat-declined .text-rose-400\/70 {
+  color: #be123c !important;
+}
+html.light .royal-stat-pending {
+  background: linear-gradient(180deg, #fffdf7 0%, #fef3c7 100%) !important;
+  background-image: linear-gradient(180deg, #fffdf7 0%, #fef3c7 100%) !important;
+  border-color: rgba(217, 119, 6, 0.35) !important;
+}
+html.light .royal-stat-pending .text-\[\#dfba73\] {
+  color: #92400e !important;
+}
+html.light .royal-stat-pending .text-\[\#dfba73\]\/70 {
+  color: #b45309 !important;
+}
+html.light .royal-stat-openrate {
+  background: linear-gradient(135deg, #ffffff 0%, #faf3e6 100%) !important;
+  background-image: linear-gradient(135deg, #ffffff 0%, #faf3e6 100%) !important;
+  border-color: rgba(197, 160, 89, 0.45) !important;
+}
+html.light .royal-stat-openrate .text-\[\#fdfbf7\] {
+  color: #23161c !important;
+}
+html.light .royal-stat-openrate .text-\[\#fdfbf7\]\/60 {
+  color: #68505c !important;
+}
+html.light .royal-stat-openrate .text-\[\#edd892\] {
+  color: #7a581e !important;
+}
+html.light .royal-stat-openrate .bg-\[\#120e11\] {
+  background-color: #ede4d1 !important;
+  border-color: rgba(197, 160, 89, 0.3) !important;
+}
+
+/* Royal Navigation Tabs */
+html.light .royal-nav-tab:not(.bg-\[\#800020\]) {
+  background: #ffffff !important;
+  background-image: none !important;
+  border-color: rgba(197, 160, 89, 0.35) !important;
+  color: #4a333e !important;
+  box-shadow: 0 2px 8px rgba(189, 160, 109, 0.1) !important;
+}
+html.light .royal-nav-tab:not(.bg-\[\#800020\]):hover {
+  background: #faf4e8 !important;
+  border-color: #c5a059 !important;
+  color: #1f1217 !important;
+}
+html.light .royal-nav-tab:not(.bg-\[\#800020\]) .bg-white\/10,
+html.light .royal-nav-tab:not(.bg-\[\#800020\]) .bg-\[\#181216\] {
+  background-color: #f3ede2 !important;
+  color: #7a581e !important;
+}
+html.light .royal-nav-tab.bg-\[\#800020\] {
+  background: linear-gradient(135deg, #780d25 0%, #520516 100%) !important;
+  background-image: linear-gradient(135deg, #780d25 0%, #520516 100%) !important;
+  color: #ffffff !important;
+  border-color: #dfba73 !important;
+  box-shadow: 0 4px 18px rgba(120, 13, 37, 0.35) !important;
+}
+
+/* 4. Comprehensive Dark Surface & Card Overrides */
+html.light .bg-\[\#1c161a\],
+html.light .bg-\[\#1c1519\],
+html.light .bg-\[\#1c141a\],
+html.light .bg-\[\#1c1419\],
+html.light .bg-\[\#1b1419\],
+html.light .bg-\[\#181216\],
+html.light .bg-\[\#181014\],
+html.light .bg-\[\#191116\],
+html.light .bg-\[\#1a1217\],
+html.light .bg-\[\#1c1117\],
+html.light .bg-\[\#140e12\],
+html.light .bg-\[\#1a1519\],
+html.light .bg-\[\#140e11\],
+html.light .bg-\[\#1a1215\],
+html.light .bg-\[\#1a1517\],
+html.light .bg-\[\#1e171b\],
+html.light .bg-\[\#1f1519\],
+html.light .bg-\[\#1a1519\]\/90,
+html.light .bg-\[\#181114\]\/90 {
+  background-color: #ffffff !important;
+  border-color: rgba(197, 160, 89, 0.35) !important;
+  box-shadow: 0 4px 20px rgba(189, 160, 109, 0.12) !important;
+}
+
+/* Secondary Surfaces, Nested Panels & Inner Bars */
+html.light .bg-\[\#231a20\],
+html.light .bg-\[\#241a21\],
+html.light .bg-\[\#241a22\],
+html.light .bg-\[\#20161c\],
+html.light .bg-\[\#20161d\],
+html.light .bg-\[\#20151f\],
+html.light .bg-\[\#22171f\],
+html.light .bg-\[\#23171f\],
+html.light .bg-\[\#251820\],
+html.light .bg-\[\#281822\],
+html.light .bg-\[\#2a1721\],
+html.light .bg-\[\#2a1c24\],
+html.light .bg-\[\#2b1e17\],
+html.light .bg-\[\#2d1f27\],
+html.light .bg-\[\#2e1f2a\],
+html.light .bg-\[\#2a1a20\],
+html.light .bg-\[\#3d3238\],
+html.light .bg-\[\#231a20\]\/90 {
+  background-color: #fbf7ee !important;
+  border-color: rgba(197, 160, 89, 0.35) !important;
+}
+
+/* Form Controls, Inputs, Textareas, and Dropdown Menus */
+html.light .bg-\[\#261c22\],
+html.light .bg-\[\#2a1d25\],
+html.light .bg-\[\#191217\] {
+  background-color: #ffffff !important;
+  color: #23161c !important;
+  border-color: rgba(197, 160, 89, 0.42) !important;
+}
+
+html.light input,
+html.light textarea,
+html.light select {
+  color-scheme: light !important;
+}
+html.light select option {
+  background-color: #ffffff !important;
+  color: #23161c !important;
+}
+html.light input::placeholder,
+html.light textarea::placeholder {
+  color: #8c7782 !important;
+  opacity: 0.8 !important;
+}
+
+/* Small interactive pill badges */
+html.light .bg-\[\#130d12\] {
+  background-color: #ffffff !important;
+  border-color: rgba(197, 160, 89, 0.4) !important;
+  color: #7a581e !important;
+}
+html.light .bg-\[\#120e11\] {
+  background-color: #ede4d1 !important;
+}
+
+/* Table Header Row */
+html.light .bg-\[\#261820\] {
+  background: linear-gradient(180deg, #f8f2e6 0%, #efe5d3 100%) !important;
+  color: #634015 !important;
+  border-color: rgba(197, 160, 89, 0.35) !important;
+}
+
+/* Table Row Hover State */
+html.light .hover\:bg-\[\#c5a059\]\/5:hover {
+  background-color: rgba(197, 160, 89, 0.08) !important;
+}
+
+/* 5. Override Dark Tailwind Gradients on Light Containers */
+html.light [class*="from-\[\#1c1519\]"],
+html.light [class*="from-\[\#1c161a\]"],
+html.light [class*="from-\[\#1e151b\]"],
+html.light [class*="from-\[\#1f141b\]"],
+html.light [class*="from-\[\#2c131d\]"],
+html.light [class*="from-\[\#281520\]"] {
+  background-image: none !important;
+}
+
+/* Modals & Dialog Backdrops */
+html.light .fixed.inset-0.bg-black\/85,
+html.light .fixed.inset-0.bg-black\/80,
+html.light .fixed.inset-0.bg-black\/70 {
+  background-color: rgba(30, 20, 25, 0.45) !important;
+}
+
+/* 6. Guest Invitation View Parchment & Glass Overrides */
+html.light .parchment-card {
+  background: linear-gradient(180deg, #ffffff 0%, #faf6ef 100%) !important;
+  box-shadow: 0 25px 50px -12px rgba(189, 160, 109, 0.28), 0 0 0 1px rgba(197, 160, 89, 0.35) !important;
+}
+
+html.light .glass-dock {
+  background: rgba(255, 255, 255, 0.94) !important;
+  border-color: rgba(197, 160, 89, 0.45) !important;
+  box-shadow: 0 10px 30px -5px rgba(189, 160, 109, 0.28), 0 0 20px rgba(197, 160, 89, 0.18) !important;
+}
+
+html.light ::-webkit-scrollbar-track {
+  background: #f4ede0 !important;
+}
+
+html.light ::-webkit-scrollbar-thumb {
+  background: #c5a059 !important;
+}
+
+/* Luxurious Theme Fade Transition */
+html,
+body,
+header,
+nav,
+main,
+footer {
+  transition: background-color 0.35s ease, color 0.35s ease, border-color 0.35s ease;
+}

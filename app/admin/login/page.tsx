@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ShieldCheck, User, Lock, Eye, EyeOff, Sparkles, AlertCircle, ArrowRight } from "lucide-react";
+import RoyalThemeToggle from "@/components/RoyalThemeToggle";
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -48,6 +49,11 @@ export default function AdminLoginPage() {
       {/* Background ambient lighting */}
       <div className="absolute top-1/4 -left-32 w-96 h-96 bg-[#800020]/25 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-1/4 -right-32 w-96 h-96 bg-[#c5a059]/15 rounded-full blur-3xl pointer-events-none" />
+
+      {/* Floating Theme Switcher */}
+      <div className="absolute top-4 right-4 z-20">
+        <RoyalThemeToggle variant="floating" />
+      </div>
 
       <div className="relative z-10 w-full max-w-md">
         {/* Luxury Glassmorphism Login Card */}

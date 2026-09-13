@@ -10,6 +10,7 @@ import {
   getOptimizedImageUrl,
   getThumbnailUrl,
 } from "@/lib/media-optimization";
+import RoyalThemeToggle from "@/components/RoyalThemeToggle";
 
 import {
   Users,
@@ -1475,7 +1476,7 @@ export default function AdminDashboard() {
             <button
               type="button"
               onClick={() => setShowProfileMenu((prev) => !prev)}
-              className="group flex items-center gap-3.5 p-2.5 sm:p-3 rounded-2xl bg-gradient-to-br from-[#1c1519] via-[#231821] to-[#181116] border border-[#c5a059]/35 hover:border-[#dfba73]/70 shadow-lg hover:shadow-[0_0_20px_rgba(197,160,89,0.2)] transition-all duration-300 w-full sm:w-auto text-left cursor-pointer"
+              className="group royal-profile-button flex items-center gap-3.5 p-2.5 sm:p-3 rounded-2xl bg-gradient-to-br from-[#1c1519] via-[#231821] to-[#181116] border border-[#c5a059]/35 hover:border-[#dfba73]/70 shadow-lg hover:shadow-[0_0_20px_rgba(197,160,89,0.2)] transition-all duration-300 w-full sm:w-auto text-left cursor-pointer"
               aria-expanded={showProfileMenu}
               title="Click to view Account Profile details"
             >
@@ -1664,8 +1665,9 @@ export default function AdminDashboard() {
             )}
           </div>
 
-          {/* Right: Wedding Switcher & Global Toolbar Actions */}
+          {/* Right: Wedding Switcher, Theme Switcher & Global Toolbar Actions */}
           <div className="flex flex-wrap items-center gap-2 sm:gap-2.5 w-full md:w-auto justify-start md:justify-end">
+            <RoyalThemeToggle variant="floating" />
             {/* Wedding Switcher Selector: Dropdown for Super Admin, Dedicated Badge for Event Manager */}
             {manager?.role === "SUPER_ADMIN" ? (
               <div className="flex items-center gap-2 bg-[#1c161a] border border-[#c5a059]/60 rounded-xl px-3 py-2 shadow-md w-full sm:w-auto min-h-[42px]">
@@ -1717,7 +1719,7 @@ export default function AdminDashboard() {
 
             <button
               onClick={handleExportCSV}
-              className="px-3 py-2 rounded-xl bg-[#231a20] border border-[#c5a059]/40 text-[#dfba73] hover:bg-[#c5a059]/10 text-xs font-cinzel font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer min-h-[42px] touch-manipulation shrink-0"
+              className="royal-action-btn px-3 py-2 rounded-xl bg-[#231a20] border border-[#c5a059]/40 text-[#dfba73] hover:bg-[#c5a059]/10 text-xs font-cinzel font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer min-h-[42px] touch-manipulation shrink-0"
             >
               <FileSpreadsheet className="w-3.5 h-3.5" /> <span>CSV</span>
             </button>
@@ -1737,7 +1739,7 @@ export default function AdminDashboard() {
                   showToast(`Active invite domain set to: ${clean}`);
                 }
               }}
-              className="px-3 py-2 rounded-xl bg-[#231a20] border border-[#c5a059]/40 text-[#dfba73] hover:bg-[#c5a059]/10 text-xs font-cinzel font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer min-h-[42px] touch-manipulation shrink-0"
+              className="royal-action-btn px-3 py-2 rounded-xl bg-[#231a20] border border-[#c5a059]/40 text-[#dfba73] hover:bg-[#c5a059]/10 text-xs font-cinzel font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer min-h-[42px] touch-manipulation shrink-0"
               title={`Active Public Domain: ${appBaseUrl} (Click to change)`}
             >
               <Link2 className="w-3.5 h-3.5 text-[#ffd700]" /> <span>Domain</span>
@@ -1745,7 +1747,7 @@ export default function AdminDashboard() {
 
             <button
               onClick={handleLogout}
-              className="px-3 py-2 rounded-xl bg-[#800020]/20 border border-rose-800/60 text-rose-300 hover:bg-rose-950/40 text-xs font-cinzel font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer min-h-[42px] touch-manipulation shrink-0"
+              className="royal-action-btn royal-btn-exit px-3 py-2 rounded-xl bg-[#800020]/20 border border-rose-800/60 text-rose-300 hover:bg-rose-950/40 text-xs font-cinzel font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer min-h-[42px] touch-manipulation shrink-0"
             >
               <LogOut className="w-3.5 h-3.5" /> <span>Exit</span>
             </button>
@@ -1753,7 +1755,7 @@ export default function AdminDashboard() {
         </header>
 
         {/* Tier 2: Active Wedding Showcase Hero Banner (Prominent, dedicated breathing room) */}
-        <div className="my-5 p-4 sm:p-5 md:p-6 rounded-2xl bg-gradient-to-br from-[#1c1519] via-[#22161f] to-[#181116] border border-[#c5a059]/35 shadow-xl relative overflow-hidden">
+        <div className="my-5 p-4 sm:p-5 md:p-6 rounded-2xl royal-hero-banner bg-gradient-to-br from-[#1c1519] via-[#22161f] to-[#181116] border border-[#c5a059]/35 shadow-xl relative overflow-hidden">
           {/* Gilded atmospheric glow effect */}
           <div className="absolute -top-10 -right-10 w-60 h-60 bg-[#c5a059]/5 rounded-full blur-3xl pointer-events-none" />
 
@@ -1839,7 +1841,7 @@ export default function AdminDashboard() {
         {/* Executive Stats & Live RSVP Analytics Hub */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-4 mb-6">
           {/* Card 1: Total Invited */}
-          <div className="p-3.5 sm:p-4 rounded-2xl bg-[#1c161a] border border-[#c5a059]/30 backdrop-blur-sm shadow-md flex flex-col justify-between">
+          <div className="p-3.5 sm:p-4 rounded-2xl royal-stat-card bg-[#1c161a] border border-[#c5a059]/30 backdrop-blur-sm shadow-md flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between text-[#dfba73] mb-1">
                 <span className="text-[10px] uppercase tracking-wider font-cinzel font-semibold">
@@ -1857,7 +1859,7 @@ export default function AdminDashboard() {
           </div>
 
           {/* Card 2: Confirmed Attending */}
-          <div className="p-3.5 sm:p-4 rounded-2xl bg-[#1c161a] border border-emerald-500/40 bg-gradient-to-b from-emerald-950/20 to-transparent backdrop-blur-sm shadow-md flex flex-col justify-between">
+          <div className="p-3.5 sm:p-4 rounded-2xl royal-stat-card royal-stat-attending bg-[#1c161a] border border-emerald-500/40 bg-gradient-to-b from-emerald-950/20 to-transparent backdrop-blur-sm shadow-md flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between text-emerald-400 mb-1">
                 <span className="text-[10px] uppercase tracking-wider font-cinzel font-semibold">
@@ -1875,7 +1877,7 @@ export default function AdminDashboard() {
           </div>
 
           {/* Card 3: Declined */}
-          <div className="p-3.5 sm:p-4 rounded-2xl bg-[#1c161a] border border-rose-800/40 bg-gradient-to-b from-rose-950/20 to-transparent backdrop-blur-sm shadow-md flex flex-col justify-between">
+          <div className="p-3.5 sm:p-4 rounded-2xl royal-stat-card royal-stat-declined bg-[#1c161a] border border-rose-800/40 bg-gradient-to-b from-rose-950/20 to-transparent backdrop-blur-sm shadow-md flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between text-rose-400 mb-1">
                 <span className="text-[10px] uppercase tracking-wider font-cinzel font-semibold">
@@ -1893,7 +1895,7 @@ export default function AdminDashboard() {
           </div>
 
           {/* Card 4: Pending RSVP */}
-          <div className="p-3.5 sm:p-4 rounded-2xl bg-[#1c161a] border border-[#c5a059]/40 backdrop-blur-sm shadow-md flex flex-col justify-between">
+          <div className="p-3.5 sm:p-4 rounded-2xl royal-stat-card royal-stat-pending bg-[#1c161a] border border-[#c5a059]/40 backdrop-blur-sm shadow-md flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between text-[#dfba73] mb-1">
                 <span className="text-[10px] uppercase tracking-wider font-cinzel font-semibold">
@@ -1911,7 +1913,7 @@ export default function AdminDashboard() {
           </div>
 
           {/* Card 5: Open Rate */}
-          <div className="p-3.5 sm:p-4 rounded-2xl bg-gradient-to-br from-[#1c161a] to-[#251821] border border-[#c5a059]/40 backdrop-blur-sm shadow-md col-span-2 sm:col-span-2 lg:col-span-1 flex flex-col justify-between">
+          <div className="p-3.5 sm:p-4 rounded-2xl royal-stat-card royal-stat-openrate bg-gradient-to-br from-[#1c161a] to-[#251821] border border-[#c5a059]/40 backdrop-blur-sm shadow-md col-span-2 sm:col-span-2 lg:col-span-1 flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between text-[#dfba73] mb-1">
                 <span className="text-[10px] uppercase tracking-wider font-cinzel font-semibold flex items-center gap-1.5">
@@ -1962,7 +1964,7 @@ export default function AdminDashboard() {
           <div className="grid grid-cols-2 sm:grid-cols-3 xl:flex xl:flex-wrap items-center gap-2 sm:gap-2.5">
             <button
               onClick={() => setActiveTab("guests")}
-              className={`w-full xl:w-auto px-3.5 sm:px-4 py-2.5 rounded-xl text-xs font-cinzel font-bold tracking-wider transition cursor-pointer flex items-center justify-center sm:justify-start gap-2 touch-manipulation min-h-[44px] ${
+              className={`w-full xl:w-auto royal-nav-tab px-3.5 sm:px-4 py-2.5 rounded-xl text-xs font-cinzel font-bold tracking-wider transition cursor-pointer flex items-center justify-center sm:justify-start gap-2 touch-manipulation min-h-[44px] ${
                 activeTab === "guests"
                   ? "bg-[#800020] text-[#fdfbf7] border border-[#dfba73]/80 shadow-lg shadow-[#800020]/40 ring-1 ring-[#dfba73]/30"
                   : "bg-[#231a20] text-[#fdfbf7]/70 hover:bg-[#c5a059]/15 border border-[#c5a059]/20"
@@ -1979,7 +1981,7 @@ export default function AdminDashboard() {
             </button>
             <button
               onClick={() => setActiveTab("photos")}
-              className={`w-full xl:w-auto px-3.5 sm:px-4 py-2.5 rounded-xl text-xs font-cinzel font-bold tracking-wider transition cursor-pointer flex items-center justify-center sm:justify-start gap-2 touch-manipulation min-h-[44px] ${
+              className={`w-full xl:w-auto royal-nav-tab px-3.5 sm:px-4 py-2.5 rounded-xl text-xs font-cinzel font-bold tracking-wider transition cursor-pointer flex items-center justify-center sm:justify-start gap-2 touch-manipulation min-h-[44px] ${
                 activeTab === "photos"
                   ? "bg-[#800020] text-[#fdfbf7] border border-[#dfba73]/80 shadow-lg shadow-[#800020]/40 ring-1 ring-[#dfba73]/30"
                   : "bg-[#231a20] text-[#fdfbf7]/70 hover:bg-[#c5a059]/15 border border-[#c5a059]/20"
@@ -1996,7 +1998,7 @@ export default function AdminDashboard() {
             </button>
             <button
               onClick={() => setActiveTab("settings")}
-              className={`w-full xl:w-auto px-3.5 sm:px-4 py-2.5 rounded-xl text-xs font-cinzel font-bold tracking-wider transition cursor-pointer flex items-center justify-center sm:justify-start gap-2 touch-manipulation min-h-[44px] ${
+              className={`w-full xl:w-auto royal-nav-tab px-3.5 sm:px-4 py-2.5 rounded-xl text-xs font-cinzel font-bold tracking-wider transition cursor-pointer flex items-center justify-center sm:justify-start gap-2 touch-manipulation min-h-[44px] ${
                 activeTab === "settings"
                   ? "bg-[#800020] text-[#fdfbf7] border border-[#dfba73]/80 shadow-lg shadow-[#800020]/40 ring-1 ring-[#dfba73]/30"
                   : "bg-[#231a20] text-[#fdfbf7]/70 hover:bg-[#c5a059]/15 border border-[#c5a059]/20"
@@ -2008,7 +2010,7 @@ export default function AdminDashboard() {
             </button>
             <button
               onClick={() => setActiveTab("tables")}
-              className={`w-full xl:w-auto px-3.5 sm:px-4 py-2.5 rounded-xl text-xs font-cinzel font-bold tracking-wider transition cursor-pointer flex items-center justify-center sm:justify-start gap-2 touch-manipulation min-h-[44px] ${
+              className={`w-full xl:w-auto royal-nav-tab px-3.5 sm:px-4 py-2.5 rounded-xl text-xs font-cinzel font-bold tracking-wider transition cursor-pointer flex items-center justify-center sm:justify-start gap-2 touch-manipulation min-h-[44px] ${
                 activeTab === "tables"
                   ? "bg-[#800020] text-[#fdfbf7] border border-[#dfba73]/80 shadow-lg shadow-[#800020]/40 ring-1 ring-[#dfba73]/30"
                   : "bg-[#231a20] text-[#fdfbf7]/70 hover:bg-[#c5a059]/15 border border-[#c5a059]/20"
@@ -2021,7 +2023,7 @@ export default function AdminDashboard() {
             {manager?.role === "SUPER_ADMIN" && (
               <button
                 onClick={() => setActiveTab("events")}
-                className={`w-full xl:w-auto px-3.5 sm:px-4 py-2.5 rounded-xl text-xs font-cinzel font-bold tracking-wider transition cursor-pointer flex items-center justify-center sm:justify-start gap-2 touch-manipulation min-h-[44px] col-span-1 sm:col-span-1 xl:col-auto ${
+                className={`w-full xl:w-auto royal-nav-tab px-3.5 sm:px-4 py-2.5 rounded-xl text-xs font-cinzel font-bold tracking-wider transition cursor-pointer flex items-center justify-center sm:justify-start gap-2 touch-manipulation min-h-[44px] col-span-1 sm:col-span-1 xl:col-auto ${
                   activeTab === "events"
                     ? "bg-[#800020] text-[#fdfbf7] border border-[#dfba73]/80 shadow-lg shadow-[#800020]/40 ring-1 ring-[#dfba73]/30"
                     : "bg-[#231a20] text-[#fdfbf7]/70 hover:bg-[#c5a059]/15 border border-[#c5a059]/20"
@@ -2040,7 +2042,7 @@ export default function AdminDashboard() {
             {manager?.role === "SUPER_ADMIN" && (
               <button
                 onClick={() => setActiveTab("managers")}
-                className={`w-full xl:w-auto px-3.5 sm:px-4 py-2.5 rounded-xl text-xs font-cinzel font-bold tracking-wider transition cursor-pointer flex items-center justify-center sm:justify-start gap-2 touch-manipulation min-h-[44px] col-span-1 sm:col-span-1 xl:col-auto ${
+                className={`w-full xl:w-auto royal-nav-tab px-3.5 sm:px-4 py-2.5 rounded-xl text-xs font-cinzel font-bold tracking-wider transition cursor-pointer flex items-center justify-center sm:justify-start gap-2 touch-manipulation min-h-[44px] col-span-1 sm:col-span-1 xl:col-auto ${
                   activeTab === "managers"
                     ? "bg-[#800020] text-[#fdfbf7] border border-[#dfba73] shadow-lg ring-1 ring-[#dfba73]/40"
                     : "bg-[#2a1721] text-[#dfba73] hover:bg-[#c5a059]/15 border border-[#c5a059]/30"

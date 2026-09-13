@@ -16,6 +16,7 @@ import {
   AlertCircle,
   Crown,
 } from "lucide-react";
+import RoyalThemeToggle from "@/components/RoyalThemeToggle";
 
 export default function AdminRegisterPage() {
   const router = useRouter();
@@ -77,6 +78,11 @@ export default function AdminRegisterPage() {
       {/* Ambient background glows */}
       <div className="absolute top-1/4 -left-32 w-96 h-96 bg-[#800020]/25 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-1/4 -right-32 w-96 h-96 bg-[#c5a059]/15 rounded-full blur-3xl pointer-events-none" />
+
+      {/* Floating Theme Switcher */}
+      <div className="absolute top-4 right-4 z-20">
+        <RoyalThemeToggle variant="floating" />
+      </div>
 
       <div className="relative z-10 w-full max-w-lg">
         <div className="rounded-3xl bg-[#1a1519]/95 border border-[#c5a059]/40 p-6 sm:p-10 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.8),0_0_30px_rgba(197,160,89,0.15)] backdrop-blur-xl">

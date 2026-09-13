@@ -56,6 +56,7 @@ import MusicPlayer from "./MusicPlayer";
 import EnvelopeOpening from "./EnvelopeOpening";
 import ScrollProgress from "./ScrollProgress";
 import ScrollReveal from "./ScrollReveal";
+import RoyalThemeToggle from "./RoyalThemeToggle";
 import { formatEventDate } from "@/lib/date";
 import { generateICS } from "@/lib/calendar";
 import { translations, Locale } from "@/lib/translations";
@@ -847,23 +848,26 @@ export default function InvitationView({
       {/* Interactive Golden Floral Scroll Progress Bar */}
       <ScrollProgress />
 
-      {/* Floating Luxury Language Switcher */}
-      <div className="fixed top-4 right-4 z-40 flex items-center gap-1 p-1 rounded-full bg-[#181114]/90 border border-[#dfba73]/60 shadow-[0_4px_20px_rgba(0,0,0,0.6)] backdrop-blur-md">
-        {(["en", "si", "ta"] as Locale[]).map((loc) => (
-          <button
-            key={loc}
-            type="button"
-            onClick={() => handleLanguageChange(loc)}
-            className={`px-3 py-1 rounded-full text-xs font-cinzel font-bold transition-all cursor-pointer flex items-center gap-1 ${
-              locale === loc
-                ? "bg-gradient-to-r from-[#800020] to-[#6b0f24] text-[#ffd700] border border-[#ffd700] shadow-md scale-105"
-                : "text-[#edd892]/70 hover:text-[#ffd700]"
-            }`}
-          >
-            <span>{translations[loc].langFlag}</span>
-            <span className="hidden sm:inline">{translations[loc].langName}</span>
-          </button>
-        ))}
+      {/* Floating Luxury Language Switcher & Royal Celestial Theme Toggle */}
+      <div className="fixed top-4 right-4 z-40 flex items-center gap-2">
+        <RoyalThemeToggle variant="floating" />
+        <div className="flex items-center gap-1 p-1 rounded-full bg-[#181114]/90 border border-[#dfba73]/60 shadow-[0_4px_20px_rgba(0,0,0,0.6)] backdrop-blur-md">
+          {(["en", "si", "ta"] as Locale[]).map((loc) => (
+            <button
+              key={loc}
+              type="button"
+              onClick={() => handleLanguageChange(loc)}
+              className={`px-3 py-1 rounded-full text-xs font-cinzel font-bold transition-all cursor-pointer flex items-center gap-1 ${
+                locale === loc
+                  ? "bg-gradient-to-r from-[#800020] to-[#6b0f24] text-[#ffd700] border border-[#ffd700] shadow-md scale-105"
+                  : "text-[#edd892]/70 hover:text-[#ffd700]"
+              }`}
+            >
+              <span>{translations[loc].langFlag}</span>
+              <span className="hidden sm:inline">{translations[loc].langName}</span>
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Luxury Vinyl Disc Background Music Player */}
