@@ -510,12 +510,12 @@ export default function InvitationView({
   // High-performance CDN optimized image URLs
   const rawHeroImage = settings.heroImageUrl && !settings.heroImageUrl.includes("preshoot-photo-Pragya")
     ? settings.heroImageUrl
-    : "/images/coupleshare.png";
+    : "/images/couple-kiss.jpg";
   const heroImageSrc = useMemo(() => getOptimizedImageUrl(rawHeroImage, { width: 1080, quality: "auto:good" }), [rawHeroImage]);
 
   const rawWelcomeImage = settings.welcomeImageUrl && !settings.welcomeImageUrl.includes("preshoot-photo-423f")
     ? settings.welcomeImageUrl
-    : "/images/coupleshare.png";
+    : "/images/couple-kiss.jpg";
   const welcomeImageSrc = useMemo(
     () => getOptimizedImageUrl(rawWelcomeImage, { width: 360, height: 360, crop: "fill", gravity: "face", quality: "auto:good" }),
     [rawWelcomeImage]
@@ -523,7 +523,7 @@ export default function InvitationView({
 
   const rawPlaceCardImage = settings.placeCardImageUrl && !settings.placeCardImageUrl.includes("preshoot-photo-e5a4")
     ? settings.placeCardImageUrl
-    : "/images/coupleshare.png";
+    : "/images/couple-kiss.jpg";
   const placeCardImageSrc = useMemo(
     () => getOptimizedImageUrl(rawPlaceCardImage, { width: 160, height: 160, crop: "fill", quality: "auto:good" }),
     [rawPlaceCardImage]
@@ -531,7 +531,7 @@ export default function InvitationView({
 
   const rawBlessingImage = settings.blessingImageUrl && !settings.blessingImageUrl.includes("preshoot-photo-OIP2")
     ? settings.blessingImageUrl
-    : "/images/coupleshare.png";
+    : "/images/couple-kiss.jpg";
   const blessingImageSrc = useMemo(() => getOptimizedImageUrl(rawBlessingImage, { width: 640, quality: "auto:good" }), [rawBlessingImage]);
   const placeCardNote = settings.placeCardNote || t.cantWaitToWelcome;
 

@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import confetti from "canvas-confetti";
 import { Sparkles, Heart, Globe } from "lucide-react";
 import { translations, Locale } from "@/lib/translations";
+import CoupleWalkAndKiss from "./CoupleWalkAndKiss";
 
 interface EnvelopeOpeningProps {
   guestName: string;
@@ -307,6 +308,14 @@ export default function EnvelopeOpening({
             <Sparkles className="w-3.5 h-3.5 text-[#edd892] animate-spin-slow flex-shrink-0" />
           </span>
           <div className="h-px w-10 sm:w-16 bg-gradient-to-l from-transparent via-[#dfba73] to-[#c5a059]" />
+        </div>
+
+        {/* ROMANTIC STAGE: GROOM & BRIDE WALK SEPARATE SIDES & MEET TO KISS */}
+        <div className="w-full mb-5">
+          <CoupleWalkAndKiss
+            coupleNames={coupleNames}
+            isOpening={isOpening}
+          />
         </div>
 
         {/* 3D Realistic Royal Envelope Wrapper */}
