@@ -190,7 +190,6 @@ export default function InvitationView({
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [isSlideshowPlaying, setIsSlideshowPlaying] = useState(true);
-  const [galleryTilt, setGalleryTilt] = useState({ x: 0, y: 0 });
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
   const [floatingHearts, setFloatingHearts] = useState<{ id: number; left: number; size: number }[]>([]);
   const galleryCardRef = useRef<HTMLDivElement>(null);
@@ -411,7 +410,7 @@ export default function InvitationView({
   // Digital Guestbook wishes state
   const [wishes, setWishes] = useState<GuestbookWish[]>([]);
   const [loadingWishes, setLoadingWishes] = useState(false);
-  const [likedWishIds, setLikedWishIds] = useState<string[]>([]);
+  const [likedWishIds, setLikedWishIds] = useState<Set<string>>(new Set());
 
   async function loadWishes() {
     try {
@@ -434,8 +433,8 @@ export default function InvitationView({
   }, []);
 
   async function handleLikeWish(wishId: string) {
-    if (likedWishIds.includes(wishId)) return;
-    setLikedWishIds((prev) => [...prev, wishId]);
+    if (likedWishIds.has(wishId)) return;
+    setLikedWishIds((prev) => new Set(prev).add(wishId));
     setWishes((prev) =>
       prev.map((w) => (w.id === wishId ? { ...w, likes: w.likes + 1 } : w))
     );
@@ -458,7 +457,11 @@ export default function InvitationView({
       if (!res.ok) throw new Error('Like failed');
     } catch {
       // Rollback optimistic update on failure
-      setLikedWishIds((prev) => prev.filter((id) => id !== wishId));
+      setLikedWishIds((prev) => {
+        const next = new Set(prev);
+        next.delete(wishId);
+        return next;
+      });
       setWishes((prev) => prev.map((w) => (w.id === wishId ? { ...w, likes: Math.max(0, w.likes - 1) } : w)));
     }
   }
@@ -505,7 +508,7 @@ export default function InvitationView({
     return t.defaultTimeline;
   }, [settings.timelineJson, t.defaultTimeline]);
 
-  const date = formatEventDate(settings.eventDate);
+  const date = useMemo(() => formatEventDate(settings.eventDate), [settings.eventDate]);
 
   // High-performance CDN optimized image URLs
   const rawHeroImage = settings.heroImageUrl && !settings.heroImageUrl.includes("preshoot-photo-Pragya")
@@ -567,17 +570,20 @@ export default function InvitationView({
     return () => clearInterval(interval);
   }, [isSlideshowPlaying, isLightboxOpen, parsedGallery.length]);
 
-  // 3D Parallax Tilt for Photo Card
+  // 3D Parallax Tilt for Photo Card - direct DOM transform (0 React re-renders on mousemove)
   const handleGalleryMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    const rect = galleryCardRef.current?.getBoundingClientRect();
-    if (!rect) return;
+    const card = galleryCardRef.current;
+    if (!card) return;
+    const rect = card.getBoundingClientRect();
     const x = (e.clientX - rect.left) / rect.width - 0.5;
     const y = (e.clientY - rect.top) / rect.height - 0.5;
-    setGalleryTilt({ x: -(y * 8), y: x * 8 });
+    card.style.transform = `rotateX(${-(y * 8)}deg) rotateY(${x * 8}deg)`;
   };
 
   const handleGalleryMouseLeave = () => {
-    setGalleryTilt({ x: 0, y: 0 });
+    if (galleryCardRef.current) {
+      galleryCardRef.current.style.transform = "rotateX(0deg) rotateY(0deg)";
+    }
   };
 
   // Mobile Touch Swipe Handlers
@@ -1599,9 +1605,8 @@ export default function InvitationView({
                 onTouchEnd={handleTouchEnd}
                 style={{
                   perspective: "1000px",
-                  transform: `rotateX(${galleryTilt.x}deg) rotateY(${galleryTilt.y}deg)`,
                 }}
-                className="relative rounded-2xl overflow-hidden border-2 border-[#c5a059]/70 shadow-2xl bg-[#140e11] group transition-transform duration-200 ease-out"
+                className="relative rounded-2xl overflow-hidden border-2 border-[#c5a059]/70 shadow-2xl bg-[#140e11] group transition-transform duration-200 ease-out will-change-transform"
               >
                 {/* Autoplay Golden Progress Bar Line */}
                 {isSlideshowPlaying && (
@@ -2251,14 +2256,14 @@ export default function InvitationView({
                         type="button"
                         onClick={() => handleLikeWish(w.id)}
                         className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-cinzel transition cursor-pointer ${
-                          likedWishIds.includes(w.id)
+                          likedWishIds.has(w.id)
                             ? "bg-[#800020] text-white border border-[#c5a059]"
                             : "bg-[#fbf6eb] text-[#800020] hover:bg-[#800020]/10 border border-[#c5a059]/30"
                         }`}
                       >
                         <Heart
                           className={`w-3 h-3 ${
-                            likedWishIds.includes(w.id) ? "fill-current text-[#dfba73]" : "text-[#800020]"
+                            likedWishIds.has(w.id) ? "fill-current text-[#dfba73]" : "text-[#800020]"
                           }`}
                         />
                         <span>{w.likes}</span>

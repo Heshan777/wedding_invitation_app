@@ -39,8 +39,6 @@ export async function GET(req: NextRequest) {
         musicUrl: true,
         dressCodeTitle: true,
         dressCodeDescription: true,
-        timelineJson: true,
-        galleryJson: true,
         manager: {
           select: {
             id: true,

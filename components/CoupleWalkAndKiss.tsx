@@ -19,46 +19,12 @@ export default function CoupleWalkAndKiss({
 }: CoupleWalkAndKissProps) {
   // State: "walking" | "kissing"
   const [phase, setPhase] = useState<"walking" | "kissing">("walking");
-  const [progress, setProgress] = useState(0);
+  const [isWalkingToMiddle, setIsWalkingToMiddle] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [hearts, setHearts] = useState<{ id: number; left: number; delay: string; size: number }[]>([]);
-  const animFrameRef = useRef<number | null>(null);
-
-  // Start smooth automatic walk animation on mount
-  useEffect(() => {
-    let startTimestamp: number | null = null;
-    const duration = 2600; // 2.6s romantic walking duration
-
-    const step = (timestamp: number) => {
-      if (!startTimestamp) startTimestamp = timestamp;
-      const elapsed = timestamp - startTimestamp;
-      const rawProgress = Math.min(elapsed / duration, 1);
-      
-      // Smooth easeInOutQuad easing for lifelike footsteps
-      const easeProgress =
-        rawProgress < 0.5
-          ? 2 * rawProgress * rawProgress
-          : 1 - Math.pow(-2 * rawProgress + 2, 2) / 2;
-
-      setProgress(easeProgress);
-
-      if (rawProgress < 1) {
-        animFrameRef.current = requestAnimationFrame(step);
-      } else {
-        triggerKiss();
-      }
-    };
-
-    animFrameRef.current = requestAnimationFrame(step);
-
-    return () => {
-      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
-    };
-  }, []);
 
   const triggerKiss = () => {
     setPhase("kissing");
-    setProgress(1);
 
     // Floating hearts bloom
     setHearts([
@@ -75,41 +41,42 @@ export default function CoupleWalkAndKiss({
     }
   };
 
+  // Start smooth GPU-accelerated CSS walk transition on mount
+  useEffect(() => {
+    const startTimer = setTimeout(() => {
+      setIsWalkingToMiddle(true);
+    }, 60);
+
+    const kissTimer = setTimeout(() => {
+      triggerKiss();
+    }, 2460);
+
+    return () => {
+      clearTimeout(startTimer);
+      clearTimeout(kissTimer);
+    };
+  }, []);
+
   const handleReplay = (e: React.MouseEvent) => {
     e.stopPropagation();
     setPhase("walking");
-    setProgress(0);
+    setIsWalkingToMiddle(false);
     setHearts([]);
 
-    let startTimestamp: number | null = null;
-    const duration = 2400;
+    setTimeout(() => {
+      setIsWalkingToMiddle(true);
+    }, 60);
 
-    const step = (timestamp: number) => {
-      if (!startTimestamp) startTimestamp = timestamp;
-      const elapsed = timestamp - startTimestamp;
-      const rawProgress = Math.min(elapsed / duration, 1);
-      const easeProgress =
-        rawProgress < 0.5
-          ? 2 * rawProgress * rawProgress
-          : 1 - Math.pow(-2 * rawProgress + 2, 2) / 2;
-
-      setProgress(easeProgress);
-
-      if (rawProgress < 1) {
-        animFrameRef.current = requestAnimationFrame(step);
-      } else {
-        triggerKiss();
-      }
-    };
-
-    if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
-    animFrameRef.current = requestAnimationFrame(step);
+    setTimeout(() => {
+      triggerKiss();
+    }, 2460);
   };
 
   // Split couple names for romantic typography
-  const nameParts = coupleNames.split(/&|and|\+/i).map((s) => s.trim()).filter(Boolean);
-  const groomFirst = nameParts[0] || "Groom";
-  const brideFirst = nameParts[1] || "Bride";
+  const [groomFirst, brideFirst] = React.useMemo(() => {
+    const nameParts = (coupleNames || "").split(/&|and|\+/i).map((s) => s.trim()).filter(Boolean);
+    return [nameParts[0] || "Groom", nameParts[1] || "Bride"];
+  }, [coupleNames]);
 
   return (
     <div
@@ -184,9 +151,9 @@ export default function CoupleWalkAndKiss({
         >
           {/* GROOM (Left side -> walks right) */}
           <div
-            className="flex flex-col items-center transition-transform will-change-transform z-10"
+            className="flex flex-col items-center transition-transform duration-[2400ms] ease-in-out will-change-transform z-10"
             style={{
-              transform: `translateX(${progress * 135}px)`,
+              transform: isWalkingToMiddle ? "translateX(135px)" : "translateX(0px)",
             }}
           >
             <div className="relative w-20 h-28 sm:w-24 sm:h-34 rounded-2xl overflow-hidden border-2 border-[#dfba73] shadow-[0_8px_20px_rgba(0,0,0,0.8),0_0_15px_rgba(223,186,115,0.4)] bg-[#1a0810]">
@@ -211,9 +178,9 @@ export default function CoupleWalkAndKiss({
 
           {/* BRIDE (Right side -> walks left) */}
           <div
-            className="flex flex-col items-center transition-transform will-change-transform z-10"
+            className="flex flex-col items-center transition-transform duration-[2400ms] ease-in-out will-change-transform z-10"
             style={{
-              transform: `translateX(-${progress * 135}px)`,
+              transform: isWalkingToMiddle ? "translateX(-135px)" : "translateX(0px)",
             }}
           >
             <div className="relative w-20 h-28 sm:w-24 sm:h-34 rounded-2xl overflow-hidden border-2 border-[#dfba73] shadow-[0_8px_20px_rgba(0,0,0,0.8),0_0_15px_rgba(223,186,115,0.4)] bg-[#1a0810]">

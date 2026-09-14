@@ -8,14 +8,20 @@ export function getOrdinalSuffix(day: number): string {
   }
 }
 
-export function formatEventDate(date: Date) {
-  const d = new Date(date);
+// Pre-instantiated Intl formatters to avoid expensive re-initialization on every render
+const weekdayFormatter = new Intl.DateTimeFormat("en-US", { weekday: "long" });
+const monthFormatter = new Intl.DateTimeFormat("en-US", { month: "long" });
+const timeFormatter = new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit", hour12: true });
+
+export function formatEventDate(date: Date | string | number) {
+  const d = date instanceof Date ? date : new Date(date);
+  const day = d.getDate();
   return {
-    weekday: d.toLocaleDateString("en-US", { weekday: "long" }),
-    month: d.toLocaleDateString("en-US", { month: "long" }),
-    day: d.getDate(),
-    ordinal: getOrdinalSuffix(d.getDate()),
+    weekday: weekdayFormatter.format(d),
+    month: monthFormatter.format(d),
+    day,
+    ordinal: getOrdinalSuffix(day),
     year: d.getFullYear(),
-    time: d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true }).toLowerCase(),
+    time: timeFormatter.format(d).toLowerCase(),
   };
 }

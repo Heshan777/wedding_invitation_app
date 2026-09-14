@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import confetti from "canvas-confetti";
 import { Sparkles, Heart, Globe } from "lucide-react";
 import { translations, Locale } from "@/lib/translations";
@@ -61,8 +61,8 @@ export default function EnvelopeOpening({
   const [isOpen, setIsOpen] = useState(false);
   const [isOpening, setIsOpening] = useState(false);
   const [hasDismissed, setHasDismissed] = useState(false);
-  const [tilt, setTilt] = useState({ x: 0, y: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
+  const envelopeRef = useRef<HTMLDivElement>(null);
 
   const t = translations[selectedLocale];
 
@@ -78,21 +78,23 @@ export default function EnvelopeOpening({
     }
   }, []);
 
-  // 3D Parallax tilt on mouse/touch movement
+  // 3D Parallax tilt on mouse/touch movement directly on DOM - 0 React re-renders on mousemove
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (isOpening) return;
     const rect = containerRef.current?.getBoundingClientRect();
-    if (!rect) return;
+    if (!rect || !envelopeRef.current) return;
     const x = (e.clientX - rect.left) / rect.width - 0.5;
     const y = (e.clientY - rect.top) / rect.height - 0.5;
-    setTilt({ x: -(y * 12), y: x * 12 });
+    envelopeRef.current.style.transform = `rotateX(${-(y * 12)}deg) rotateY(${x * 12}deg)`;
   };
 
   const handleMouseLeave = () => {
-    setTilt({ x: 0, y: 0 });
+    if (envelopeRef.current) {
+      envelopeRef.current.style.transform = "rotateX(0deg) rotateY(0deg)";
+    }
   };
 
-  const monogram = (() => {
+  const monogram = useMemo(() => {
     const parts = (coupleNames || "").split(/&|and|\+/i).map((s) => s.trim()).filter(Boolean);
     if (parts.length >= 2) {
       return `${parts[0][0]?.toUpperCase() || "S"} & ${parts[1][0]?.toUpperCase() || "S"}`;
@@ -102,7 +104,7 @@ export default function EnvelopeOpening({
       return `${words[0][0]?.toUpperCase() || "S"} & ${words[words.length - 1][0]?.toUpperCase() || "S"}`;
     }
     return (coupleNames || "").slice(0, 2).toUpperCase() || "S & S";
-  })();
+  }, [coupleNames]);
 
   const handleSelectLanguage = (e: React.MouseEvent, loc: Locale) => {
     e.stopPropagation();
@@ -320,11 +322,11 @@ export default function EnvelopeOpening({
 
         {/* 3D Realistic Royal Envelope Wrapper */}
         <div
+          ref={envelopeRef}
           onClick={handleOpenEnvelope}
-          className="relative w-full cursor-pointer transition-transform duration-300 ease-out"
+          className="relative w-full cursor-pointer transition-transform duration-300 ease-out will-change-transform"
           style={{
             perspective: "1200px",
-            transform: `rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)`,
           }}
         >
           {/* Outer Velvet Pocket Box */}

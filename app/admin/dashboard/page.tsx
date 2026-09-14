@@ -482,32 +482,51 @@ export default function AdminDashboard() {
     return () => window.removeEventListener("afterprint", handleAfterPrint);
   }, []);
 
-  // Pre-generate scannable QR codes for all guests when viewing cards
+  // Pre-generate scannable QR codes for guests with caching and non-blocking micro-batches
   useEffect(() => {
     if (activeTab === "tables" && guests.length > 0) {
       const origin = typeof window !== "undefined" ? window.location.origin : "";
-      const generateAllQrs = async () => {
-        const qrs: Record<string, string> = {};
-        await Promise.all(
-          guests.map(async (g) => {
-            try {
-              const url = `${origin}/invite/${g.token}`;
-              const qrData = await QRCode.toDataURL(url, {
-                width: 220,
-                margin: 1,
-                color: { dark: "#6b0f24", light: "#ffffff" },
-              });
-              qrs[g.id] = qrData;
-            } catch (e) {
-              console.error("QR generation error for guest", g.id, e);
-            }
-          })
-        );
-        setGuestQrMap(qrs);
+      let isSubscribed = true;
+
+      const generateMissingQrs = async () => {
+        // Only generate for guests whose ID is not already cached in guestQrMap
+        const missing = guests.filter((g) => !guestQrMap[g.id]);
+        if (missing.length === 0) return;
+
+        const newQrs: Record<string, string> = {};
+        // Process in micro-batches of 8 to prevent freezing the UI thread
+        for (let i = 0; i < missing.length; i += 8) {
+          if (!isSubscribed) break;
+          const batch = missing.slice(i, i + 8);
+          await Promise.all(
+            batch.map(async (g) => {
+              try {
+                const url = `${origin}/invite/${g.token}`;
+                const qrData = await QRCode.toDataURL(url, {
+                  width: 220,
+                  margin: 1,
+                  color: { dark: "#6b0f24", light: "#ffffff" },
+                });
+                newQrs[g.id] = qrData;
+              } catch (e) {
+                console.error("QR generation error for guest", g.id, e);
+              }
+            })
+          );
+        }
+
+        if (isSubscribed && Object.keys(newQrs).length > 0) {
+          setGuestQrMap((prev) => ({ ...prev, ...newQrs }));
+        }
       };
-      generateAllQrs();
+
+      generateMissingQrs();
+
+      return () => {
+        isSubscribed = false;
+      };
     }
-  }, [activeTab, guests]);
+  }, [activeTab, guests, guestQrMap]);
 
   const handlePrintSingleCard = (guestId: string) => {
     setSinglePrintGuestId(guestId);
@@ -518,25 +537,28 @@ export default function AdminDashboard() {
 
   const availableTableNumbers = useMemo(() => {
     const set = new Set<number>();
-    guests.forEach((g) => {
-      if (typeof g.tableNumber === "number") set.add(g.tableNumber);
-    });
+    for (let i = 0; i < guests.length; i++) {
+      const tn = guests[i].tableNumber;
+      if (typeof tn === "number") set.add(tn);
+    }
     return Array.from(set).sort((a, b) => a - b);
   }, [guests]);
 
   const filteredPrintableGuests = useMemo(() => {
+    const query = cardSearchQuery.trim().toLowerCase();
+    const hasQuery = query.length > 0;
+    const hasTableFilter = cardFilterTable !== "all";
+
     return guests.filter((g) => {
-      if (cardFilterTable !== "all" && String(g.tableNumber) !== cardFilterTable) {
+      if (hasTableFilter && String(g.tableNumber) !== cardFilterTable) {
         return false;
       }
-      if (cardSearchQuery.trim()) {
-        const query = cardSearchQuery.toLowerCase();
-        const name = (g.displayName || "").toLowerCase();
-        const salutation = (g.salutation || "").toLowerCase();
-        const table = `table ${g.tableNumber}`.toLowerCase();
-        return name.includes(query) || salutation.includes(query) || table.includes(query);
-      }
-      return true;
+      if (!hasQuery) return true;
+
+      const name = (g.displayName || "").toLowerCase();
+      const salutation = (g.salutation || "").toLowerCase();
+      const table = `table ${g.tableNumber}`;
+      return name.includes(query) || salutation.includes(query) || table.includes(query);
     });
   }, [guests, cardFilterTable, cardSearchQuery]);
 
@@ -643,34 +665,42 @@ export default function AdminDashboard() {
     }));
   };
 
-  // RSVP & Headcount Statistics
+  // RSVP & Headcount Statistics - single pass O(N) aggregation
   const rsvpStats = useMemo(() => {
     const totalInvited = guests.length;
-    const attending = guests.filter((g) => g.rsvpStatus === "ATTENDING");
-    const declined = guests.filter((g) => g.rsvpStatus === "DECLINED");
-    const pending = guests.filter((g) => !g.rsvpStatus || g.rsvpStatus === "PENDING");
-    const totalHeadcount = attending.reduce(
-      (acc, g) => acc + (g.attendeeCount || (g.inviteType === "COUPLE" ? 2 : g.inviteType === "FAMILY" ? 4 : 1)),
-      0
-    );
-
+    let attendingCount = 0;
+    let declinedCount = 0;
+    let pendingCount = 0;
+    let totalHeadcount = 0;
     const dietaryCounts: Record<string, number> = {};
-    attending.forEach((g) => {
-      const diet = g.dietary || "NONE";
-      dietaryCounts[diet] = (dietaryCounts[diet] || 0) + (g.attendeeCount || 1);
-    });
+
+    for (let i = 0; i < guests.length; i++) {
+      const g = guests[i];
+      const status = g.rsvpStatus;
+      if (status === "ATTENDING") {
+        attendingCount++;
+        const count = g.attendeeCount || (g.inviteType === "COUPLE" ? 2 : g.inviteType === "FAMILY" ? 4 : 1);
+        totalHeadcount += count;
+        const diet = g.dietary || "NONE";
+        dietaryCounts[diet] = (dietaryCounts[diet] || 0) + (g.attendeeCount || 1);
+      } else if (status === "DECLINED") {
+        declinedCount++;
+      } else {
+        pendingCount++;
+      }
+    }
 
     return {
       totalInvited,
-      attendingCount: attending.length,
-      declinedCount: declined.length,
-      pendingCount: pending.length,
+      attendingCount,
+      declinedCount,
+      pendingCount,
       totalHeadcount,
       dietaryCounts,
     };
   }, [guests]);
 
-  // Export to CSV
+  // Export to CSV using memory-safe browser Blob
   function handleExportCSV() {
     const base = getAppBaseUrl();
     const headers = [
@@ -687,9 +717,9 @@ export default function AdminDashboard() {
     ];
 
     const rows = guests.map((g) => [
-      `"${g.salutation}"`,
-      `"${g.displayName}"`,
-      `"${g.inviteType}"`,
+      `"${(g.salutation || "").replace(/"/g, '""')}"`,
+      `"${(g.displayName || "").replace(/"/g, '""')}"`,
+      `"${g.inviteType || ""}"`,
       g.tableNumber,
       `"${g.phone || ""}"`,
       `"${g.rsvpStatus || "PENDING"}"`,
@@ -699,14 +729,16 @@ export default function AdminDashboard() {
       `"${base}/invite/${g.token}"`,
     ]);
 
-    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
-    const encodedUri = encodeURI(csvContent);
+    const csvContent = [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const blobUrl = URL.createObjectURL(blob);
     const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
+    link.href = blobUrl;
     link.setAttribute("download", `Wedding_Guests_${new Date().toISOString().slice(0, 10)}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(blobUrl);
     showToast("Guest list exported to CSV successfully!");
   }
 
@@ -1438,14 +1470,17 @@ export default function AdminDashboard() {
     let viewedCount = 0;
     const tableSet = new Set<number>();
 
-    guests.forEach((g) => {
-      if (g.inviteType === "SINGLE") estimatedHeadcount += 1;
-      else if (g.inviteType === "COUPLE") estimatedHeadcount += 2;
-      else if (g.inviteType === "FAMILY") estimatedHeadcount += 4;
+    for (let i = 0; i < guests.length; i++) {
+      const g = guests[i];
+      const type = g.inviteType;
+      if (type === "SINGLE") estimatedHeadcount += 1;
+      else if (type === "COUPLE") estimatedHeadcount += 2;
+      else if (type === "FAMILY") estimatedHeadcount += 4;
+      else estimatedHeadcount += (g.attendeeCount || 1);
 
       if (g.viewedAt) viewedCount += 1;
       if (g.tableNumber) tableSet.add(g.tableNumber);
-    });
+    }
 
     const openRate = totalGuests > 0 ? Math.round((viewedCount / totalGuests) * 100) : 0;
 
@@ -1459,34 +1494,60 @@ export default function AdminDashboard() {
   }, [guests]);
 
   const filteredGuests = useMemo(() => {
-    return guests
-      .filter((g) => {
-        const matchesSearch =
-          g.displayName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          g.salutation.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          String(g.tableNumber).includes(searchQuery) ||
-          (g.phone && g.phone.includes(searchQuery)) ||
-          (g.notes && g.notes.toLowerCase().includes(searchQuery.toLowerCase()));
+    const query = searchQuery.trim().toLowerCase();
+    const hasQuery = query.length > 0;
+    const hasTypeFilter = filterType !== "ALL";
+    const hasRsvpFilter = filterRsvp !== "ALL";
+    const hasViewedFilter = filterViewed !== "ALL";
 
-        const matchesType = filterType === "ALL" || g.inviteType === filterType;
-        const matchesRsvp = filterRsvp === "ALL" || (g.rsvpStatus || "PENDING") === filterRsvp;
-        const matchesViewed =
-          filterViewed === "ALL" ||
-          (filterViewed === "VIEWED" && g.viewedAt !== null) ||
-          (filterViewed === "UNVIEWED" && g.viewedAt === null);
+    const filtered = guests.filter((g) => {
+      // 1. Fast boolean & enum checks first to short-circuit before string scanning
+      if (hasTypeFilter && g.inviteType !== filterType) return false;
+      if (hasRsvpFilter && (g.rsvpStatus || "PENDING") !== filterRsvp) return false;
+      if (hasViewedFilter) {
+        if (filterViewed === "VIEWED" && g.viewedAt === null) return false;
+        if (filterViewed === "UNVIEWED" && g.viewedAt !== null) return false;
+      }
 
-        return matchesSearch && matchesType && matchesRsvp && matchesViewed;
-      })
-      .sort((a, b) => {
-        if (sortBy === "name") return a.displayName.localeCompare(b.displayName);
-        if (sortBy === "table") return a.tableNumber - b.tableNumber;
-        if (sortBy === "viewed") {
-          if (!a.viewedAt) return 1;
-          if (!b.viewedAt) return -1;
-          return new Date(b.viewedAt).getTime() - new Date(a.viewedAt).getTime();
-        }
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      // 2. Search query matches
+      if (!hasQuery) return true;
+
+      const name = (g.displayName || "").toLowerCase();
+      const salutation = (g.salutation || "").toLowerCase();
+      const notes = g.notes ? g.notes.toLowerCase() : "";
+      const table = String(g.tableNumber);
+      const phone = g.phone || "";
+
+      return (
+        name.includes(query) ||
+        salutation.includes(query) ||
+        table.includes(query) ||
+        phone.includes(query) ||
+        notes.includes(query)
+      );
+    });
+
+    // 3. Fast sort without allocating ephemeral Date instances in O(N log N) comparator
+    if (sortBy === "name") {
+      return filtered.sort((a, b) => a.displayName.localeCompare(b.displayName));
+    }
+    if (sortBy === "table") {
+      return filtered.sort((a, b) => a.tableNumber - b.tableNumber);
+    }
+    if (sortBy === "viewed") {
+      return filtered.sort((a, b) => {
+        if (!a.viewedAt && !b.viewedAt) return 0;
+        if (!a.viewedAt) return 1;
+        if (!b.viewedAt) return -1;
+        return Date.parse(b.viewedAt) - Date.parse(a.viewedAt);
       });
+    }
+    // Default sortBy createdAt
+    return filtered.sort((a, b) => {
+      const timeA = a.createdAt ? Date.parse(a.createdAt) : 0;
+      const timeB = b.createdAt ? Date.parse(b.createdAt) : 0;
+      return timeB - timeA;
+    });
   }, [guests, searchQuery, filterType, filterRsvp, filterViewed, sortBy]);
 
   const currentEvent = events.find((e) => e.id === activeEventId) || events[0];
