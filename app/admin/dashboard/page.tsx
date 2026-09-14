@@ -16,6 +16,14 @@ import {
   getThumbnailUrl,
 } from "@/lib/media-optimization";
 import RoyalThemeToggle from "@/components/RoyalThemeToggle";
+import {
+  GuestSide,
+  extractGuestSide,
+  cleanGuestNotes,
+  formatGuestNotes,
+  parseContactPhones,
+  serializeContactPhones,
+} from "@/lib/contact-side";
 
 import {
   Users,
@@ -282,6 +290,7 @@ type FormState = {
   rsvpStatus: "PENDING" | "ATTENDING" | "DECLINED";
   attendeeCount: string;
   notes: string;
+  side: GuestSide;
 };
 
 const emptyForm: FormState = {
@@ -294,6 +303,7 @@ const emptyForm: FormState = {
   rsvpStatus: "PENDING",
   attendeeCount: "2",
   notes: "",
+  side: "BOTH",
 };
 
 export const DEFAULT_PRODUCTION_URL = "https://wedding-invitation-app-silk.vercel.app";
@@ -423,9 +433,14 @@ export default function AdminDashboard() {
   // Search & Filter
   const [searchQuery, setSearchQuery] = useState("");
   const [filterType, setFilterType] = useState<string>("ALL");
+  const [filterSide, setFilterSide] = useState<string>("ALL");
   const [filterRsvp, setFilterRsvp] = useState<string>("ALL");
   const [filterViewed, setFilterViewed] = useState<string>("ALL");
   const [sortBy, setSortBy] = useState<"created" | "name" | "table" | "viewed">("created");
+
+  // Dual Groom & Bride Contact Phones state for settings
+  const [groomContactInput, setGroomContactInput] = useState<string>("");
+  const [brideContactInput, setBrideContactInput] = useState<string>("");
 
   // QR Modal
   const [qrModalGuest, setQrModalGuest] = useState<Guest | null>(null);
@@ -753,7 +768,19 @@ export default function AdminDashboard() {
       day: "numeric",
     });
 
-    const text = `✨ *ROYAL WEDDING INVITATION* ✨\n\nDear *${salutationName}*,\n\nWe warmly invite you to celebrate the joyous Homecoming of *${settings.coupleNames}*! 🥂🍾\n\n📅 *Date:* ${formattedDate}\n📍 *Venue:* ${settings.venueName}\n🍽 *Reserved Table:* Table #${String(g.tableNumber).padStart(2, "0")}\n\n👉 *View Your Personalized Luxury Invitation & RSVP:* \n${link}\n\nWe look forward to celebrating together! 💖`;
+    const side = extractGuestSide(g.notes);
+    const coupleParts = (settings.coupleNames || "").split(/&|and|\+/i).map((s) => s.trim()).filter(Boolean);
+    const groomName = coupleParts[0] || "Groom";
+    const brideName = coupleParts[1] || "Bride";
+
+    let intro = `We warmly invite you to celebrate the joyous Homecoming of *${settings.coupleNames}*! 🥂🍾`;
+    if (side === "GROOM") {
+      intro = `*${groomName}* warmly invites you to celebrate our joyous Homecoming with *${brideName}*! 🤵✨🥂`;
+    } else if (side === "BRIDE") {
+      intro = `*${brideName}* warmly invites you to celebrate our joyous Homecoming with *${groomName}*! 👰✨🥂`;
+    }
+
+    const text = `✨ *ROYAL WEDDING INVITATION* ✨\n\nDear *${salutationName}*,\n\n${intro}\n\n📅 *Date:* ${formattedDate}\n📍 *Venue:* ${settings.venueName}\n🍽 *Reserved Table:* Table #${String(g.tableNumber).padStart(2, "0")}\n\n👉 *View Your Personalized Luxury Invitation & RSVP:* \n${link}\n\nWe look forward to celebrating together! 💖`;
 
     const phoneClean = g.phone ? g.phone.replace(/[^0-9]/g, "") : "";
     const waUrl = phoneClean
@@ -1021,6 +1048,9 @@ export default function AdminDashboard() {
               ? new Date(data.settings.eventDate).toISOString().slice(0, 16)
               : "2026-10-04T19:00",
           });
+          const contacts = parseContactPhones(data.settings.contactPhone);
+          setGroomContactInput(contacts.groomPhone || "");
+          setBrideContactInput(contacts.bridePhone || "");
         }
 
         setEventPhotos(data.photos || []);
@@ -1325,12 +1355,18 @@ export default function AdminDashboard() {
   async function handleSaveGuest(e: React.FormEvent) {
     e.preventDefault();
 
+    const formattedNotes = formatGuestNotes(form.notes, form.side);
+    const payload = {
+      ...form,
+      notes: formattedNotes,
+    };
+
     try {
       if (editingId) {
         const res = await fetch(`/api/admin/guests/${editingId}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(form),
+          body: JSON.stringify(payload),
         });
         if (!res.ok) {
           const err = await res.json().catch(() => ({}));
@@ -1345,7 +1381,7 @@ export default function AdminDashboard() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            ...form,
+            ...payload,
             eventId: activeEventId,
           }),
         });
@@ -1367,6 +1403,8 @@ export default function AdminDashboard() {
 
   function startEdit(g: Guest) {
     setEditingId(g.id);
+    const side = extractGuestSide(g.notes);
+    const cleanNotes = cleanGuestNotes(g.notes);
     setForm({
       displayName: g.displayName,
       salutation: g.salutation,
@@ -1376,7 +1414,8 @@ export default function AdminDashboard() {
       dietary: g.dietary || "NONE",
       rsvpStatus: g.rsvpStatus || "PENDING",
       attendeeCount: String(g.attendeeCount || (g.inviteType === "COUPLE" ? 2 : 1)),
-      notes: g.notes || "",
+      notes: cleanNotes,
+      side,
     });
     setShowAddModal(true);
   }
@@ -1497,12 +1536,14 @@ export default function AdminDashboard() {
     const query = searchQuery.trim().toLowerCase();
     const hasQuery = query.length > 0;
     const hasTypeFilter = filterType !== "ALL";
+    const hasSideFilter = filterSide !== "ALL";
     const hasRsvpFilter = filterRsvp !== "ALL";
     const hasViewedFilter = filterViewed !== "ALL";
 
     const filtered = guests.filter((g) => {
       // 1. Fast boolean & enum checks first to short-circuit before string scanning
       if (hasTypeFilter && g.inviteType !== filterType) return false;
+      if (hasSideFilter && extractGuestSide(g.notes) !== filterSide) return false;
       if (hasRsvpFilter && (g.rsvpStatus || "PENDING") !== filterRsvp) return false;
       if (hasViewedFilter) {
         if (filterViewed === "VIEWED" && g.viewedAt === null) return false;
@@ -1548,7 +1589,7 @@ export default function AdminDashboard() {
       const timeB = b.createdAt ? Date.parse(b.createdAt) : 0;
       return timeB - timeA;
     });
-  }, [guests, searchQuery, filterType, filterRsvp, filterViewed, sortBy]);
+  }, [guests, searchQuery, filterType, filterSide, filterRsvp, filterViewed, sortBy]);
 
   const currentEvent = events.find((e) => e.id === activeEventId) || events[0];
 
@@ -2278,6 +2319,17 @@ export default function AdminDashboard() {
                 {/* Secondary Select Dropdowns */}
                 <div className="flex flex-wrap items-center gap-2">
                   <select
+                    value={filterSide}
+                    onChange={(e) => setFilterSide(e.target.value)}
+                    className="px-2.5 py-1.5 rounded-lg bg-[#261c22] border border-[#c5a059]/40 text-[11px] font-cinzel text-[#dfba73] focus:outline-none cursor-pointer"
+                  >
+                    <option value="ALL">All Sides</option>
+                    <option value="GROOM">🤵 Groom's Guests</option>
+                    <option value="BRIDE">👰 Bride's Guests</option>
+                    <option value="BOTH">💍 Mutual Guests</option>
+                  </select>
+
+                  <select
                     value={filterType}
                     onChange={(e) => setFilterType(e.target.value)}
                     className="px-2.5 py-1.5 rounded-lg bg-[#261c22] border border-[#c5a059]/40 text-[11px] font-cinzel text-[#dfba73] focus:outline-none cursor-pointer"
@@ -2325,6 +2377,7 @@ export default function AdminDashboard() {
                     setSearchQuery("");
                     setFilterRsvp("ALL");
                     setFilterType("ALL");
+                    setFilterSide("ALL");
                     setFilterViewed("ALL");
                   }}
                   className="px-4 py-2 rounded-xl bg-[#231a20] border border-[#c5a059]/40 text-xs font-cinzel text-[#dfba73] hover:bg-[#c5a059]/15"
@@ -2347,10 +2400,28 @@ export default function AdminDashboard() {
                       <div className="font-cinzel font-bold text-base text-[#fdfbf7] leading-snug">
                         {g.salutation} {g.displayName}
                       </div>
-                      <div className="flex items-center gap-2 mt-1">
+                      <div className="flex items-center gap-2 mt-1 flex-wrap">
                         <span className="px-2 py-0.5 rounded-md bg-[#c5a059]/15 text-[#dfba73] text-[10px] font-cinzel font-semibold">
                           {inviteTypeLabels[g.inviteType]}
                         </span>
+                        {(() => {
+                          const side = extractGuestSide(g.notes);
+                          if (side === "GROOM") {
+                            return (
+                              <span className="px-1.5 py-0.5 rounded text-[10px] bg-blue-950/70 border border-blue-500/50 text-blue-200 font-cinzel font-semibold">
+                                🤵 Groom's Side
+                              </span>
+                            );
+                          }
+                          if (side === "BRIDE") {
+                            return (
+                              <span className="px-1.5 py-0.5 rounded text-[10px] bg-rose-950/70 border border-rose-500/50 text-rose-200 font-cinzel font-semibold">
+                                👰 Bride's Side
+                              </span>
+                            );
+                          }
+                          return null;
+                        })()}
                         {g.viewedAt ? (
                           <span className="text-[10px] text-emerald-400 font-sans flex items-center gap-0.5">
                             <Eye className="w-3 h-3" /> Opened
@@ -2497,18 +2568,36 @@ export default function AdminDashboard() {
                             📞 {g.phone}
                           </span>
                         )}
-                        {g.notes && (
+                        {cleanGuestNotes(g.notes) && (
                           <span className="text-[10px] text-[#edd892]/70 font-sans truncate max-w-[140px]">
-                            • {g.notes}
+                            • {cleanGuestNotes(g.notes)}
                           </span>
                         )}
                       </div>
                     </div>
 
-                    <div className="col-span-2">
+                    <div className="col-span-2 flex flex-wrap items-center gap-1.5">
                       <span className="inline-block px-2 py-0.5 rounded-md bg-[#c5a059]/15 text-[#dfba73] text-[10px] font-cinzel font-semibold">
                         {inviteTypeLabels[g.inviteType]}
                       </span>
+                      {(() => {
+                        const side = extractGuestSide(g.notes);
+                        if (side === "GROOM") {
+                          return (
+                            <span className="px-1.5 py-0.5 rounded text-[10px] bg-blue-950/70 border border-blue-500/50 text-blue-200 font-cinzel font-semibold">
+                              🤵 Groom
+                            </span>
+                          );
+                        }
+                        if (side === "BRIDE") {
+                          return (
+                            <span className="px-1.5 py-0.5 rounded text-[10px] bg-rose-950/70 border border-rose-500/50 text-rose-200 font-cinzel font-semibold">
+                              👰 Bride
+                            </span>
+                          );
+                        }
+                        return null;
+                      })()}
                     </div>
 
                     <div className="col-span-1 text-center">
@@ -3359,11 +3448,11 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
-                {/* Coordinates & Contact Phone */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {/* Coordinates & Dual Groom & Bride Contact Phones */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold mb-1">
-                      Latitude
+                      Venue Latitude
                     </label>
                     <input
                       type="number"
@@ -3376,7 +3465,7 @@ export default function AdminDashboard() {
 
                   <div>
                     <label className="block text-xs uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold mb-1">
-                      Longitude
+                      Venue Longitude
                     </label>
                     <input
                       type="number"
@@ -3386,17 +3475,63 @@ export default function AdminDashboard() {
                       className="w-full px-3.5 py-2.5 rounded-xl bg-[#2a1d25] border border-[#c5a059]/40 text-xs sm:text-sm text-[#fdfbf7] focus:outline-none focus:border-[#dfba73] min-h-[44px]"
                     />
                   </div>
+                </div>
 
+                {/* Dual Groom & Bride Direct Contact Numbers for Invitations */}
+                <div className="p-4 sm:p-5 rounded-2xl bg-[#20141b] border border-[#c5a059]/40 space-y-3 shadow-md">
                   <div>
-                    <label className="block text-xs uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold mb-1">
-                      Event Contact Phone
-                    </label>
-                    <input
-                      value={settings.contactPhone || ""}
-                      onChange={(e) => setSettings({ ...settings, contactPhone: e.target.value })}
-                      placeholder="+94 77 123 4567"
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#2a1d25] border border-[#c5a059]/40 text-xs sm:text-sm text-[#fdfbf7] focus:outline-none focus:border-[#dfba73] min-h-[44px]"
-                    />
+                    <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-[#ffd700] font-cinzel font-bold">
+                      <Phone className="w-4 h-4 text-[#ffd700]" /> Groom & Bride Direct Contact Numbers
+                    </div>
+                    <p className="text-[11px] text-[#fdfbf7]/70 font-sans mt-0.5">
+                      Provided on the digital invitation for guest directions, queries, or WhatsApp messages.
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold mb-1 flex items-center gap-1.5">
+                        <span>🤵 Groom Contact Phone & WhatsApp</span>
+                      </label>
+                      <input
+                        value={groomContactInput}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setGroomContactInput(val);
+                          setSettings((prev) => ({
+                            ...prev,
+                            contactPhone: serializeContactPhones({ groomPhone: val, bridePhone: brideContactInput }),
+                          }));
+                        }}
+                        placeholder="+94 77 123 4567"
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-[#2a1d25] border border-[#c5a059]/40 text-xs sm:text-sm text-[#fdfbf7] focus:outline-none focus:border-[#dfba73] min-h-[44px]"
+                      />
+                      <span className="text-[10px] text-[#fdfbf7]/50 mt-1 block">
+                        Displayed with 1-click Call & WhatsApp on Groom's friends' invitations.
+                      </span>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold mb-1 flex items-center gap-1.5">
+                        <span>👰 Bride Contact Phone & WhatsApp</span>
+                      </label>
+                      <input
+                        value={brideContactInput}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setBrideContactInput(val);
+                          setSettings((prev) => ({
+                            ...prev,
+                            contactPhone: serializeContactPhones({ groomPhone: groomContactInput, bridePhone: val }),
+                          }));
+                        }}
+                        placeholder="+94 71 987 6543"
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-[#2a1d25] border border-[#c5a059]/40 text-xs sm:text-sm text-[#fdfbf7] focus:outline-none focus:border-[#dfba73] min-h-[44px]"
+                      />
+                      <span className="text-[10px] text-[#fdfbf7]/50 mt-1 block">
+                        Displayed with 1-click Call & WhatsApp on Bride's friends' invitations.
+                      </span>
+                    </div>
                   </div>
                 </div>
 
@@ -5139,7 +5274,22 @@ export default function AdminDashboard() {
                 />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-xs uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold mb-1">
+                    Invited By (Side)
+                  </label>
+                  <select
+                    value={form.side}
+                    onChange={(e) => setForm({ ...form, side: e.target.value as GuestSide })}
+                    className="w-full px-3 py-2.5 rounded-xl bg-[#261c22] border border-[#c5a059]/40 text-xs text-[#dfba73] focus:outline-none cursor-pointer"
+                  >
+                    <option value="GROOM">🤵 Groom's Side</option>
+                    <option value="BRIDE">👰 Bride's Side</option>
+                    <option value="BOTH">💍 Mutual (Both)</option>
+                  </select>
+                </div>
+
                 <div>
                   <label className="block text-xs uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold mb-1">
                     Invite Category

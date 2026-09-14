@@ -139,6 +139,15 @@ export interface Translations {
   // Footer & Blessings
   footerBlessing: string;
   contactOrganizer: string;
+
+  // Contact & Inquiries
+  furtherInfoTitle: string;
+  furtherInfoSubtitle: string;
+  groomContact: string;
+  brideContact: string;
+  yourHostBadge: string;
+  callDirect: string;
+  whatsappDirect: string;
 }
 
 export const translations: Record<Locale, Translations> = {
@@ -273,6 +282,14 @@ export const translations: Record<Locale, Translations> = {
 
     footerBlessing: "With warm hearts & gratitude, we look forward to celebrating our unforgettable day with you.",
     contactOrganizer: "For inquiries or assistance, please contact",
+
+    furtherInfoTitle: "Need Further Information?",
+    furtherInfoSubtitle: "Feel free to call or WhatsApp the couple for directions, seating, or any questions.",
+    groomContact: "Groom's Contact",
+    brideContact: "Bride's Contact",
+    yourHostBadge: "Your Host",
+    callDirect: "Call",
+    whatsappDirect: "WhatsApp",
   },
 
   si: {
@@ -407,6 +424,14 @@ export const translations: Record<Locale, Translations> = {
 
     footerBlessing: "හදපිරි සතුටින් යුතුව අපගේ අමතක නොවන මංගල දිනය ඔබ සමග සැමරීමට බලාපොරොත්තු වෙමු.",
     contactOrganizer: "වැඩිදුර තොරතුරු සඳහා අමතන්න",
+
+    furtherInfoTitle: "වැඩිදුර තොරතුරු සහ විමසීම්",
+    furtherInfoSubtitle: "ඕනෑම විමසීමක්, සහයෝගයක් හෝ මගපෙන්වීමක් සඳහා දුරකථනයෙන් හෝ WhatsApp මගින් සම්බන්ධ වන්න.",
+    groomContact: "මනමාලයාගේ දුරකථන අංකය",
+    brideContact: "මනමාලියගේ දුරකථන අංකය",
+    yourHostBadge: "ඔබගේ සත්කාරක",
+    callDirect: "ඇමතුමක් ගන්න",
+    whatsappDirect: "WhatsApp",
   },
 
   ta: {
@@ -541,5 +566,13 @@ export const translations: Record<Locale, Translations> = {
 
     footerBlessing: "எங்கள் மறக்கமுடியாத திருமண வைபவத்தில் தங்களை சந்திப்பதில் பெருமகிழ்ச்சி அடைகிறோம்.",
     contactOrganizer: "மேலதிக தகவல்களுக்கு தொடர்பு கொள்ளவும்",
+
+    furtherInfoTitle: "மேலதிக தகவல்களுக்கு",
+    furtherInfoSubtitle: "வழிகாட்டல்கள் அல்லது உதவிக்கு எங்களை நேரடியாக அழைக்கவும் அல்லது WhatsApp செய்யவும்.",
+    groomContact: "மணமகனின் தொடர்பு எண்",
+    brideContact: "மணமகளின் தொடர்பு எண்",
+    yourHostBadge: "உங்களை அழைத்தவர்",
+    callDirect: "அழைக்கவும்",
+    whatsappDirect: "WhatsApp",
   },
 };

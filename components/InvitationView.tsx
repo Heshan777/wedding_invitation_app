@@ -37,6 +37,7 @@ import {
   ChevronUp,
   Plus,
   Minus,
+  Phone,
 } from "lucide-react";
 import dynamic from "next/dynamic";
 import CountdownTimer from "./CountdownTimer";
@@ -60,6 +61,12 @@ import RoyalThemeToggle from "./RoyalThemeToggle";
 import { formatEventDate } from "@/lib/date";
 import { generateICS } from "@/lib/calendar";
 import { translations, Locale } from "@/lib/translations";
+import {
+  parseContactPhones,
+  extractGuestSide,
+  cleanPhoneForUrl,
+  cleanPhoneForWhatsApp,
+} from "@/lib/contact-side";
 import {
   getOptimizedVideoUrl,
   getVideoPosterUrl,
@@ -196,6 +203,18 @@ export default function InvitationView({
   const [loveCount, setLoveCount] = useState(142);
   const [hasLiked, setHasLiked] = useState(false);
 
+  // Host contact information & guest side resolution
+  const contactInfo = useMemo(() => parseContactPhones(settings.contactPhone), [settings.contactPhone]);
+  const guestSide = useMemo(() => extractGuestSide(guest.notes), [guest.notes]);
+
+  const { groomFirstName, brideFirstName } = useMemo(() => {
+    const raw = settings.coupleNames || "";
+    const parts = raw.split(/&|\band\b|\+/i).map((s) => s.trim());
+    return {
+      groomFirstName: parts[0] || "Groom",
+      brideFirstName: parts[1] || "Bride",
+    };
+  }, [settings.coupleNames]);
 
   const youtubeEmbedUrl = useMemo(
     () => (settings.heroVideoUrl ? getYouTubeEmbedUrl(settings.heroVideoUrl) : null),
@@ -2305,6 +2324,130 @@ export default function InvitationView({
               </p>
             </div>
 
+            {/* Royal Contact & Inquiries Section */}
+            {(contactInfo.groomPhone || contactInfo.bridePhone || contactInfo.generalPhone) && (
+              <div id="contact" className="my-10 pt-6 border-t border-[#c5a059]/30 scroll-mt-20">
+                <div className="text-center mb-6">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#800020]/10 border border-[#c5a059]/40 text-[#800020] text-xs font-cinzel font-semibold mb-2 shadow-sm">
+                    <Phone className="w-3 h-3 text-[#dfba73]" />
+                    <span>{t.furtherInfoTitle}</span>
+                  </div>
+                  <h4 className="font-cinzel text-base sm:text-lg font-bold text-[#2a1d25] tracking-wide">
+                    {t.contactOrganizer}
+                  </h4>
+                  <p className="text-xs text-[#5a483e] font-sans mt-1 max-w-md mx-auto">
+                    {t.furtherInfoSubtitle}
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-xl mx-auto">
+                  {/* Groom's Contact Card */}
+                  {(contactInfo.groomPhone || contactInfo.generalPhone) && (
+                    <div
+                      className={`relative rounded-2xl p-4 sm:p-5 transition-all duration-300 border shadow-sm hover:shadow-md ${
+                        guestSide === "GROOM"
+                          ? "bg-gradient-to-b from-[#f8f5ee] to-[#ece3d2] border-[#bda06d] ring-2 ring-[#c5a059]/40"
+                          : "bg-[#fffdf9]/90 border-[#c5a059]/30"
+                      }`}
+                    >
+                      {guestSide === "GROOM" && (
+                        <div className="absolute -top-2.5 right-3 px-2 py-0.5 rounded-full bg-[#1e293b] text-[#dfba73] text-[9px] font-cinzel font-bold tracking-wider border border-[#dfba73]/40 shadow-sm">
+                          {t.yourHostBadge}
+                        </div>
+                      )}
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-lg">🤵</span>
+                        <div>
+                          <div className="text-[10px] uppercase font-cinzel tracking-wider text-[#8c6a2b] font-semibold">
+                            {t.groomContact}
+                          </div>
+                          <div className="font-serif italic font-bold text-sm text-[#1a1517]">
+                            {groomFirstName}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="font-mono text-xs text-[#2a1d25] font-semibold py-1.5 px-2.5 rounded-lg bg-black/5 border border-black/10 mb-3 flex items-center justify-between">
+                        <span>{contactInfo.groomPhone || contactInfo.generalPhone}</span>
+                        <Phone className="w-3 h-3 text-[#c5a059]" />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2">
+                        <a
+                          href={`tel:${cleanPhoneForUrl(contactInfo.groomPhone || contactInfo.generalPhone)}`}
+                          className="py-2 px-2.5 rounded-xl bg-[#800020] hover:bg-[#6b0f24] text-[#ffd700] text-[11px] font-cinzel font-bold flex items-center justify-center gap-1.5 shadow-sm transition active:scale-95 touch-manipulation cursor-pointer"
+                        >
+                          <Phone className="w-3 h-3 text-[#ffd700]" />
+                          <span>{t.callDirect}</span>
+                        </a>
+                        <a
+                          href={`https://wa.me/${cleanPhoneForWhatsApp(contactInfo.groomPhone || contactInfo.generalPhone)}?text=${encodeURIComponent(`Hi ${groomFirstName}, this is ${guest.displayName} regarding your wedding invitation!`)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="py-2 px-2.5 rounded-xl bg-[#25D366] hover:bg-[#20ba59] text-white text-[11px] font-sans font-bold flex items-center justify-center gap-1.5 shadow-sm transition active:scale-95 touch-manipulation cursor-pointer"
+                        >
+                          <Send className="w-3 h-3" />
+                          <span>WhatsApp</span>
+                        </a>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Bride's Contact Card */}
+                  {contactInfo.bridePhone && (
+                    <div
+                      className={`relative rounded-2xl p-4 sm:p-5 transition-all duration-300 border shadow-sm hover:shadow-md ${
+                        guestSide === "BRIDE"
+                          ? "bg-gradient-to-b from-[#f8f5ee] to-[#ece3d2] border-[#bda06d] ring-2 ring-[#c5a059]/40"
+                          : "bg-[#fffdf9]/90 border-[#c5a059]/30"
+                      }`}
+                    >
+                      {guestSide === "BRIDE" && (
+                        <div className="absolute -top-2.5 right-3 px-2 py-0.5 rounded-full bg-[#800020] text-[#ffd700] text-[9px] font-cinzel font-bold tracking-wider border border-[#ffd700]/40 shadow-sm">
+                          {t.yourHostBadge}
+                        </div>
+                      )}
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-lg">👰</span>
+                        <div>
+                          <div className="text-[10px] uppercase font-cinzel tracking-wider text-[#8c6a2b] font-semibold">
+                            {t.brideContact}
+                          </div>
+                          <div className="font-serif italic font-bold text-sm text-[#1a1517]">
+                            {brideFirstName}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="font-mono text-xs text-[#2a1d25] font-semibold py-1.5 px-2.5 rounded-lg bg-black/5 border border-black/10 mb-3 flex items-center justify-between">
+                        <span>{contactInfo.bridePhone}</span>
+                        <Phone className="w-3 h-3 text-[#c5a059]" />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2">
+                        <a
+                          href={`tel:${cleanPhoneForUrl(contactInfo.bridePhone)}`}
+                          className="py-2 px-2.5 rounded-xl bg-[#800020] hover:bg-[#6b0f24] text-[#ffd700] text-[11px] font-cinzel font-bold flex items-center justify-center gap-1.5 shadow-sm transition active:scale-95 touch-manipulation cursor-pointer"
+                        >
+                          <Phone className="w-3 h-3 text-[#ffd700]" />
+                          <span>{t.callDirect}</span>
+                        </a>
+                        <a
+                          href={`https://wa.me/${cleanPhoneForWhatsApp(contactInfo.bridePhone)}?text=${encodeURIComponent(`Hi ${brideFirstName}, this is ${guest.displayName} regarding your wedding invitation!`)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="py-2 px-2.5 rounded-xl bg-[#25D366] hover:bg-[#20ba59] text-white text-[11px] font-sans font-bold flex items-center justify-center gap-1.5 shadow-sm transition active:scale-95 touch-manipulation cursor-pointer"
+                        >
+                          <Send className="w-3 h-3" />
+                          <span>WhatsApp</span>
+                        </a>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* Social Share & Link Actions */}
             <div className="pt-6 border-t border-[#c5a059]/30 flex flex-col sm:flex-row items-center justify-center gap-3">
               <button
@@ -2538,6 +2681,18 @@ export default function InvitationView({
               <Heart className="w-3.5 h-3.5 text-[#dfba73]" />
               <span className="hidden sm:inline">Wishes</span>
             </button>
+
+            {(contactInfo.groomPhone || contactInfo.bridePhone || contactInfo.generalPhone) && (
+              <button
+                type="button"
+                onClick={() => scrollToSection("contact")}
+                className="px-2.5 py-1.5 rounded-full text-[11px] font-cinzel font-semibold text-[#edd892]/80 hover:text-[#ffd700] hover:bg-white/10 transition flex items-center gap-1 cursor-pointer touch-manipulation active:scale-95"
+                title="Contact Host"
+              >
+                <Phone className="w-3.5 h-3.5 text-[#dfba73]" />
+                <span className="hidden sm:inline">Contact</span>
+              </button>
+            )}
 
             {/* Back to top */}
             <div className="w-px h-4 bg-white/20 mx-0.5" />
