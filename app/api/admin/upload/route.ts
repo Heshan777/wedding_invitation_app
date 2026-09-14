@@ -17,14 +17,19 @@ export async function GET() {
     const cloudinaryConfig = getCloudinaryConfig();
     const hasCloudinary = Boolean(cloudinaryConfig);
 
+    const cloudName =
+      cloudinaryConfig?.cloudName || process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || null;
+    const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || null;
+
     return NextResponse.json({
       configured: hasCloudinary || !isVercel,
       provider: hasCloudinary ? "cloudinary" : isVercel ? "none" : "local-disk",
       isVercel,
       hasCloudinary,
-      cloudName: cloudinaryConfig?.cloudName || null,
+      cloudName,
+      uploadPreset,
       message: hasCloudinary
-        ? `Cloudinary media storage is connected and active (${cloudinaryConfig?.cloudName}).`
+        ? `Cloudinary media storage is connected and active (${cloudName}).`
         : isVercel
         ? "Cloudinary is not configured yet. Filesystem on Vercel is read-only. Please set NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME and NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET in environment variables."
         : "Local disk storage is active for local development.",

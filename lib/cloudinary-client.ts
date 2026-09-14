@@ -6,6 +6,8 @@
 
 export interface CloudinaryClientUploadOptions {
   folder?: string;
+  cloudName?: string;
+  uploadPreset?: string;
   onProgress?: (percent: number) => void;
 }
 
@@ -20,14 +22,134 @@ export interface CloudinaryClientUploadResponse {
   is_audio?: boolean;
 }
 
-export function isCloudinaryClientConfigured(): boolean {
-  const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
-  const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
+let runtimeCloudinaryConfig: { cloudName: string | null; uploadPreset: string | null } | null = null;
+
+export function setRuntimeCloudinaryConfig(config: {
+  cloudName?: string | null;
+  uploadPreset?: string | null;
+}) {
+  runtimeCloudinaryConfig = {
+    cloudName: config.cloudName || null,
+    uploadPreset: config.uploadPreset || null,
+  };
+}
+
+export function isCloudinaryClientConfigured(customConfig?: {
+  cloudName?: string | null;
+  uploadPreset?: string | null;
+}): boolean {
+  const cloudName =
+    customConfig?.cloudName ||
+    runtimeCloudinaryConfig?.cloudName ||
+    process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+  const uploadPreset =
+    customConfig?.uploadPreset ||
+    runtimeCloudinaryConfig?.uploadPreset ||
+    process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
   return Boolean(cloudName && uploadPreset);
 }
 
 export function getCloudinaryCloudName(): string | null {
-  return process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || null;
+  return (
+    runtimeCloudinaryConfig?.cloudName ||
+    process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME ||
+    null
+  );
+}
+
+/**
+ * Compresses an image client-side before upload to avoid payload limits (e.g. 4.5MB Vercel limit)
+ * and ensure fast mobile delivery. Retains high fidelity with 2048px max bounds and JPEG 0.85 quality.
+ */
+export async function compressImageForUpload(
+  file: File,
+  maxDimension = 2048,
+  quality = 0.85
+): Promise<File> {
+  // Only compress images, skip SVG and GIF (preserve animations / vectors)
+  if (
+    !file.type.startsWith("image/") ||
+    file.type.includes("svg") ||
+    file.type.includes("gif")
+  ) {
+    return file;
+  }
+
+  // If already lightweight (under 1.5MB), no downscaling strictly required
+  if (file.size <= 1.5 * 1024 * 1024) {
+    return file;
+  }
+
+  if (typeof window === "undefined" || typeof document === "undefined") {
+    return file;
+  }
+
+  return new Promise((resolve) => {
+    const img = new window.Image();
+    const objectUrl = URL.createObjectURL(file);
+
+    img.onload = () => {
+      URL.revokeObjectURL(objectUrl);
+      try {
+        let { width, height } = img;
+        if (width <= 0 || height <= 0) {
+          resolve(file);
+          return;
+        }
+
+        if (width > maxDimension || height > maxDimension) {
+          if (width > height) {
+            height = Math.round((height * maxDimension) / width);
+            width = maxDimension;
+          } else {
+            width = Math.round((width * maxDimension) / height);
+            height = maxDimension;
+          }
+        }
+
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          resolve(file);
+          return;
+        }
+
+        ctx.drawImage(img, 0, 0, width, height);
+
+        canvas.toBlob(
+          (blob) => {
+            if (!blob || blob.size >= file.size) {
+              // If compression didn't save space, return original file
+              resolve(file);
+              return;
+            }
+
+            const cleanName = file.name.replace(/\.[^.]+$/, "") + ".jpg";
+            const compressedFile = new File([blob], cleanName, {
+              type: "image/jpeg",
+              lastModified: Date.now(),
+            });
+            resolve(compressedFile);
+          },
+          "image/jpeg",
+          quality
+        );
+      } catch (err) {
+        console.warn("Client image compression error, using original file:", err);
+        resolve(file);
+      }
+    };
+
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      resolve(file);
+    };
+
+    img.src = objectUrl;
+  });
 }
 
 /**
@@ -38,13 +160,19 @@ export function uploadToCloudinary(
   options: CloudinaryClientUploadOptions = {}
 ): Promise<CloudinaryClientUploadResponse> {
   return new Promise((resolve, reject) => {
-    const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
-    const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
+    const cloudName =
+      options.cloudName ||
+      runtimeCloudinaryConfig?.cloudName ||
+      process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+    const uploadPreset =
+      options.uploadPreset ||
+      runtimeCloudinaryConfig?.uploadPreset ||
+      process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
 
     if (!cloudName || !uploadPreset) {
       return reject(
         new Error(
-          "Cloudinary is not configured. Please verify NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME and NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET in your environment."
+          "Cloudinary is not configured. Please verify NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME and NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET in your environment variables."
         )
       );
     }
@@ -85,7 +213,8 @@ export function uploadToCloudinary(
             is_audio: data.is_audio,
           });
         } else {
-          const errMsg = data.error?.message || `Cloudinary upload failed with status ${xhr.status}`;
+          const errMsg =
+            data.error?.message || `Cloudinary upload failed with status ${xhr.status}`;
           reject(new Error(errMsg));
         }
       } catch (err) {
@@ -95,7 +224,11 @@ export function uploadToCloudinary(
     };
 
     xhr.onerror = () => {
-      reject(new Error("Network error during Cloudinary upload. Please check your internet connection."));
+      reject(
+        new Error(
+          "Network error during Cloudinary upload. Please check your internet connection."
+        )
+      );
     };
 
     xhr.ontimeout = () => {

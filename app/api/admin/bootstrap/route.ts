@@ -139,6 +139,7 @@ export async function GET(req: NextRequest) {
     const hasBlobToken = Boolean(process.env.BLOB_READ_WRITE_TOKEN);
     const isVercel = Boolean(process.env.VERCEL);
     const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || null;
+    const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || null;
 
     let storageConfigured = false;
     let storageProvider = "local";
@@ -163,6 +164,7 @@ export async function GET(req: NextRequest) {
       hasCloudinary,
       hasBlobToken,
       cloudName,
+      uploadPreset,
       message: storageMessage,
     };
 

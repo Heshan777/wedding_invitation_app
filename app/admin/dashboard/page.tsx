@@ -3,7 +3,12 @@
 import { useEffect, useState, useMemo } from "react";
 import Image from "next/image";
 import QRCode from "qrcode";
-import { uploadToCloudinary, isCloudinaryClientConfigured } from "@/lib/cloudinary-client";
+import {
+  uploadToCloudinary,
+  isCloudinaryClientConfigured,
+  compressImageForUpload,
+  setRuntimeCloudinaryConfig,
+} from "@/lib/cloudinary-client";
 import {
   getOptimizedVideoUrl,
   getVideoPosterUrl,
@@ -398,6 +403,7 @@ export default function AdminDashboard() {
     hasCloudinary?: boolean;
     hasBlobToken?: boolean;
     cloudName?: string | null;
+    uploadPreset?: string | null;
     message: string;
   } | null>(null);
   const [appBaseUrl, setAppBaseUrl] = useState<string>(DEFAULT_PRODUCTION_URL);
@@ -837,15 +843,33 @@ export default function AdminDashboard() {
 
     setUploadingField(fieldKey);
     setUploadProgress(0);
-    showToast(`Uploading ${mediaLabel.toLowerCase()}... Please wait.`);
 
     try {
+      let fileToUpload = file;
+
+      // Automatically compress & resize large photos client-side to prevent 413 Vercel Serverless payload limits
+      if (!isVid && !isAudio && file.size > 1.5 * 1024 * 1024) {
+        showToast(`Optimizing photo (${(file.size / (1024 * 1024)).toFixed(1)} MB)... Please wait.`);
+        try {
+          const compressed = await compressImageForUpload(file);
+          if (compressed.size < file.size) {
+            console.log(
+              `Optimized image: ${(file.size / (1024 * 1024)).toFixed(2)} MB -> ${(compressed.size / (1024 * 1024)).toFixed(2)} MB`
+            );
+            fileToUpload = compressed;
+          }
+        } catch (compErr) {
+          console.warn("Client-side image optimization skipped:", compErr);
+        }
+      }
+
+      showToast(`Uploading ${mediaLabel.toLowerCase()}... Please wait.`);
       let finalUrl: string | null = null;
 
       // Strategy 1: Direct Client Upload to Cloudinary (bypasses 4.5MB Serverless Limit!)
       if (isCloudinaryClientConfigured()) {
         try {
-          const cloudRes = await uploadToCloudinary(file, {
+          const cloudRes = await uploadToCloudinary(fileToUpload, {
             folder: isVid ? "wedding-videos" : isAudio ? "wedding-audio" : "wedding-photos",
             onProgress: (pct) => setUploadProgress(pct),
           });
@@ -855,7 +879,7 @@ export default function AdminDashboard() {
         } catch (cloudErr: any) {
           console.warn("Direct Cloudinary upload failed, attempting server upload:", cloudErr);
           // If file is too large for server fallback (> 4.5MB), rethrow direct upload error
-          if (file.size > 4.5 * 1024 * 1024) {
+          if (fileToUpload.size > 4.5 * 1024 * 1024) {
             throw new Error(`Cloudinary upload failed: ${cloudErr.message || "Unknown error"}`);
           }
         }
@@ -864,7 +888,7 @@ export default function AdminDashboard() {
       // Strategy 2: Fallback to standard Multipart/FormData Server Upload (works for local dev or files <= 4.5MB)
       if (!finalUrl) {
         const formData = new FormData();
-        formData.append("file", file);
+        formData.append("file", fileToUpload);
 
         const res = await fetch("/api/admin/upload", {
           method: "POST",
@@ -874,13 +898,13 @@ export default function AdminDashboard() {
         const data = await res.json().catch(() => ({}));
         if (!res.ok) {
           // If server filesystem is read-only and it's an image, read directly as Data URL on client!
-          if (!isVid && !isAudio && file.size <= 5 * 1024 * 1024) {
+          if (!isVid && !isAudio && fileToUpload.size <= 5 * 1024 * 1024) {
             try {
               const dataUrl = await new Promise<string>((resolve, reject) => {
                 const reader = new FileReader();
                 reader.onload = () => resolve(reader.result as string);
                 reader.onerror = reject;
-                reader.readAsDataURL(file);
+                reader.readAsDataURL(fileToUpload);
               });
               finalUrl = dataUrl;
             } catch (readErr) {
@@ -891,7 +915,7 @@ export default function AdminDashboard() {
           if (!finalUrl) {
             if (res.status === 413) {
               throw new Error(
-                `File is too large for this upload path (${(file.size / (1024 * 1024)).toFixed(1)} MB). Please configure NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME and NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET.`
+                `File is too large for server upload (${(fileToUpload.size / (1024 * 1024)).toFixed(1)} MB). Vercel limits server uploads to 4.5 MB. Please configure NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME and NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET in Vercel Environment Variables.`
               );
             }
             if (data.error) {
@@ -948,6 +972,12 @@ export default function AdminDashboard() {
 
         if (data.storageStatus) {
           setStorageStatus(data.storageStatus);
+          if (data.storageStatus.cloudName && data.storageStatus.uploadPreset) {
+            setRuntimeCloudinaryConfig({
+              cloudName: data.storageStatus.cloudName,
+              uploadPreset: data.storageStatus.uploadPreset,
+            });
+          }
         }
 
         setGuests(Array.isArray(data.guests) ? data.guests : []);
