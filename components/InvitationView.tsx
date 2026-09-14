@@ -68,14 +68,21 @@ import {
   getLightboxImageUrl,
 } from "@/lib/media-optimization";
 
-function FloralDivider({ className = "" }: { className?: string }) {
-  return (
-    <div className={`flex items-center justify-center gap-3 my-8 sm:my-10 pointer-events-none select-none ${className}`}>
-      <div className="h-px w-12 sm:w-20 bg-gradient-to-r from-transparent via-[#bda06d]/30 to-transparent" />
-      <span className="text-[#bda06d]/50 text-[8px] tracking-widest">◇</span>
-      <div className="h-px w-12 sm:w-20 bg-gradient-to-l from-transparent via-[#bda06d]/30 to-transparent" />
-    </div>
-  );
+import {
+  RoyalCornerFlourish,
+  RoyalFlourishDivider,
+  RoyalCrest,
+  GildedCardBorder,
+} from "./RoyalDecorations";
+
+function FloralDivider({
+  className = "",
+  variant = "lotus",
+}: {
+  className?: string;
+  variant?: "lotus" | "crown" | "heart";
+}) {
+  return <RoyalFlourishDivider className={className} variant={variant} />;
 }
 
 type Guest = {
@@ -875,33 +882,42 @@ export default function InvitationView({
       <div className="relative z-10 max-w-xl mx-auto px-3 sm:px-6 py-6 sm:py-16">
         {/* Parchment Invitation Card Frame */}
         <div className="parchment-card rounded-2xl sm:rounded-3xl p-4 sm:p-10 text-[#1a1517] relative overflow-hidden">
-          {/* Refined Inset Hairline Border */}
-          <div className="absolute inset-2 sm:inset-4 rounded-xl sm:rounded-2xl border border-[#bda06d]/25 pointer-events-none" />
+          {/* Ornate Gold Filigree Corners */}
+          <RoyalCornerFlourish position="top-left" size={68} />
+          <RoyalCornerFlourish position="top-right" size={68} />
+          <RoyalCornerFlourish position="bottom-left" size={68} />
+          <RoyalCornerFlourish position="bottom-right" size={68} />
+
+          {/* Gilded Dual-Layer Border with Corner Diamonds */}
+          <GildedCardBorder />
+
+          {/* Ambient Gold Radiance Top Sheen */}
+          <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-[#ffd700]/70 to-transparent pointer-events-none" />
 
           {/* Header Monogram & Title with Scroll Reveal */}
           <ScrollReveal variant="fade-up" duration={750}>
-            <div className="text-center pt-2 sm:pt-4 mb-4">
-              <div className="inline-flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-[#661022]/8 border border-[#bda06d]/40 shadow-sm mb-3">
-                <span className="font-cinzel text-lg sm:text-xl font-bold text-[#661022] tracking-wider">
-                  {monogram}
-                </span>
+            <div className="text-center pt-3 sm:pt-5 mb-4">
+              {/* Royal Crest with Couple Monogram */}
+              <div className="flex justify-center mb-3">
+                <RoyalCrest monogram={monogram} size={76} />
               </div>
-              <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.35em] text-[#8c6a2b] font-cinzel font-semibold">
-                {t.royalHomecoming}
-              </p>
-              <h1 className="font-serif italic text-3xl sm:text-5xl text-[#661022] font-normal mt-1.5 tracking-tight">
+
+              {/* Royal Homecoming Ribbon Pill */}
+              <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-gradient-to-r from-[#661022]/10 via-[#dfba73]/25 to-[#661022]/10 border border-[#bda06d]/40 shadow-2xs mb-2 text-[#8c6a2b] font-cinzel text-[9px] sm:text-[10px] tracking-[0.3em] uppercase font-bold">
+                <span className="text-[10px] text-[#ffd700]">✦</span>
+                <span>{t.royalHomecoming}</span>
+                <span className="text-[10px] text-[#ffd700]">✦</span>
+              </div>
+
+              <h1 className="font-serif italic text-3xl sm:text-5xl text-[#661022] font-bold mt-1 tracking-tight drop-shadow-xs">
                 {t.invitationTitle}
               </h1>
             </div>
 
-            {/* Subtle Typographic Divider */}
-            <div className="flex items-center justify-center gap-3 my-3">
-              <div className="h-px w-8 sm:w-14 bg-gradient-to-r from-transparent via-[#bda06d]/30 to-transparent" />
-              <span className="text-[#bda06d]/50 text-[7px]">◇</span>
-              <div className="h-px w-8 sm:w-14 bg-gradient-to-l from-transparent via-[#bda06d]/30 to-transparent" />
-            </div>
+            {/* Symmetrical Royal Flourish Divider */}
+            <RoyalFlourishDivider variant="crown" className="!my-2.5 !sm:my-3" />
 
-            <p className="text-center text-xs sm:text-sm text-[#4a3b42] font-sans leading-relaxed max-w-md mx-auto mb-4">
+            <p className="text-center text-xs sm:text-sm text-[#4a3b42] font-sans leading-relaxed max-w-md mx-auto mb-4 italic">
               {t.familyIntro}
             </p>
           </ScrollReveal>
@@ -945,7 +961,9 @@ export default function InvitationView({
           {/* Luxury Couple Hero Pre-Shoot Video / Photo Cinema Card with Scroll Reveal */}
           <ScrollReveal variant="scale-up" duration={850}>
             <div className="relative w-full my-6">
-              <div className="relative rounded-3xl overflow-hidden border-2 border-[#c5a059]/60 shadow-2xl bg-[#1a1215] group">
+              <div className="relative rounded-3xl overflow-hidden gilded-frame bg-[#1a1215] group">
+                {/* Gilded Inner Inset Fillet Line */}
+                <div className="absolute inset-1.5 rounded-[22px] border border-[#ffd700]/30 pointer-events-none z-15" />
               {hasPlayableVideo && mediaMode === "video" ? (
                 /* PRE-SHOOT CINEMATIC VIDEO MODE */
                 <div className="relative w-full overflow-hidden bg-black">
@@ -1125,17 +1143,74 @@ export default function InvitationView({
 
           {/* Host Intro & Personalized Guest Salutation Card with Scroll Reveal */}
           <ScrollReveal variant="fade-up" duration={750}>
-            <div className="text-center my-6 sm:my-8 px-4 py-6 sm:py-8 rounded-2xl bg-[#f8f4ee]/80 border border-[#bda06d]/25">
-              <p className="text-xs sm:text-sm text-[#5a483e] font-sans leading-relaxed max-w-md mx-auto mb-3">
-                {settings.hostIntro}
-              </p>
-              <div className="text-[10px] uppercase tracking-[0.3em] text-[#8c6a2b] font-cinzel font-semibold mb-1.5">
-                {t.honouredGuest}
+            <div className="royal-decree-card relative text-center my-6 sm:my-8 px-5 py-7 sm:px-8 sm:py-9 rounded-2xl sm:rounded-3xl overflow-hidden transition-all duration-300 hover:shadow-xl">
+              {/* Corner Filigree Mini-Ornaments on Guest Card */}
+              <RoyalCornerFlourish position="top-left" size={44} />
+              <RoyalCornerFlourish position="top-right" size={44} />
+              <RoyalCornerFlourish position="bottom-left" size={44} />
+              <RoyalCornerFlourish position="bottom-right" size={44} />
+
+              {/* Top ambient gold highlight */}
+              <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-[#dfba73]/70 to-transparent pointer-events-none" />
+
+              {/* Host Intro Narrative */}
+              {settings.hostIntro && (
+                <p className="text-xs sm:text-sm text-[#5a483e] font-sans leading-relaxed max-w-md mx-auto mb-4 italic">
+                  &ldquo;{settings.hostIntro}&rdquo;
+                </p>
+              )}
+
+              {/* Regal Ribbon Badge */}
+              <div className="inline-flex items-center gap-1.5 px-4 py-1 rounded-full bg-gradient-to-r from-[#661022] via-[#800020] to-[#661022] text-[#ffd700] text-[10px] sm:text-xs font-cinzel font-bold tracking-[0.25em] uppercase shadow-md border border-[#ffd700]/50 mb-3">
+                <Sparkles className="w-3 h-3 text-[#ffd700]" />
+                <span>{t.honouredGuest}</span>
+                <Sparkles className="w-3 h-3 text-[#ffd700]" />
               </div>
-              <div className="font-serif italic text-2xl sm:text-4xl text-[#661022] font-normal tracking-wide">
+
+              {/* Personalized Guest Name in Grand Calligraphy */}
+              <div className="font-serif italic text-2xl sm:text-4xl text-[#661022] font-bold tracking-wide my-1 drop-shadow-xs">
                 {formatInviteLine(guest)}
               </div>
-              <div className="w-12 h-px bg-[#bda06d]/30 mx-auto mt-4" />
+
+              {/* Delicate Gold Flourish Underline */}
+              <div className="flex items-center justify-center gap-2 my-3">
+                <div className="h-px w-12 sm:w-20 bg-gradient-to-r from-transparent via-[#dfba73] to-transparent" />
+                <span className="text-[#8c6a2b] text-xs select-none">❦</span>
+                <div className="h-px w-12 sm:w-20 bg-gradient-to-l from-transparent via-[#dfba73] to-transparent" />
+              </div>
+
+              {/* Smart Guest Metadata Pills: Invitation Category & Table Reservation */}
+              <div className="flex flex-wrap items-center justify-center gap-2 mt-3 pt-3 border-t border-[#bda06d]/20 text-xs">
+                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white/80 border border-[#bda06d]/30 text-[#661022] font-cinzel font-semibold shadow-2xs">
+                  <Users className="w-3 h-3 text-[#8c6a2b]" />
+                  <span>
+                    {guest.inviteType === "FAMILY"
+                      ? "Family Group Invitation"
+                      : guest.inviteType === "COUPLE"
+                      ? "Couple Invitation"
+                      : "Personal VIP Invitation"}
+                  </span>
+                </span>
+
+                {guest.tableNumber > 0 && (
+                  <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[#661022]/10 border border-[#661022]/25 text-[#661022] font-cinzel font-bold shadow-2xs">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#661022]" />
+                    <span>Table {guest.tableNumber} Reserved</span>
+                  </span>
+                )}
+              </div>
+
+              {/* Interactive Celebration Trigger */}
+              <div className="mt-4 pt-1">
+                <button
+                  type="button"
+                  onClick={() => triggerReaction("love")}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#661022]/8 hover:bg-[#661022] text-[#661022] hover:text-[#ffd700] text-[11px] font-cinzel font-semibold border border-[#bda06d]/35 transition-all shadow-2xs cursor-pointer active:scale-95 group"
+                >
+                  <Heart className="w-3 h-3 fill-current text-[#661022] group-hover:text-[#ffd700] transition-colors" />
+                  <span>Celebrate with Couple</span>
+                </button>
+              </div>
             </div>
           </ScrollReveal>
 
@@ -1144,18 +1219,24 @@ export default function InvitationView({
 
           {/* SWEET COUPLE WARM WELCOME VIGNETTE with Scroll Reveal */}
           <ScrollReveal variant="scale-up" duration={850}>
-            <div className="relative my-6 sm:my-8 rounded-2xl overflow-hidden border border-[#bda06d]/30 bg-[#1e171b] text-[#fdfbf7] p-5 sm:p-7 shadow-xl">
-              <div className="flex flex-col sm:flex-row items-center gap-5 sm:gap-6">
-                {/* Sweet Couple Portrait Cameo */}
-                <div className="relative w-28 h-28 sm:w-36 sm:h-36 rounded-full overflow-hidden border-2 border-[#bda06d]/60 shadow-lg flex-shrink-0 group">
-                  <Image
-                    src={welcomeImageSrc}
-                    alt={t.cantWaitToWelcome}
-                    fill
-                    sizes="144px"
-                    loading="lazy"
-                    className="object-cover transition duration-700 group-hover:scale-105"
-                  />
+            <div className="relative my-6 sm:my-8 rounded-2xl sm:rounded-3xl overflow-hidden border border-[#bda06d]/40 bg-[#1e171b] text-[#fdfbf7] p-5 sm:p-7 shadow-xl">
+              {/* Corner Filigree Mini-Ornaments */}
+              <RoyalCornerFlourish position="top-left" size={36} />
+              <RoyalCornerFlourish position="bottom-right" size={36} />
+
+              <div className="flex flex-col sm:flex-row items-center gap-5 sm:gap-6 relative z-10">
+                {/* Sweet Couple Portrait Cameo with Royal Medallion Gold Rim */}
+                <div className="relative w-28 h-28 sm:w-36 sm:h-36 rounded-full p-1 bg-gradient-to-tr from-[#dfba73] via-[#ffd700] to-[#8c6a2b] shadow-[0_0_25px_rgba(223,186,115,0.4)] flex-shrink-0 group">
+                  <div className="relative w-full h-full rounded-full overflow-hidden border-2 border-[#fff8ea]">
+                    <Image
+                      src={welcomeImageSrc}
+                      alt={t.cantWaitToWelcome}
+                      fill
+                      sizes="144px"
+                      loading="lazy"
+                      className="object-cover transition duration-700 group-hover:scale-110"
+                    />
+                  </div>
                 </div>
 
                 {/* Sweet Welcome Narrative */}
@@ -1204,41 +1285,75 @@ export default function InvitationView({
 
           {/* Invitation Body & Golden Date/Time Badge with Scroll Reveal */}
           <ScrollReveal variant="fade-up" duration={800}>
-            <p className="text-center text-sm sm:text-base text-[#3d3238] font-sans leading-relaxed my-6 px-2">
-              {settings.invitationBody}
-            </p>
+            {/* Elegant Quotation Cartouche */}
+            <div className="relative my-6 px-6 sm:px-10 py-4 text-center">
+              <span className="absolute top-0 left-2 sm:left-4 text-3xl sm:text-4xl font-serif text-[#dfba73]/40 select-none pointer-events-none">
+                “
+              </span>
+              <p className="text-center text-sm sm:text-base text-[#3d3238] font-sans leading-relaxed px-2 italic">
+                {settings.invitationBody}
+              </p>
+              <span className="absolute bottom-0 right-2 sm:right-4 text-3xl sm:text-4xl font-serif text-[#dfba73]/40 select-none pointer-events-none">
+                ”
+              </span>
+            </div>
 
-            {/* Editorial Date & Time Lockup */}
-            <div className="my-8 text-center py-6 px-4 rounded-2xl bg-[#f8f4ee]/70 border border-[#bda06d]/25">
-              <div className="flex items-center justify-center gap-2 mb-2 text-[#8c6a2b]">
+            {/* Editorial Date & Time Lockup (The Royal Arch Calendar) */}
+            <div className="my-8 relative rounded-2xl sm:rounded-3xl bg-gradient-to-b from-[#fdfbf7] via-[#faf5ec] to-[#f4ecd9] border border-[#dfba73]/50 p-6 sm:p-8 text-center shadow-md overflow-hidden">
+              {/* Corner Filigree Mini-Ornaments */}
+              <RoyalCornerFlourish position="top-left" size={38} />
+              <RoyalCornerFlourish position="top-right" size={38} />
+              <RoyalCornerFlourish position="bottom-left" size={38} />
+              <RoyalCornerFlourish position="bottom-right" size={38} />
+
+              {/* Top Arch Gold Highlight */}
+              <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-[#ffd700] to-transparent pointer-events-none" />
+
+              {/* Weekday Banner */}
+              <div className="inline-flex items-center gap-2 px-4 py-1 rounded-full bg-[#661022]/8 border border-[#dfba73]/40 text-[#8c6a2b] mb-2 shadow-2xs">
                 <Calendar className="w-3.5 h-3.5 text-[#8c6a2b]" />
-                <span className="text-[11px] font-cinzel font-semibold uppercase tracking-[0.25em]">
+                <span className="text-[11px] font-cinzel font-bold uppercase tracking-[0.3em]">
                   {date.weekday}
                 </span>
               </div>
-              <p className="font-serif italic text-lg sm:text-xl text-[#661022]">{date.month}</p>
-              <div className="font-cinzel text-5xl sm:text-7xl text-[#1a1517] font-normal my-1 tracking-tight">
-                {String(date.day).padStart(2, "0")}
+
+              {/* Month */}
+              <p className="font-serif italic text-xl sm:text-2xl text-[#661022] font-semibold mt-1">
+                {date.month}
+              </p>
+
+              {/* Day with Ordinal */}
+              <div className="flex items-center justify-center font-cinzel text-6xl sm:text-7xl text-[#1a1517] font-bold my-1 tracking-tight drop-shadow-xs">
+                <span>{String(date.day).padStart(2, "0")}</span>
                 <sup className="text-xl sm:text-2xl text-[#8c6a2b] font-serif italic ml-1">
                   {date.ordinal}
                 </sup>
               </div>
-              <p className="font-cinzel text-lg sm:text-xl text-[#661022] font-semibold tracking-widest">
+
+              {/* Year */}
+              <p className="font-cinzel text-lg sm:text-xl text-[#661022] font-bold tracking-[0.25em]">
                 {date.year}
               </p>
-              <div className="flex items-center justify-center gap-1.5 text-xs text-[#5a483e] font-sans font-medium mt-3">
+
+              {/* Subtle Botanical Divider */}
+              <div className="w-24 h-px bg-gradient-to-r from-transparent via-[#dfba73] to-transparent mx-auto my-3" />
+
+              {/* Time Details Pill */}
+              <div className="inline-flex items-center justify-center gap-2 px-4 py-1.5 rounded-xl bg-white/90 border border-[#bda06d]/30 text-xs text-[#5a483e] font-sans font-medium shadow-2xs">
                 <Clock className="w-3.5 h-3.5 text-[#8c6a2b]" />
-                <span>Ceremony & Reception from <strong className="text-[#661022]">{date.time}</strong> onwards</span>
+                <span>Ceremony & Reception from <strong className="text-[#661022] font-semibold">{date.time}</strong> onwards</span>
               </div>
-              {/* Value-Giving Add to Calendar Button */}
-              <div className="mt-4 pt-3 border-t border-[#bda06d]/20">
+
+              {/* Value-Giving Add to Calendar Button with Gold Shimmer */}
+              <div className="mt-5 pt-3 border-t border-[#bda06d]/20 flex items-center justify-center gap-2">
                 <button
                   type="button"
                   onClick={handleDownloadICS}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white hover:bg-[#661022] hover:text-[#fdfbf7] text-[#661022] text-xs font-cinzel font-semibold border border-[#bda06d]/40 transition shadow-xs cursor-pointer active:scale-95"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#661022] via-[#800020] to-[#661022] hover:opacity-95 text-[#fffdfa] text-xs font-cinzel font-bold border border-[#ffd700]/60 transition shadow-sm hover:shadow-md cursor-pointer active:scale-95 group"
                 >
-                  <Calendar className="w-3.5 h-3.5" />
+                  <Calendar className="w-3.5 h-3.5 text-[#ffd700]" />
                   <span>{t.addToCalendarTitle}</span>
+                  <Sparkles className="w-3 h-3 text-[#ffd700] opacity-80 group-hover:opacity-100 group-hover:rotate-12 transition-all" />
                 </button>
               </div>
             </div>
@@ -1249,9 +1364,17 @@ export default function InvitationView({
 
           {/* VIRTUAL LUXURY TABLE SEATING PLACE CARD with Scroll Reveal */}
           <ScrollReveal variant="scale-up" duration={850}>
-            <div id="vip-pass" className="my-8 rounded-2xl border border-[#bda06d]/30 bg-[#fbf8f3] p-5 sm:p-7 shadow-lg relative overflow-hidden text-[#1a1517] scroll-mt-8 transition-all hover:shadow-xl hover:border-[#dfba73]">
+            <div id="vip-pass" className="my-8 rounded-2xl sm:rounded-3xl border border-[#bda06d]/35 bg-[#fbf8f3] p-5 sm:p-7 shadow-lg relative overflow-hidden text-[#1a1517] scroll-mt-8 transition-all hover:shadow-xl hover:border-[#dfba73]">
+              {/* Corner Filigree Mini-Ornaments */}
+              <RoyalCornerFlourish position="top-left" size={32} />
+              <RoyalCornerFlourish position="top-right" size={32} />
+
+              {/* VIP Ticket Punch Side Notches */}
+              <div className="hidden sm:block absolute -left-2 top-1/2 -translate-y-1/2 w-4 h-5 rounded-r-full bg-[#121013] border-r border-[#bda06d]/40 pointer-events-none" />
+              <div className="hidden sm:block absolute -right-2 top-1/2 -translate-y-1/2 w-4 h-5 rounded-l-full bg-[#121013] border-l border-[#bda06d]/40 pointer-events-none" />
+
               {/* Top ambient gold highlight */}
-              <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-[#dfba73]/60 to-transparent" />
+              <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-[#dfba73]/60 to-transparent pointer-events-none" />
 
               {/* Header Couple Cameo & Title */}
               <div className="flex flex-col items-center text-center pb-4 border-b border-[#bda06d]/25">
