@@ -14,6 +14,9 @@ export interface Translations {
   tapToBreakSeal: string;
   cordiallyInvited: string;
   selectLanguage: string;
+  continueToInvitation: string;
+  viewStoryAgain: string;
+  scrollOrTapToOpen: string;
 
   // Header & Monogram
   royalHomecoming: string;
@@ -163,6 +166,9 @@ export const translations: Record<Locale, Translations> = {
     tapToBreakSeal: "Tap to Break Seal",
     cordiallyInvited: "✧ You Are Cordially Invited ✧",
     selectLanguage: "Select Language / භාෂාව / மொழி",
+    continueToInvitation: "Continue to Invitation ↓",
+    viewStoryAgain: "Watch Love Story Again",
+    scrollOrTapToOpen: "Scroll or tap to view royal card",
 
     royalHomecoming: "The Royal Homecoming Celebration",
     invitationTitle: "Invitation",
@@ -304,6 +310,9 @@ export const translations: Record<Locale, Translations> = {
     tapToBreakSeal: "මුද්‍රාව කඩා විවෘත කරන්න",
     cordiallyInvited: "✧ ඔබ සැමට සාදරයෙන් ඇරයුම් කරමු ✧",
     selectLanguage: "භාෂාව තෝරන්න / Select Language / மொழி",
+    continueToInvitation: "ආරාධනා පත්‍රය වෙත ↓",
+    viewStoryAgain: "කතාව නැවත නරඹන්න",
+    scrollOrTapToOpen: "ආරාධනා පත්‍රය බැලීමට scroll හෝ tap කරන්න",
 
     royalHomecoming: "රාජකීය දෙවැනි ගමන මංගල උත්සවය",
     invitationTitle: "ආරාධනා පත්‍රය",
@@ -446,6 +455,9 @@ export const translations: Record<Locale, Translations> = {
     tapToBreakSeal: "முத்திரையை உடைத்து திறக்கவும்",
     cordiallyInvited: "✧ அன்புடன் அழைக்கின்றோம் ✧",
     selectLanguage: "மொழியைத் தேர்ந்தெடுக்கவும் / Select Language / භාෂාව",
+    continueToInvitation: "அழைப்பிதழுக்கு செல்லவும் ↓",
+    viewStoryAgain: "காதல் கதையை மீண்டும் காண்க",
+    scrollOrTapToOpen: "அழைப்பிதழைக் காண scroll அல்லது tap செய்யவும்",
 
     royalHomecoming: "மங்கலகரமான மறுவீட்டு வைபவம்",
     invitationTitle: "அழைப்பிதழ்",

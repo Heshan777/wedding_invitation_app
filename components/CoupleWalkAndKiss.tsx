@@ -8,6 +8,7 @@ interface CoupleWalkAndKissProps {
   coupleNames: string;
   isOpening?: boolean;
   onKiss?: () => void;
+  onStoryComplete?: () => void;
   className?: string;
 }
 
@@ -15,6 +16,7 @@ export default function CoupleWalkAndKiss({
   coupleNames,
   isOpening = false,
   onKiss,
+  onStoryComplete,
   className = "",
 }: CoupleWalkAndKissProps) {
   // State: "walking" | "kissing"
@@ -22,6 +24,7 @@ export default function CoupleWalkAndKiss({
   const [isWalkingToMiddle, setIsWalkingToMiddle] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [hearts, setHearts] = useState<{ id: number; left: number; delay: string; size: number }[]>([]);
+  const storyCompleteTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const triggerKiss = () => {
     setPhase("kissing");
@@ -39,6 +42,15 @@ export default function CoupleWalkAndKiss({
     if (onKiss) {
       onKiss();
     }
+
+    if (storyCompleteTimerRef.current) {
+      clearTimeout(storyCompleteTimerRef.current);
+    }
+    storyCompleteTimerRef.current = setTimeout(() => {
+      if (onStoryComplete) {
+        onStoryComplete();
+      }
+    }, 1800);
   };
 
   // Start smooth GPU-accelerated CSS walk transition on mount
@@ -54,11 +66,17 @@ export default function CoupleWalkAndKiss({
     return () => {
       clearTimeout(startTimer);
       clearTimeout(kissTimer);
+      if (storyCompleteTimerRef.current) {
+        clearTimeout(storyCompleteTimerRef.current);
+      }
     };
   }, []);
 
   const handleReplay = (e: React.MouseEvent) => {
     e.stopPropagation();
+    if (storyCompleteTimerRef.current) {
+      clearTimeout(storyCompleteTimerRef.current);
+    }
     setPhase("walking");
     setIsWalkingToMiddle(false);
     setHearts([]);

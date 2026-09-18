@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import confetti from "canvas-confetti";
-import { Sparkles, Heart, Globe } from "lucide-react";
+import { Sparkles, Heart, Globe, RotateCcw, ChevronDown } from "lucide-react";
 import { translations, Locale } from "@/lib/translations";
 import CoupleWalkAndKiss from "./CoupleWalkAndKiss";
 
@@ -58,13 +58,96 @@ export default function EnvelopeOpening({
   onOpen,
 }: EnvelopeOpeningProps) {
   const [selectedLocale, setSelectedLocale] = useState<Locale>(initialLocale);
+  const [stage, setStage] = useState<"couple" | "envelope">("couple");
   const [isOpen, setIsOpen] = useState(false);
   const [isOpening, setIsOpening] = useState(false);
   const [hasDismissed, setHasDismissed] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const envelopeRef = useRef<HTMLDivElement>(null);
+  const autoTransitionTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const t = translations[selectedLocale];
+
+  const handleAdvanceToEnvelope = () => {
+    if (autoTransitionTimerRef.current) {
+      clearTimeout(autoTransitionTimerRef.current);
+      autoTransitionTimerRef.current = null;
+    }
+    setStage("envelope");
+  };
+
+  const handleReturnToStory = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    if (autoTransitionTimerRef.current) {
+      clearTimeout(autoTransitionTimerRef.current);
+      autoTransitionTimerRef.current = null;
+    }
+    setStage("couple");
+    if (envelopeRef.current) {
+      envelopeRef.current.style.transform = "rotateX(0deg) rotateY(0deg)";
+    }
+  };
+
+  const handleStoryComplete = () => {
+    if (autoTransitionTimerRef.current) {
+      clearTimeout(autoTransitionTimerRef.current);
+    }
+    // Auto transition smoothly to envelope after ~1.4s of kiss celebration
+    autoTransitionTimerRef.current = setTimeout(() => {
+      setStage((prev) => (prev === "couple" ? "envelope" : prev));
+    }, 1400);
+  };
+
+  // Listen for scroll / wheel / touch swipe down to transition smoothly from couple story to envelope
+  useEffect(() => {
+    if (stage !== "couple") return;
+
+    let touchStartY = 0;
+
+    const handleWheel = (e: WheelEvent) => {
+      if (e.deltaY > 15) {
+        handleAdvanceToEnvelope();
+      }
+    };
+
+    const handleTouchStart = (e: TouchEvent) => {
+      touchStartY = e.touches[0]?.clientY || 0;
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      const touchEndY = e.touches[0]?.clientY || 0;
+      if (touchStartY - touchEndY > 30) {
+        // Swiped up (scrolling down to view content)
+        handleAdvanceToEnvelope();
+      }
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (["ArrowDown", "PageDown", " ", "Enter"].includes(e.key)) {
+        handleAdvanceToEnvelope();
+      }
+    };
+
+    window.addEventListener("wheel", handleWheel, { passive: true });
+    window.addEventListener("touchstart", handleTouchStart, { passive: true });
+    window.addEventListener("touchmove", handleTouchMove, { passive: true });
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("wheel", handleWheel);
+      window.removeEventListener("touchstart", handleTouchStart);
+      window.removeEventListener("touchmove", handleTouchMove);
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [stage]);
+
+  useEffect(() => {
+    return () => {
+      if (autoTransitionTimerRef.current) {
+        clearTimeout(autoTransitionTimerRef.current);
+      }
+    };
+  }, []);
 
   // Check if previously opened in this session to allow direct view on refresh if preferred
   useEffect(() => {
@@ -80,7 +163,7 @@ export default function EnvelopeOpening({
 
   // 3D Parallax tilt on mouse/touch movement directly on DOM - 0 React re-renders on mousemove
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (isOpening) return;
+    if (isOpening || stage !== "envelope") return;
     const rect = containerRef.current?.getBoundingClientRect();
     if (!rect || !envelopeRef.current) return;
     const x = (e.clientX - rect.left) / rect.width - 0.5;
@@ -312,144 +395,178 @@ export default function EnvelopeOpening({
           <div className="h-px w-10 sm:w-16 bg-gradient-to-l from-transparent via-[#dfba73] to-[#c5a059]" />
         </div>
 
-        {/* ROMANTIC STAGE: GROOM & BRIDE WALK SEPARATE SIDES & MEET TO KISS */}
-        <div className="w-full mb-5">
-          <CoupleWalkAndKiss
-            coupleNames={coupleNames}
-            isOpening={isOpening}
-          />
-        </div>
+        {/* Stage Container: Single Central Stage for Couple Animation -> Royal Envelope */}
+        <div className="relative w-full max-w-lg flex flex-col items-center justify-center">
+          {stage === "couple" ? (
+            <div className="w-full flex flex-col items-center animate-stage-appear">
+              <CoupleWalkAndKiss
+                coupleNames={coupleNames}
+                isOpening={isOpening}
+                onStoryComplete={handleStoryComplete}
+              />
 
-        {/* 3D Realistic Royal Envelope Wrapper */}
-        <div
-          ref={envelopeRef}
-          onClick={handleOpenEnvelope}
-          className="relative w-full cursor-pointer transition-transform duration-300 ease-out will-change-transform"
-          style={{
-            perspective: "1200px",
-          }}
-        >
-          {/* Outer Velvet Pocket Box */}
-          <div className="relative w-full aspect-[16/11] rounded-3xl bg-gradient-to-b from-[#3a101b] via-[#240810] to-[#140409] p-1.5 border-2 border-[#c5a059] shadow-[0_30px_60px_-15px_rgba(0,0,0,0.9),0_0_35px_rgba(197,160,89,0.35)] overflow-hidden">
-            
-            {/* Subtle Velvet Fabric Sheen Overlay */}
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_30%,rgba(223,186,115,0.15)_0%,transparent_70%)] pointer-events-none" />
-
-            {/* Corner Filigrees ⚜ */}
-            <div className="absolute top-3 left-3 text-[#dfba73] text-sm select-none drop-shadow">⚜</div>
-            <div className="absolute top-3 right-3 text-[#dfba73] text-sm select-none drop-shadow">⚜</div>
-            <div className="absolute bottom-3 left-3 text-[#dfba73] text-sm select-none drop-shadow">⚜</div>
-            <div className="absolute bottom-3 right-3 text-[#dfba73] text-sm select-none drop-shadow">⚜</div>
-
-            {/* INSIDE: Royal Parchment Letter (Slides Upward when flap opens) */}
-            <div
-              className={`absolute inset-x-5 top-5 bottom-5 rounded-2xl bg-gradient-to-b from-[#fffdfa] via-[#fcf8f0] to-[#f5ebd7] text-[#1a1517] p-5 sm:p-6 border-2 border-[#dfba73] shadow-xl flex flex-col justify-between items-center text-center transition-all duration-700 ${
-                isOpening ? "animate-card-slide-up shadow-2xl" : "translate-y-0"
-              }`}
-            >
-              {/* Inner Parchment Gold Border Frame */}
-              <div className="absolute inset-1.5 rounded-xl border border-[#c5a059]/40 pointer-events-none" />
-
-              <div className="pt-1">
-                <span className="text-[10px] uppercase tracking-[0.25em] text-[#8c6a2b] font-cinzel font-bold block">
-                  {t.speciallyPreparedFor}
+              {/* Action row below couple animation */}
+              <div className="flex flex-col items-center gap-2 mt-5">
+                <button
+                  type="button"
+                  onClick={handleAdvanceToEnvelope}
+                  className="btn-gold-shimmer px-7 py-2.5 rounded-full font-cinzel text-xs tracking-[0.15em] uppercase font-bold flex items-center justify-center gap-2 shadow-[0_10px_25px_rgba(197,160,89,0.35)] hover:scale-105 active:scale-95 transition cursor-pointer border border-[#fff2cf]/50 min-h-[42px] touch-manipulation"
+                >
+                  <span>{t.continueToInvitation}</span>
+                  <ChevronDown className="w-4 h-4 text-[#1a1517] animate-bounce flex-shrink-0" />
+                </button>
+                <span className="text-[10px] uppercase font-cinzel tracking-widest text-[#dfba73]/80 animate-pulse">
+                  {t.scrollOrTapToOpen}
                 </span>
-                <h2 className="font-serif italic text-2xl sm:text-3xl text-[#6b0f24] font-bold mt-1 tracking-wide leading-snug drop-shadow-xs">
-                  {salutation} {guestName}
-                </h2>
+              </div>
+            </div>
+          ) : (
+            <div className="w-full flex flex-col items-center animate-stage-appear">
+              {/* Return to Story link at top */}
+              <div className="w-full flex justify-end mb-2.5 px-1">
+                <button
+                  type="button"
+                  onClick={handleReturnToStory}
+                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/60 hover:bg-white/10 border border-[#dfba73]/40 text-[#dfba73] text-[10px] font-cinzel font-semibold transition cursor-pointer active:scale-95 shadow-xs"
+                >
+                  <RotateCcw className="w-3 h-3 text-[#ffd700]" />
+                  <span>{t.viewStoryAgain}</span>
+                </button>
               </div>
 
-              {/* Couple Script & Heart Accent */}
-              <div className="my-1">
-                <p className="font-alex text-3xl sm:text-4xl text-[#800020] leading-none drop-shadow-xs">
-                  {coupleNames}
-                </p>
-                <div className="flex items-center justify-center gap-2 mt-1">
-                  <div className="h-px w-8 bg-[#c5a059]/60" />
-                  <span className="text-[10px] uppercase font-cinzel text-[#8c6a2b] tracking-widest font-semibold">
-                    {t.homecomingCelebration}
-                  </span>
-                  <div className="h-px w-8 bg-[#c5a059]/60" />
+              {/* 3D Realistic Royal Envelope Wrapper */}
+              <div
+                ref={envelopeRef}
+                onClick={handleOpenEnvelope}
+                className="relative w-full cursor-pointer transition-transform duration-300 ease-out will-change-transform"
+                style={{
+                  perspective: "1200px",
+                }}
+              >
+                {/* Outer Velvet Pocket Box */}
+                <div className="relative w-full aspect-[16/11] rounded-3xl bg-gradient-to-b from-[#3a101b] via-[#240810] to-[#140409] p-1.5 border-2 border-[#c5a059] shadow-[0_30px_60px_-15px_rgba(0,0,0,0.9),0_0_35px_rgba(197,160,89,0.35)] overflow-hidden">
+                  
+                  {/* Subtle Velvet Fabric Sheen Overlay */}
+                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_30%,rgba(223,186,115,0.15)_0%,transparent_70%)] pointer-events-none" />
+
+                  {/* Corner Filigrees ⚜ */}
+                  <div className="absolute top-3 left-3 text-[#dfba73] text-sm select-none drop-shadow">⚜</div>
+                  <div className="absolute top-3 right-3 text-[#dfba73] text-sm select-none drop-shadow">⚜</div>
+                  <div className="absolute bottom-3 left-3 text-[#dfba73] text-sm select-none drop-shadow">⚜</div>
+                  <div className="absolute bottom-3 right-3 text-[#dfba73] text-sm select-none drop-shadow">⚜</div>
+
+                  {/* INSIDE: Royal Parchment Letter (Slides Upward when flap opens) */}
+                  <div
+                    className={`absolute inset-x-5 top-5 bottom-5 rounded-2xl bg-gradient-to-b from-[#fffdfa] via-[#fcf8f0] to-[#f5ebd7] text-[#1a1517] p-5 sm:p-6 border-2 border-[#dfba73] shadow-xl flex flex-col justify-between items-center text-center transition-all duration-700 ${
+                      isOpening ? "animate-card-slide-up shadow-2xl" : "translate-y-0"
+                    }`}
+                  >
+                    {/* Inner Parchment Gold Border Frame */}
+                    <div className="absolute inset-1.5 rounded-xl border border-[#c5a059]/40 pointer-events-none" />
+
+                    <div className="pt-1">
+                      <span className="text-[10px] uppercase tracking-[0.25em] text-[#8c6a2b] font-cinzel font-bold block">
+                        {t.speciallyPreparedFor}
+                      </span>
+                      <h2 className="font-serif italic text-2xl sm:text-3xl text-[#6b0f24] font-bold mt-1 tracking-wide leading-snug drop-shadow-xs">
+                        {salutation} {guestName}
+                      </h2>
+                    </div>
+
+                    {/* Couple Script & Heart Accent */}
+                    <div className="my-1">
+                      <p className="font-alex text-3xl sm:text-4xl text-[#800020] leading-none drop-shadow-xs">
+                        {coupleNames}
+                      </p>
+                      <div className="flex items-center justify-center gap-2 mt-1">
+                        <div className="h-px w-8 bg-[#c5a059]/60" />
+                        <span className="text-[10px] uppercase font-cinzel text-[#8c6a2b] tracking-widest font-semibold">
+                          {t.homecomingCelebration}
+                        </span>
+                        <div className="h-px w-8 bg-[#c5a059]/60" />
+                      </div>
+                    </div>
+
+                    <div className="text-[10px] font-cinzel font-semibold text-[#8c6a2b] pb-0.5 tracking-wider">
+                      {t.cordiallyInvited}
+                    </div>
+                  </div>
+
+                  {/* FRONT POCKET (Triangular Pocket folds overlapping the card) */}
+                  <div
+                    className={`absolute inset-x-0 bottom-0 top-1/3 bg-gradient-to-t from-[#20060e] via-[#2d0914] to-[#3a0d1a] border-t border-[#dfba73]/70 rounded-b-3xl transition-opacity duration-500 shadow-inner ${
+                      isOpening ? "opacity-75" : "opacity-95"
+                    }`}
+                    style={{
+                      clipPath: "polygon(0 35%, 50% 100%, 100% 35%, 100% 100%, 0% 100%)",
+                    }}
+                  />
+
+                  {/* 3D TOP TRIANGLE FLAP (Flips open upwards on tap) */}
+                  <div
+                    className={`absolute inset-x-0 top-0 h-3/5 bg-gradient-to-b from-[#471221] via-[#350d18] to-[#250810] border-b-2 border-[#dfba73] rounded-t-3xl transition-all ${
+                      isOpening ? "animate-flap-open" : ""
+                    }`}
+                    style={{
+                      clipPath: "polygon(0 0, 100% 0, 50% 100%)",
+                      transformOrigin: "top center",
+                    }}
+                  >
+                    {/* Flap gold rim border lining */}
+                    <div
+                      className="absolute inset-x-0 top-0 h-full border-b border-[#ffd700]/60 pointer-events-none"
+                      style={{ clipPath: "polygon(0 0, 100% 0, 50% 98%)" }}
+                    />
+                  </div>
+
+                  {/* 3D WAX SEAL MEDALLION (Anchored at triangle tip) */}
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/4 z-30 flex flex-col items-center">
+                    <div
+                      className={`relative wax-seal w-20 h-20 sm:w-24 sm:h-24 rounded-full flex flex-col items-center justify-center text-center cursor-pointer border-2 border-[#ffd700]/70 shadow-[0_12px_28px_rgba(0,0,0,0.7),0_0_20px_rgba(223,186,115,0.4)] transition-transform duration-300 group-hover:scale-110 active:scale-95 touch-manipulation ${
+                        isOpening ? "animate-seal-break" : ""
+                      }`}
+                    >
+                      {/* Glossy light reflection sweep */}
+                      <div className="absolute top-1.5 left-3 w-7 h-4 rounded-full bg-white/25 blur-[1px] -rotate-30 pointer-events-none" />
+
+                      {/* Monogram Text */}
+                      <span className="font-cinzel text-lg sm:text-2xl font-bold text-[#fffdfa] drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] tracking-wider">
+                        {monogram}
+                      </span>
+
+                      {/* Gold Heart Crest */}
+                      <Heart className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#ffd700] fill-[#ffd700] mt-0.5 filter drop-shadow" />
+
+                      {/* Pulsing Aura Rings */}
+                      {!isOpening && (
+                        <div className="absolute inset-0 -m-3 rounded-full border border-[#dfba73]/60 animate-ping opacity-35 pointer-events-none" />
+                      )}
+                    </div>
+
+                    {/* Gentle Tap Hint */}
+                    {!isOpening && (
+                      <span className="mt-2.5 px-3 py-0.5 rounded-full bg-black/60 backdrop-blur-sm border border-[#dfba73]/40 text-[#dfba73] text-[9px] font-cinzel tracking-widest uppercase font-semibold animate-pulse shadow text-center line-clamp-1 max-w-[160px]">
+                        {t.tapToBreakSeal}
+                      </span>
+                    )}
+                  </div>
+
                 </div>
               </div>
 
-              <div className="text-[10px] font-cinzel font-semibold text-[#8c6a2b] pb-0.5 tracking-wider">
-                {t.cordiallyInvited}
-              </div>
-            </div>
-
-            {/* FRONT POCKET (Triangular Pocket folds overlapping the card) */}
-            <div
-              className={`absolute inset-x-0 bottom-0 top-1/3 bg-gradient-to-t from-[#20060e] via-[#2d0914] to-[#3a0d1a] border-t border-[#dfba73]/70 rounded-b-3xl transition-opacity duration-500 shadow-inner ${
-                isOpening ? "opacity-75" : "opacity-95"
-              }`}
-              style={{
-                clipPath: "polygon(0 35%, 50% 100%, 100% 35%, 100% 100%, 0% 100%)",
-              }}
-            />
-
-            {/* 3D TOP TRIANGLE FLAP (Flips open upwards on tap) */}
-            <div
-              className={`absolute inset-x-0 top-0 h-3/5 bg-gradient-to-b from-[#471221] via-[#350d18] to-[#250810] border-b-2 border-[#dfba73] rounded-t-3xl transition-all ${
-                isOpening ? "animate-flap-open" : ""
-              }`}
-              style={{
-                clipPath: "polygon(0 0, 100% 0, 50% 100%)",
-                transformOrigin: "top center",
-              }}
-            >
-              {/* Flap gold rim border lining */}
-              <div
-                className="absolute inset-x-0 top-0 h-full border-b border-[#ffd700]/60 pointer-events-none"
-                style={{ clipPath: "polygon(0 0, 100% 0, 50% 98%)" }}
-              />
-            </div>
-
-            {/* 3D WAX SEAL MEDALLION (Anchored at triangle tip) */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/4 z-30 flex flex-col items-center">
-              <div
-                className={`relative wax-seal w-20 h-20 sm:w-24 sm:h-24 rounded-full flex flex-col items-center justify-center text-center cursor-pointer border-2 border-[#ffd700]/70 shadow-[0_12px_28px_rgba(0,0,0,0.7),0_0_20px_rgba(223,186,115,0.4)] transition-transform duration-300 group-hover:scale-110 active:scale-95 touch-manipulation ${
-                  isOpening ? "animate-seal-break" : ""
-                }`}
+              {/* Big Action Shimmer Button */}
+              <button
+                onClick={handleOpenEnvelope}
+                disabled={isOpening}
+                className="mt-6 btn-gold-shimmer px-8 sm:px-9 py-3.5 rounded-full font-cinzel text-xs sm:text-sm tracking-[0.15em] uppercase font-bold flex items-center justify-center gap-2.5 shadow-[0_10px_25px_rgba(197,160,89,0.35)] hover:scale-105 active:scale-95 transition cursor-pointer border border-[#fff2cf]/50 min-h-[48px] touch-manipulation animate-pulse-subtle"
               >
-                {/* Glossy light reflection sweep */}
-                <div className="absolute top-1.5 left-3 w-7 h-4 rounded-full bg-white/25 blur-[1px] -rotate-30 pointer-events-none" />
-
-                {/* Monogram Text */}
-                <span className="font-cinzel text-lg sm:text-2xl font-bold text-[#fffdfa] drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] tracking-wider">
-                  {monogram}
-                </span>
-
-                {/* Gold Heart Crest */}
-                <Heart className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#ffd700] fill-[#ffd700] mt-0.5 filter drop-shadow" />
-
-                {/* Pulsing Aura Rings */}
-                {!isOpening && (
-                  <div className="absolute inset-0 -m-3 rounded-full border border-[#dfba73]/60 animate-ping opacity-35 pointer-events-none" />
-                )}
-              </div>
-
-              {/* Gentle Tap Hint */}
-              {!isOpening && (
-                <span className="mt-2.5 px-3 py-0.5 rounded-full bg-black/60 backdrop-blur-sm border border-[#dfba73]/40 text-[#dfba73] text-[9px] font-cinzel tracking-widest uppercase font-semibold animate-pulse shadow text-center line-clamp-1 max-w-[160px]">
-                  {t.tapToBreakSeal}
-                </span>
-              )}
+                <Sparkles className="w-4 h-4 text-[#1a1517] flex-shrink-0" />
+                <span className="text-center">{isOpening ? t.openingInvitation : t.tapToOpen}</span>
+                <Sparkles className="w-4 h-4 text-[#1a1517] flex-shrink-0" />
+              </button>
             </div>
-
-          </div>
+          )}
         </div>
-
-        {/* Big Action Shimmer Button */}
-        <button
-          onClick={handleOpenEnvelope}
-          disabled={isOpening}
-          className="mt-6 btn-gold-shimmer px-8 sm:px-9 py-3.5 rounded-full font-cinzel text-xs sm:text-sm tracking-[0.15em] uppercase font-bold flex items-center justify-center gap-2.5 shadow-[0_10px_25px_rgba(197,160,89,0.35)] hover:scale-105 active:scale-95 transition cursor-pointer border border-[#fff2cf]/50 min-h-[48px] touch-manipulation animate-pulse-subtle"
-        >
-          <Sparkles className="w-4 h-4 text-[#1a1517] flex-shrink-0" />
-          <span className="text-center">{isOpening ? t.openingInvitation : t.tapToOpen}</span>
-          <Sparkles className="w-4 h-4 text-[#1a1517] flex-shrink-0" />
-        </button>
       </div>
     </div>
   );
