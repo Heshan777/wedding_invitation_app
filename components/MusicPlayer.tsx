@@ -43,7 +43,7 @@ export default function MusicPlayer({ src }: { src: string }) {
     window.addEventListener("start_wedding_music", handleStartAudio);
     window.addEventListener("wedding_video_play", handleVideoPlay);
     window.addEventListener("wedding_video_pause", handleVideoPause);
-    const events: (keyof WindowEventMap)[] = ["click", "touchstart", "scroll"];
+    const events: (keyof WindowEventMap)[] = ["click", "touchstart"];
     events.forEach((evt) => window.addEventListener(evt, handleStartAudio, { once: true }));
 
     return () => {
