@@ -150,6 +150,7 @@ export async function PATCH(req: NextRequest) {
     dressCodeDescription,
     timelineJson,
     contactPhone,
+    templateId,
   } = body;
 
   const updated = await prisma.weddingEvent.update({
@@ -176,6 +177,7 @@ export async function PATCH(req: NextRequest) {
       dressCodeDescription: dressCodeDescription !== undefined ? dressCodeDescription : existing.dressCodeDescription,
       timelineJson: timelineJson !== undefined ? timelineJson : existing.timelineJson,
       contactPhone: contactPhone !== undefined ? contactPhone : existing.contactPhone,
+      ...(templateId !== undefined ? { templateId } : {}),
     },
   });
 

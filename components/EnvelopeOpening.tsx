@@ -5,12 +5,14 @@ import confetti from "canvas-confetti";
 import { Sparkles, Heart, Globe, RotateCcw, ChevronDown } from "lucide-react";
 import { translations, Locale } from "@/lib/translations";
 import CoupleWalkAndKiss from "./CoupleWalkAndKiss";
+import { getTemplate } from "@/lib/templates";
 
 interface EnvelopeOpeningProps {
   guestName: string;
   salutation: string;
   coupleNames: string;
   initialLocale?: Locale;
+  templateId?: string | null;
   onStartOpen?: () => void;
   onOpen: (locale: Locale) => void;
 }
@@ -54,6 +56,7 @@ export default function EnvelopeOpening({
   salutation,
   coupleNames,
   initialLocale = "en",
+  templateId,
   onStartOpen,
   onOpen,
 }: EnvelopeOpeningProps) {
@@ -66,6 +69,7 @@ export default function EnvelopeOpening({
   const envelopeRef = useRef<HTMLDivElement>(null);
   const autoTransitionTimerRef = useRef<NodeJS.Timeout | null>(null);
 
+  const template = useMemo(() => getTemplate(templateId), [templateId]);
   const t = translations[selectedLocale];
 
   const handleAdvanceToEnvelope = () => {
@@ -278,7 +282,12 @@ export default function EnvelopeOpening({
       }`}
     >
       {/* Royal Ambient Glow Backdrop */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(128,0,32,0.45)_0%,rgba(20,8,14,0.85)_55%,#0a0608_100%)] pointer-events-none" />
+      <div
+        className="absolute inset-0 pointer-events-none transition-colors duration-700"
+        style={{
+          background: `radial-gradient(ellipse at center, ${template.styles.radialGlow} 0%, rgba(15,10,14,0.85) 55%, #070608 100%)`,
+        }}
+      />
 
       {/* Floating Golden Stardust Particles */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
@@ -444,7 +453,7 @@ export default function EnvelopeOpening({
                 }}
               >
                 {/* Outer Velvet Pocket Box */}
-                <div className="relative w-full aspect-[16/11] rounded-3xl bg-gradient-to-b from-[#3a101b] via-[#240810] to-[#140409] p-1.5 border-2 border-[#c5a059] shadow-[0_30px_60px_-15px_rgba(0,0,0,0.9),0_0_35px_rgba(197,160,89,0.35)] overflow-hidden">
+                <div className={`relative w-full aspect-[16/11] rounded-3xl bg-gradient-to-b ${template.styles.envelopeBoxGradient} p-1.5 border-2 ${template.styles.envelopeBorder} shadow-[0_30px_60px_-15px_rgba(0,0,0,0.9),0_0_35px_rgba(197,160,89,0.35)] overflow-hidden`}>
                   
                   {/* Subtle Velvet Fabric Sheen Overlay */}
                   <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_30%,rgba(223,186,115,0.15)_0%,transparent_70%)] pointer-events-none" />
@@ -457,7 +466,7 @@ export default function EnvelopeOpening({
 
                   {/* INSIDE: Royal Parchment Letter (Slides Upward when flap opens) */}
                   <div
-                    className={`absolute inset-x-5 top-5 bottom-5 rounded-2xl bg-gradient-to-b from-[#fffdfa] via-[#fcf8f0] to-[#f5ebd7] text-[#1a1517] p-5 sm:p-6 border-2 border-[#dfba73] shadow-xl flex flex-col justify-between items-center text-center transition-all duration-700 ${
+                    className={`absolute inset-x-5 top-5 bottom-5 rounded-2xl bg-gradient-to-b ${template.styles.cardBg} text-[#1a1517] p-5 sm:p-6 border-2 ${template.styles.cardBorder} shadow-xl flex flex-col justify-between items-center text-center transition-all duration-700 ${
                       isOpening ? "animate-card-slide-up shadow-2xl" : "translate-y-0"
                     }`}
                   >
@@ -494,7 +503,7 @@ export default function EnvelopeOpening({
 
                   {/* FRONT POCKET (Triangular Pocket folds overlapping the card) */}
                   <div
-                    className={`absolute inset-x-0 bottom-0 top-1/3 bg-gradient-to-t from-[#20060e] via-[#2d0914] to-[#3a0d1a] border-t border-[#dfba73]/70 rounded-b-3xl transition-opacity duration-500 shadow-inner ${
+                    className={`absolute inset-x-0 bottom-0 top-1/3 bg-gradient-to-t ${template.styles.envelopePocketGradient} border-t border-[#dfba73]/70 rounded-b-3xl transition-opacity duration-500 shadow-inner ${
                       isOpening ? "opacity-75" : "opacity-95"
                     }`}
                     style={{
@@ -504,7 +513,7 @@ export default function EnvelopeOpening({
 
                   {/* 3D TOP TRIANGLE FLAP (Flips open upwards on tap) */}
                   <div
-                    className={`absolute inset-x-0 top-0 h-3/5 bg-gradient-to-b from-[#471221] via-[#350d18] to-[#250810] border-b-2 border-[#dfba73] rounded-t-3xl transition-all ${
+                    className={`absolute inset-x-0 top-0 h-3/5 bg-gradient-to-b ${template.styles.envelopeFlapGradient} border-b-2 border-[#dfba73] rounded-t-3xl transition-all ${
                       isOpening ? "animate-flap-open" : ""
                     }`}
                     style={{
@@ -522,7 +531,7 @@ export default function EnvelopeOpening({
                   {/* 3D WAX SEAL MEDALLION (Anchored at triangle tip) */}
                   <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/4 z-30 flex flex-col items-center">
                     <div
-                      className={`relative wax-seal w-20 h-20 sm:w-24 sm:h-24 rounded-full flex flex-col items-center justify-center text-center cursor-pointer border-2 border-[#ffd700]/70 shadow-[0_12px_28px_rgba(0,0,0,0.7),0_0_20px_rgba(223,186,115,0.4)] transition-transform duration-300 group-hover:scale-110 active:scale-95 touch-manipulation ${
+                      className={`relative wax-seal w-20 h-20 sm:w-24 sm:h-24 rounded-full flex flex-col items-center justify-center text-center cursor-pointer border-2 ${template.styles.waxSealBorder} ${template.styles.waxSealGradient} shadow-[0_12px_28px_rgba(0,0,0,0.7),0_0_20px_rgba(223,186,115,0.4)] transition-transform duration-300 group-hover:scale-110 active:scale-95 touch-manipulation ${
                         isOpening ? "animate-seal-break" : ""
                       }`}
                     >
@@ -530,7 +539,7 @@ export default function EnvelopeOpening({
                       <div className="absolute top-1.5 left-3 w-7 h-4 rounded-full bg-white/25 blur-[1px] -rotate-30 pointer-events-none" />
 
                       {/* Monogram Text */}
-                      <span className="font-cinzel text-lg sm:text-2xl font-bold text-[#fffdfa] drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] tracking-wider">
+                      <span className={`font-cinzel text-lg sm:text-2xl font-bold ${template.styles.waxSealText} drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] tracking-wider`}>
                         {monogram}
                       </span>
 

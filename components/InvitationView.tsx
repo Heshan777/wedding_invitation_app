@@ -81,6 +81,7 @@ import {
   RoyalCrest,
   GildedCardBorder,
 } from "./RoyalDecorations";
+import { getTemplate } from "@/lib/templates";
 
 function FloralDivider({
   className = "",
@@ -132,6 +133,7 @@ type Settings = {
   dressCodeDescription?: string | null;
   timelineJson?: string | null;
   contactPhone?: string | null;
+  templateId?: string | null;
 };
 
 function getYouTubeEmbedUrl(url: string) {
@@ -196,6 +198,20 @@ export default function InvitationView({
   // Photo Gallery & Lightbox state
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+  const [urlTemplateId, setUrlTemplateId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const t = params.get("template");
+      if (t) setUrlTemplateId(t);
+    }
+  }, []);
+
+  const activeTemplate = useMemo(
+    () => getTemplate(urlTemplateId || settings.templateId),
+    [urlTemplateId, settings.templateId]
+  );
   const [isSlideshowPlaying, setIsSlideshowPlaying] = useState(true);
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
   const [floatingHearts, setFloatingHearts] = useState<{ id: number; left: number; size: number }[]>([]);
@@ -861,13 +877,14 @@ export default function InvitationView({
   };
 
   return (
-    <div className="relative min-h-screen bg-[#121013] text-[#fdfbf7] selection:bg-[#c5a059]/30 selection:text-[#f7e4be] overflow-x-hidden">
+    <div className={`relative min-h-screen ${activeTemplate.styles.pageBg} text-[#fdfbf7] selection:bg-[#c5a059]/30 selection:text-[#f7e4be] overflow-x-hidden transition-colors duration-700`}>
       {/* 3D Wax Seal Envelope Entrance Overlay */}
       <EnvelopeOpening
         guestName={guest.displayName}
         salutation={guest.salutation}
         coupleNames={settings.coupleNames}
         initialLocale={locale}
+        templateId={activeTemplate.id}
         onStartOpen={handleStartOpenEnvelope}
         onOpen={handleOpenEnvelope}
       />

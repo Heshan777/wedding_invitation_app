@@ -39,6 +39,7 @@ export async function GET(req: NextRequest) {
         musicUrl: true,
         dressCodeTitle: true,
         dressCodeDescription: true,
+        templateId: true,
         manager: {
           select: {
             id: true,

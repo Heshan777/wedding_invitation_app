@@ -24,6 +24,12 @@ import {
   parseContactPhones,
   serializeContactPhones,
 } from "@/lib/contact-side";
+import {
+  INVITATION_TEMPLATES,
+  TEMPLATE_LIST,
+  getTemplate,
+  InvitationTemplate,
+} from "@/lib/templates";
 
 import {
   Users,
@@ -37,6 +43,7 @@ import {
   Edit,
   Trash2,
   Settings,
+  Palette,
   QrCode,
   LogOut,
   ExternalLink,
@@ -115,6 +122,7 @@ export type WeddingEventItem = {
   dressCodeTitle?: string | null;
   dressCodeDescription?: string | null;
   timelineJson?: string | null;
+  templateId?: string | null;
   _count?: {
     guests: number;
     photos: number;
@@ -218,6 +226,7 @@ type EventSettings = {
   dressCodeDescription?: string | null;
   timelineJson?: string | null;
   contactPhone?: string | null;
+  templateId?: string | null;
 };
 
 const DEFAULT_TIMELINE: TimelineEvent[] = [
@@ -333,7 +342,7 @@ export function getAppBaseUrl(): string {
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<
-    "guests" | "photos" | "settings" | "tables" | "events" | "managers"
+    "guests" | "photos" | "settings" | "tables" | "events" | "managers" | "templates"
   >("guests");
   const [manager, setManager] = useState<ManagerProfile | null>(null);
   const [events, setEvents] = useState<WeddingEventItem[]>([]);
@@ -469,9 +478,11 @@ export default function AdminDashboard() {
     dressCodeDescription: "Traditional Sri Lankan elegance or formal evening attire in warm tones of gold, burgundy, and ivory.",
     timelineJson: JSON.stringify(DEFAULT_TIMELINE),
     contactPhone: "+94 77 123 4567",
+    templateId: "royal-heritage",
   });
   const [savingSettings, setSavingSettings] = useState(false);
   const [settingsSuccess, setSettingsSuccess] = useState(false);
+  const [applyingTemplate, setApplyingTemplate] = useState<string | null>(null);
 
   // Place Card & Luxury Wedding Invitation Designer states
   const [cardStationeryType, setCardStationeryType] = useState<"wedding-card" | "place-card">("wedding-card");
@@ -1254,6 +1265,13 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     loadData();
+    if (typeof window !== "undefined") {
+      const sp = new URLSearchParams(window.location.search);
+      const tabParam = sp.get("tab");
+      if (tabParam === "templates") {
+        setActiveTab("templates");
+      }
+    }
   }, []);
 
   function handleSelectEvent(newEventId: string) {
@@ -1494,6 +1512,39 @@ export default function AdminDashboard() {
       showToast("Network error updating settings");
     } finally {
       setSavingSettings(false);
+    }
+  }
+
+  async function handleApplyTemplate(templateId: string) {
+    if (!activeEventId) {
+      showToast("Please select a wedding event first", "error");
+      return;
+    }
+    setApplyingTemplate(templateId);
+    try {
+      const res = await fetch("/api/admin/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          eventId: activeEventId,
+          templateId,
+        }),
+      });
+
+      if (res.ok) {
+        setSettings((prev) => ({ ...prev, templateId }));
+        setEvents((prev) =>
+          prev.map((e) => (e.id === activeEventId ? { ...e, templateId } : e))
+        );
+        showToast(`Template changed to ${getTemplate(templateId).name}!`);
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        showToast(errData.error || "Failed to apply template", "error");
+      }
+    } catch {
+      showToast("Network error applying template", "error");
+    } finally {
+      setApplyingTemplate(null);
     }
   }
 
@@ -2194,6 +2245,23 @@ export default function AdminDashboard() {
               <Printer className="w-4 h-4 text-[#dfba73] shrink-0" />
               <span className="truncate hidden sm:inline">Printable Cards & Invitations</span>
               <span className="truncate sm:hidden">Print Cards</span>
+            </button>
+            <button
+              onClick={() => setActiveTab("templates")}
+              className={`w-full xl:w-auto royal-nav-tab px-3.5 sm:px-4 py-2.5 rounded-xl text-xs font-cinzel font-bold tracking-wider transition cursor-pointer flex items-center justify-center sm:justify-start gap-2 touch-manipulation min-h-[44px] ${
+                activeTab === "templates"
+                  ? "bg-[#800020] text-[#fdfbf7] border border-[#dfba73]/80 shadow-lg shadow-[#800020]/40 ring-1 ring-[#dfba73]/30"
+                  : "bg-[#231a20] text-[#fdfbf7]/70 hover:bg-[#c5a059]/15 border border-[#c5a059]/20"
+              }`}
+            >
+              <Palette className="w-4 h-4 text-[#dfba73] shrink-0" />
+              <span className="truncate hidden sm:inline">Invitation Templates</span>
+              <span className="truncate sm:hidden">Templates</span>
+              <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-mono shrink-0 ${
+                activeTab === "templates" ? "bg-white/20 text-white" : "bg-[#181216] text-[#dfba73]"
+              }`}>
+                {TEMPLATE_LIST.length}
+              </span>
             </button>
             {manager?.role === "SUPER_ADMIN" && (
               <button
@@ -5233,6 +5301,235 @@ export default function AdminDashboard() {
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {/* TAB 7: INVITATION TEMPLATES */}
+        {activeTab === "templates" && (
+          <div className="space-y-6">
+            {/* Header & Gallery Link */}
+            <div className="p-6 rounded-2xl bg-[#1c1519] border border-[#c5a059]/40 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-2 mb-1.5">
+                  <span className="p-2 rounded-xl bg-[#800020]/50 border border-[#dfba73]/40 text-[#dfba73]">
+                    <Palette className="w-5 h-5" />
+                  </span>
+                  <h2 className="font-cinzel text-xl sm:text-2xl font-bold text-[#dfba73]">
+                    Invitation Templates & Themes
+                  </h2>
+                </div>
+                <p className="text-xs sm:text-sm text-[#fdfbf7]/70 max-w-2xl leading-relaxed">
+                  Select a bespoke visual theme for your wedding invitation suite. Switching themes immediately transforms the virtual envelope opening, wax seal, color harmony, typography, and card accents for all invited guests.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-3 shrink-0">
+                <a
+                  href="/templates"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-4 py-2.5 rounded-xl bg-[#2a1c24] hover:bg-[#800020] text-[#dfba73] hover:text-[#fdfbf7] border border-[#c5a059]/40 text-xs font-cinzel font-bold tracking-wider transition flex items-center gap-2 shadow-lg"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                  Browse Public Gallery
+                </a>
+              </div>
+            </div>
+
+            {/* Current Active Theme Highlight Card */}
+            {(() => {
+              const currentTpl = getTemplate(settings.templateId || "royal-heritage");
+              return (
+                <div
+                  className="p-6 rounded-2xl border border-[#dfba73]/50 shadow-2xl relative overflow-hidden"
+                  style={{
+                    background: `linear-gradient(135deg, ${currentTpl.primaryColor} 0%, #140409 100%)`,
+                  }}
+                >
+                  <div className="absolute -right-8 -bottom-8 w-48 h-48 rounded-full bg-white/5 blur-2xl pointer-events-none" />
+                  <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                    <div className="space-y-2">
+                      <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 text-xs font-cinzel font-semibold">
+                        <CheckCircle2 className="w-3.5 h-3.5" /> Currently Active on Invitations
+                      </div>
+                      <h3 className="font-cinzel text-2xl font-bold text-[#fdfbf7]">
+                        {currentTpl.name}
+                      </h3>
+                      <p className="text-xs sm:text-sm text-[#fdfbf7]/80 max-w-xl leading-relaxed">
+                        {currentTpl.description}
+                      </p>
+                      <div className="flex flex-wrap items-center gap-2 pt-1 text-xs text-[#dfba73]">
+                        <span className="font-mono bg-black/40 px-2.5 py-1 rounded-md border border-white/10">
+                          Style: {currentTpl.tagline}
+                        </span>
+                        <span className="font-mono bg-black/40 px-2.5 py-1 rounded-md border border-white/10">
+                          Category: {currentTpl.categoryLabel}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0">
+                      {guests.length > 0 && guests[0].token && (
+                        <a
+                          href={`/invite/${guests[0].token}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-4 py-2.5 rounded-xl bg-[#800020] hover:bg-[#a00028] text-white border border-[#dfba73]/80 text-xs font-cinzel font-bold tracking-wider transition flex items-center justify-center gap-2 shadow-lg"
+                        >
+                          <Eye className="w-4 h-4 text-[#dfba73]" />
+                          Test With Guest Invite
+                        </a>
+                      )}
+                      <a
+                        href={`/templates/${currentTpl.id}/preview`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-4 py-2.5 rounded-xl bg-black/50 hover:bg-black/80 text-[#dfba73] hover:text-white border border-[#dfba73]/50 text-xs font-cinzel font-bold tracking-wider transition flex items-center justify-center gap-2"
+                      >
+                        <ExternalLink className="w-4 h-4" />
+                        Interactive Demo
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* All Available Templates Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {TEMPLATE_LIST.map((tpl) => {
+                const isActive = (settings.templateId || "royal-heritage") === tpl.id;
+                const isApplying = applyingTemplate === tpl.id;
+
+                return (
+                  <div
+                    key={tpl.id}
+                    className={`rounded-2xl border transition-all duration-300 flex flex-col overflow-hidden bg-[#1c1519] ${
+                      isActive
+                        ? "border-[#dfba73] shadow-2xl shadow-[#800020]/30 ring-2 ring-[#dfba73]/40"
+                        : "border-[#c5a059]/30 hover:border-[#dfba73]/70 hover:shadow-xl"
+                    }`}
+                  >
+                    {/* Visual Mockup Header */}
+                    <div
+                      className="p-6 relative overflow-hidden flex flex-col items-center justify-center text-center min-h-[160px]"
+                      style={{
+                        background: `linear-gradient(145deg, ${tpl.primaryColor} 0%, #110d10 100%)`,
+                      }}
+                    >
+                      <div className="absolute top-3 left-3">
+                        <span className="px-2.5 py-1 rounded-full text-[10px] font-cinzel font-bold tracking-wider uppercase bg-black/40 text-[#fdfbf7] border border-white/20 backdrop-blur-sm">
+                          {tpl.categoryLabel}
+                        </span>
+                      </div>
+
+                      {isActive && (
+                        <div className="absolute top-3 right-3">
+                          <span className="px-2.5 py-1 rounded-full text-[10px] font-cinzel font-bold tracking-wider uppercase bg-emerald-500/30 text-emerald-300 border border-emerald-400/50 backdrop-blur-sm flex items-center gap-1">
+                            <Check className="w-3 h-3" /> Active
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Mockup Wax Seal */}
+                      <div
+                        className={`w-14 h-14 rounded-full flex items-center justify-center shadow-2xl border-2 mb-2 ${tpl.styles.waxSealGradient}`}
+                        style={{
+                          borderColor: tpl.accentColor,
+                        }}
+                      >
+                        <Crown className="w-6 h-6 text-white drop-shadow-md" />
+                      </div>
+                      <span className="text-[11px] font-cinzel tracking-widest uppercase font-semibold text-white/90">
+                        {tpl.tagline}
+                      </span>
+                    </div>
+
+                    {/* Card Content */}
+                    <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
+                      <div>
+                        <div className="flex items-start justify-between gap-2 mb-1.5">
+                          <h4 className="font-cinzel text-lg font-bold text-[#dfba73]">
+                            {tpl.name}
+                          </h4>
+                          {tpl.badge && (
+                            <span className="px-2 py-0.5 rounded text-[9px] font-cinzel font-bold bg-[#dfba73]/20 text-[#dfba73] border border-[#dfba73]/40 shrink-0">
+                              {tpl.badge}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-[#fdfbf7]/70 leading-relaxed mb-3">
+                          {tpl.description}
+                        </p>
+
+                        {/* Color Swatches */}
+                        <div className="flex items-center gap-2 mb-3 pb-3 border-b border-white/10">
+                          <span className="text-[10px] text-[#fdfbf7]/50 font-mono">Palette:</span>
+                          <div className="flex items-center gap-1.5">
+                            {tpl.palette.map((swatch, sIdx) => (
+                              <span
+                                key={sIdx}
+                                className="w-4 h-4 rounded-full border border-white/30 shadow-sm"
+                                style={{ backgroundColor: swatch.hex }}
+                                title={`${swatch.name}: ${swatch.hex}`}
+                              />
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Features */}
+                        <ul className="space-y-1.5 text-xs text-[#fdfbf7]/70">
+                          {tpl.features.slice(0, 3).map((feat, idx) => (
+                            <li key={idx} className="flex items-start gap-1.5">
+                              <Sparkles className="w-3.5 h-3.5 text-[#dfba73] shrink-0 mt-0.5" />
+                              <span>{feat}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+
+                      {/* Action Buttons */}
+                      <div className="pt-2 flex items-center gap-2">
+                        {isActive ? (
+                          <div className="flex-1 py-2 rounded-xl bg-emerald-950/40 border border-emerald-600/40 text-emerald-300 text-xs font-cinzel font-bold flex items-center justify-center gap-1.5">
+                            <Check className="w-4 h-4" /> Active on Wedding
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => handleApplyTemplate(tpl.id)}
+                            disabled={isApplying}
+                            className="flex-1 py-2.5 rounded-xl bg-[#800020] hover:bg-[#990028] disabled:opacity-50 text-white border border-[#dfba73]/80 text-xs font-cinzel font-bold tracking-wider transition cursor-pointer flex items-center justify-center gap-1.5 shadow-md"
+                          >
+                            {isApplying ? (
+                              <>
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                Applying...
+                              </>
+                            ) : (
+                              <>
+                                <Sparkles className="w-3.5 h-3.5 text-[#dfba73]" />
+                                Apply to Wedding
+                              </>
+                            )}
+                          </button>
+                        )}
+
+                        <a
+                          href={`/templates/${tpl.id}/preview`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-3 py-2.5 rounded-xl bg-[#261c22] hover:bg-[#34242e] text-[#dfba73] hover:text-white border border-[#c5a059]/30 text-xs font-cinzel font-semibold transition flex items-center justify-center gap-1"
+                          title="Preview Template in Demo Mode"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                          <span className="hidden sm:inline">Preview</span>
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
 
