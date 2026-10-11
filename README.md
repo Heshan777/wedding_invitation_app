@@ -44,17 +44,19 @@ An expert-level, creative digital wedding invitation web application with a luxu
    npm install
    ```
 
-2. **Generate Database Client**:
+2. **Configure PostgreSQL**: Copy `.env.example` to `.env.local` and replace `DATABASE_URL` with your Neon, Supabase, or local PostgreSQL connection string.
+
+3. **Generate Database Client**:
    ```bash
    npx prisma generate
    ```
 
-3. **Run Development Server**:
+4. **Run Development Server**:
    ```bash
    npm run dev
    ```
 
-4. **Production Build**:
+5. **Production Build**:
    ```bash
    npm run build
    npm run start

@@ -30,6 +30,7 @@ import {
   getTemplate,
   InvitationTemplate,
 } from "@/lib/templates";
+import SriLankanPlanningTools from "@/components/SriLankanPlanningTools";
 
 import {
   Users,
@@ -202,6 +203,8 @@ type TimelineEvent = {
   time: string;
   title: string;
   desc: string;
+  location?: string;
+  mapUrl?: string;
 };
 
 type EventSettings = {
@@ -342,7 +345,7 @@ export function getAppBaseUrl(): string {
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<
-    "guests" | "photos" | "settings" | "tables" | "events" | "managers" | "templates"
+    "guests" | "photos" | "settings" | "tables" | "events" | "managers" | "templates" | "planner"
   >("guests");
   const [manager, setManager] = useState<ManagerProfile | null>(null);
   const [events, setEvents] = useState<WeddingEventItem[]>([]);
@@ -454,6 +457,10 @@ export default function AdminDashboard() {
   // QR Modal
   const [qrModalGuest, setQrModalGuest] = useState<Guest | null>(null);
   const [qrModalUrl, setQrModalUrl] = useState<string>("");
+
+  // WhatsApp Dispatcher Modal
+  const [whatsAppModalGuest, setWhatsAppModalGuest] = useState<Guest | null>(null);
+  const [whatsAppLang, setWhatsAppLang] = useState<"en" | "si" | "ta">("en");
 
   // Event Settings state
   const [settings, setSettings] = useState<EventSettings>({
@@ -698,10 +705,18 @@ export default function AdminDashboard() {
     let declinedCount = 0;
     let pendingCount = 0;
     let totalHeadcount = 0;
+    let openedCount = 0;
+    let unopenedCount = 0;
     const dietaryCounts: Record<string, number> = {};
 
     for (let i = 0; i < guests.length; i++) {
       const g = guests[i];
+      if (g.viewedAt) {
+        openedCount++;
+      } else {
+        unopenedCount++;
+      }
+
       const status = g.rsvpStatus;
       if (status === "ATTENDING") {
         attendingCount++;
@@ -722,6 +737,8 @@ export default function AdminDashboard() {
       declinedCount,
       pendingCount,
       totalHeadcount,
+      openedCount,
+      unopenedCount,
       dietaryCounts,
     };
   }, [guests]);
@@ -768,37 +785,68 @@ export default function AdminDashboard() {
     showToast("Guest list exported to CSV successfully!");
   }
 
-  // 1-Click WhatsApp Invitation Dispatcher
-  function handleSendWhatsApp(g: Guest) {
+  // Multilingual WhatsApp Message Generator
+  function getWhatsAppMessage(g: Guest, lang: "en" | "si" | "ta" = whatsAppLang) {
     const link = inviteLink(g.token);
     const salutationName = `${g.salutation} ${g.displayName}`.trim();
-    const formattedDate = new Date(settings.eventDate).toLocaleDateString("en-US", {
-      weekday: "long",
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
+    const formattedDate = settings.eventDate
+      ? new Date(settings.eventDate).toLocaleDateString("en-US", {
+          weekday: "long",
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        })
+      : "Date to be announced";
 
     const side = extractGuestSide(g.notes);
     const coupleParts = (settings.coupleNames || "").split(/&|and|\+/i).map((s) => s.trim()).filter(Boolean);
     const groomName = coupleParts[0] || "Groom";
     const brideName = coupleParts[1] || "Bride";
 
-    let intro = `We warmly invite you to celebrate the joyous Homecoming of *${settings.coupleNames}*! 🥂🍾`;
-    if (side === "GROOM") {
-      intro = `*${groomName}* warmly invites you to celebrate our joyous Homecoming with *${brideName}*! 🤵✨🥂`;
-    } else if (side === "BRIDE") {
-      intro = `*${brideName}* warmly invites you to celebrate our joyous Homecoming with *${groomName}*! 👰✨🥂`;
+    if (lang === "si") {
+      let intro = `${settings.coupleNames} අපගේ විවාහ මංගල්‍යය සහ හෝම්කමිං උත්සවය වෙනුවෙන් ඔබට සහ ඔබගේ පවුලේ සැමට සාදරයෙන් ආරාධනා කරමු! 🥂🍾`;
+      if (side === "GROOM") {
+        intro = `${groomName} සහ ${brideName} අපගේ විවාහ මංගල්‍යය වෙනුවෙන් ඔබට සාදරයෙන් ආරාධනා කරමු! 🤵✨🥂`;
+      } else if (side === "BRIDE") {
+        intro = `${brideName} සහ ${groomName} අපගේ විවාහ මංගල්‍යය වෙනුවෙන් ඔබට සාදරයෙන් ආරාධනා කරමු! 👰✨🥂`;
+      }
+      return `✨ *රාජකීය විවාහ මංගල ආරාධනය* ✨\n\nගෞරවනීය *${salutationName}*,\n\n${intro}\n\n📅 *දිනය:* ${formattedDate}\n📍 *ස්ථානය:* ${settings.venueName}\n🍽 *වෙන්කළ මේසය:* අංක #${String(g.tableNumber).padStart(2, "0")}\n\n👉 *ඔබගේ පුද්ගලීකෘත ආරාධනා පත්‍රය නැරඹීමට සහ සහභාගීත්වය තහවුරු කිරීමට (RSVP) මෙතැන ක්ලික් කරන්න:* \n${link}\n\nඔබගේ පැමිණීම අපි මහත් සේ අගය කරමු! 💖`;
     }
 
-    const text = `✨ *ROYAL WEDDING INVITATION* ✨\n\nDear *${salutationName}*,\n\n${intro}\n\n📅 *Date:* ${formattedDate}\n📍 *Venue:* ${settings.venueName}\n🍽 *Reserved Table:* Table #${String(g.tableNumber).padStart(2, "0")}\n\n👉 *View Your Personalized Luxury Invitation & RSVP:* \n${link}\n\nWe look forward to celebrating together! 💖`;
+    if (lang === "ta") {
+      return `✨ *திருமண அழைப்பிதழ்* ✨\n\nஅன்பான *${salutationName}*,\n\n*${settings.coupleNames}* அவர்களின் திருமண விழාවிற்கு தங்களை அன்புடன் அழைக்கின்றோம்! 🥂🍾\n\n📅 *திகதி:* ${formattedDate}\n📍 *இடம்:* ${settings.venueName}\n🍽 *மேசை எண்:* #${String(g.tableNumber).padStart(2, "0")}\n\n👉 *தங்களின் தனிப்பயனாக்கப்பட்ட அழைப்பிதழைப் பார்வையிட:* \n${link}\n\nதங்களின் வருகையை எதிர்நோக்குகின்றோம்! 💖`;
+    }
 
+    // Default English
+    let intro = `We warmly invite you to celebrate the wedding & homecoming of *${settings.coupleNames}*! 🥂🍾`;
+    if (side === "GROOM") {
+      intro = `*${groomName}* warmly invites you to celebrate our wedding & homecoming with *${brideName}*! 🤵✨🥂`;
+    } else if (side === "BRIDE") {
+      intro = `*${brideName}* warmly invites you to celebrate our wedding & homecoming with *${groomName}*! 👰✨🥂`;
+    }
+
+    return `✨ *ROYAL WEDDING INVITATION* ✨\n\nDear *${salutationName}*,\n\n${intro}\n\n📅 *Date:* ${formattedDate}\n📍 *Venue:* ${settings.venueName}\n🍽 *Reserved Table:* Table #${String(g.tableNumber).padStart(2, "0")}\n\n👉 *View Your Personalized Luxury Invitation & RSVP:* \n${link}\n\nWe look forward to celebrating together! 💖`;
+  }
+
+  // 1-Click WhatsApp Invitation Dispatcher
+  function handleSendWhatsApp(g: Guest) {
+    setWhatsAppModalGuest(g);
+  }
+
+  function dispatchWhatsAppMessage(g: Guest) {
+    const text = getWhatsAppMessage(g, whatsAppLang);
     const phoneClean = g.phone ? g.phone.replace(/[^0-9]/g, "") : "";
     const waUrl = phoneClean
       ? `https://api.whatsapp.com/send?phone=${phoneClean}&text=${encodeURIComponent(text)}`
       : `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
 
     window.open(waUrl, "_blank");
+  }
+
+  async function copyWhatsAppMessage(g: Guest) {
+    const text = getWhatsAppMessage(g, whatsAppLang);
+    await navigator.clipboard.writeText(text);
+    showToast(`WhatsApp message copied for ${g.displayName}!`);
   }
 
   // Bulk Import CSV submit
@@ -2263,6 +2311,21 @@ export default function AdminDashboard() {
                 {TEMPLATE_LIST.length}
               </span>
             </button>
+            <button
+              onClick={() => setActiveTab("planner")}
+              className={`w-full xl:w-auto royal-nav-tab px-3.5 sm:px-4 py-2.5 rounded-xl text-xs font-cinzel font-bold tracking-wider transition cursor-pointer flex items-center justify-center sm:justify-start gap-2 touch-manipulation min-h-[44px] ${
+                activeTab === "planner"
+                  ? "bg-[#800020] text-[#fdfbf7] border border-[#dfba73]/80 shadow-lg shadow-[#800020]/40 ring-1 ring-[#dfba73]/30"
+                  : "bg-[#231a20] text-[#fdfbf7]/70 hover:bg-[#c5a059]/15 border border-[#c5a059]/20"
+              }`}
+            >
+              <Utensils className="w-4 h-4 text-[#dfba73] shrink-0" />
+              <span className="truncate hidden sm:inline">Planning Toolkit</span>
+              <span className="truncate sm:hidden">Planner</span>
+              <span className="px-1.5 py-0.5 rounded-full text-[10px] font-mono bg-[#181216] text-[#dfba73] border border-[#c5a059]/30">
+                🇱🇰 Tools
+              </span>
+            </button>
             {manager?.role === "SUPER_ADMIN" && (
               <button
                 onClick={() => setActiveTab("events")}
@@ -2382,6 +2445,30 @@ export default function AdminDashboard() {
                       {chip.label}
                     </button>
                   ))}
+
+                  {/* 1-Click Open Status Quick Chips */}
+                  <div className="flex items-center gap-1.5 pl-2 sm:border-l sm:border-[#c5a059]/30">
+                    <button
+                      onClick={() => setFilterViewed(filterViewed === "VIEWED" ? "ALL" : "VIEWED")}
+                      className={`px-2.5 py-1 rounded-lg text-[11px] font-cinzel font-semibold whitespace-nowrap transition cursor-pointer shrink-0 border ${
+                        filterViewed === "VIEWED"
+                          ? "bg-emerald-900 text-emerald-200 border-emerald-500 shadow-sm"
+                          : "bg-[#231a20] text-emerald-400/80 border-emerald-900/40 hover:bg-emerald-950/40"
+                      }`}
+                    >
+                      ✓ Opened ({rsvpStats.openedCount})
+                    </button>
+                    <button
+                      onClick={() => setFilterViewed(filterViewed === "UNVIEWED" ? "ALL" : "UNVIEWED")}
+                      className={`px-2.5 py-1 rounded-lg text-[11px] font-cinzel font-semibold whitespace-nowrap transition cursor-pointer shrink-0 border ${
+                        filterViewed === "UNVIEWED"
+                          ? "bg-amber-950 text-amber-300 border-amber-600 shadow-sm"
+                          : "bg-[#231a20] text-amber-400/70 border-amber-900/40 hover:bg-amber-950/40"
+                      }`}
+                    >
+                      Unopened ({rsvpStats.unopenedCount})
+                    </button>
+                  </div>
                 </div>
 
                 {/* Secondary Select Dropdowns */}
@@ -2689,6 +2776,25 @@ export default function AdminDashboard() {
                             <Clock className="w-3 h-3" /> Pending
                           </span>
                         )}
+
+                        {/* Link Open Tracking Status Badge */}
+                        {g.viewedAt ? (
+                          <div
+                            className="text-[10px] text-emerald-400 font-sans flex items-center gap-1"
+                            title={`Opened on ${new Date(g.viewedAt).toLocaleString()}`}
+                          >
+                            <Eye className="w-3 h-3 text-emerald-400 shrink-0" />
+                            <span>
+                              Opened {new Date(g.viewedAt).toLocaleDateString([], { month: "short", day: "numeric" })}
+                            </span>
+                          </div>
+                        ) : (
+                          <div className="text-[10px] text-[#fdfbf7]/40 font-sans flex items-center gap-1">
+                            <Clock className="w-3 h-3 shrink-0" />
+                            <span>Unopened</span>
+                          </div>
+                        )}
+
                         {g.dietary && g.dietary !== "NONE" && (
                           <div className="text-[10px] text-[#edd892] font-sans">
                             🥗 {g.dietary}
@@ -3421,6 +3527,17 @@ export default function AdminDashboard() {
                           value={item.title}
                           onChange={(e) => updateTimelineItem(idx, "title", e.target.value)}
                           placeholder="e.g. Poruwa Ceremony & Blessings"
+                          className="w-full px-3 py-2 rounded-lg bg-[#1c1419] border border-[#c5a059]/40 text-xs text-[#fdfbf7] focus:outline-none min-h-[42px]"
+                        />
+                      </div>
+                      <div className="w-full sm:w-44">
+                        <label className="block text-[10px] uppercase text-[#dfba73] font-cinzel font-semibold mb-1">
+                          Location / Hall (Optional)
+                        </label>
+                        <input
+                          value={item.location || ""}
+                          onChange={(e) => updateTimelineItem(idx, "location", e.target.value)}
+                          placeholder="e.g. Grand Ballroom"
                           className="w-full px-3 py-2 rounded-lg bg-[#1c1419] border border-[#c5a059]/40 text-xs text-[#fdfbf7] focus:outline-none min-h-[42px]"
                         />
                       </div>
@@ -5533,6 +5650,18 @@ export default function AdminDashboard() {
           </div>
         )}
 
+        {/* TAB 8: SRI LANKAN PLANNING TOOLS (LIQUOR & PORUWA) */}
+        {activeTab === "planner" && (
+          <SriLankanPlanningTools
+            guests={guests}
+            rsvpStats={rsvpStats}
+            coupleNames={settings.coupleNames}
+            eventDate={settings.eventDate}
+            venueName={settings.venueName}
+            activeEventId={activeEventId}
+          />
+        )}
+
       </div>
 
       {/* ADD / EDIT GUEST MODAL */}
@@ -5869,6 +5998,121 @@ export default function AdminDashboard() {
             >
               <Copy className="w-3.5 h-3.5" /> Copy Invite URL
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* 1-CLICK WHATSAPP PERSONALIZED DISPATCHER MODAL */}
+      {whatsAppModalGuest && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-3 sm:p-4 overflow-y-auto overscroll-contain">
+          <div className="relative w-full max-w-lg max-h-[92dvh] overflow-y-auto overscroll-contain rounded-3xl bg-[#1c1519] border border-[#c5a059]/60 p-5 sm:p-7 shadow-2xl my-auto">
+            <button
+              onClick={() => setWhatsAppModalGuest(null)}
+              className="absolute top-4 right-4 text-[#fdfbf7]/60 hover:text-[#dfba73] cursor-pointer min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg hover:bg-[#c5a059]/10 transition-colors"
+              aria-label="Close WhatsApp Modal"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-9 h-9 rounded-xl bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center">
+                <Send className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="font-cinzel text-lg font-bold text-[#fdfbf7]">
+                  WhatsApp 1-Click Dispatch
+                </h3>
+                <p className="text-[11px] text-[#dfba73]">
+                  Personalized Royal Sri Lankan Invitation Link
+                </p>
+              </div>
+            </div>
+
+            {/* Recipient Card */}
+            <div className="p-3.5 rounded-2xl bg-[#120d10] border border-[#c5a059]/30 mb-4 flex items-center justify-between gap-3">
+              <div>
+                <h4 className="font-cinzel text-sm font-bold text-[#fdfbf7]">
+                  {whatsAppModalGuest.salutation} {whatsAppModalGuest.displayName}
+                </h4>
+                <div className="flex items-center gap-2 text-xs text-[#dfba73]/80 mt-0.5">
+                  <span>Table #{String(whatsAppModalGuest.tableNumber).padStart(2, "0")}</span>
+                  <span>•</span>
+                  <span>{inviteTypeLabels[whatsAppModalGuest.inviteType]}</span>
+                  <span>•</span>
+                  <span>
+                    {whatsAppModalGuest.viewedAt ? (
+                      <span className="text-emerald-400 font-semibold">✓ Link Opened</span>
+                    ) : (
+                      <span className="text-amber-400/70">Unopened</span>
+                    )}
+                  </span>
+                </div>
+              </div>
+              <div className="text-right shrink-0">
+                <span className="text-[11px] font-mono text-[#fdfbf7]/70 bg-[#261c22] px-2.5 py-1 rounded-lg border border-[#c5a059]/20 block">
+                  {whatsAppModalGuest.phone || "No phone number"}
+                </span>
+              </div>
+            </div>
+
+            {/* Language Selector */}
+            <div className="mb-3">
+              <label className="text-[11px] font-cinzel font-semibold text-[#fdfbf7]/70 uppercase tracking-wider block mb-1.5">
+                Select Invitation Language:
+              </label>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { id: "en", label: "English", sub: "Global Royal" },
+                  { id: "si", label: "සිංහල", sub: "සාම්ප්‍රදායික" },
+                  { id: "ta", label: "தமிழ்", sub: "மங்களகரமான" },
+                ].map((lang) => (
+                  <button
+                    key={lang.id}
+                    type="button"
+                    onClick={() => setWhatsAppLang(lang.id as any)}
+                    className={`py-2 px-3 rounded-xl border text-center transition cursor-pointer ${
+                      whatsAppLang === lang.id
+                        ? "bg-[#800020] text-[#edd892] border-[#dfba73] shadow-md shadow-[#800020]/40 font-bold"
+                        : "bg-[#231a20] text-[#fdfbf7]/70 border-[#c5a059]/20 hover:bg-[#c5a059]/10 font-medium"
+                    }`}
+                  >
+                    <div className="text-xs font-cinzel">{lang.label}</div>
+                    <div className="text-[9px] opacity-70 font-sans">{lang.sub}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Formatted Message Preview */}
+            <div className="mb-4">
+              <label className="text-[11px] font-cinzel font-semibold text-[#fdfbf7]/70 uppercase tracking-wider block mb-1.5">
+                Message Preview:
+              </label>
+              <div className="p-3.5 rounded-2xl bg-[#0b141a] border border-emerald-900/60 text-[11px] text-[#e9edef] whitespace-pre-wrap font-sans max-h-52 overflow-y-auto shadow-inner leading-relaxed select-text">
+                {getWhatsAppMessage(whatsAppModalGuest, whatsAppLang)}
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex flex-col sm:flex-row items-center gap-2.5">
+              <button
+                type="button"
+                onClick={() => copyWhatsAppMessage(whatsAppModalGuest)}
+                className="w-full sm:w-1/2 py-2.5 rounded-xl bg-[#261c22] border border-[#c5a059]/40 text-[#dfba73] hover:bg-[#c5a059]/15 text-xs font-cinzel font-bold flex items-center justify-center gap-1.5 cursor-pointer min-h-[44px] transition"
+              >
+                <Copy className="w-4 h-4" /> Copy Text
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  dispatchWhatsAppMessage(whatsAppModalGuest);
+                  setWhatsAppModalGuest(null);
+                }}
+                className="w-full sm:w-1/2 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 text-white shadow-lg text-xs font-cinzel font-bold flex items-center justify-center gap-1.5 cursor-pointer min-h-[44px] transition"
+              >
+                <Send className="w-4 h-4" /> Send on WhatsApp
+              </button>
+            </div>
           </div>
         </div>
       )}

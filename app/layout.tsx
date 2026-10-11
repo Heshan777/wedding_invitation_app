@@ -39,26 +39,34 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || "https://wedding-invitation-app-silk.vercel.app"),
-  title: "Royal Wedding & Homecoming Invitation | Sandharu & Sanduni",
-  description: "Join us with joy and love as we celebrate the sacred union and homecoming of Sandharu & Sanduni.",
-  keywords: ["Wedding Invitation", "Homecoming", "Sandharu & Sanduni", "Sri Lanka Wedding", "Royal Invitation"],
+  title: "INVITATION.LK | Digital Wedding Invitations for Sri Lankan Weddings",
+  description: "Your wedding invitation, delivered on WhatsApp. Beautiful digital wedding invitation websites with live RSVP, Poruwa schedules, seating, and personalized guest links. From Rs. 5,000.",
+  keywords: [
+    "Digital Wedding Invitation Sri Lanka",
+    "invitation.lk",
+    "Wedding Invitation WhatsApp",
+    "Poruwa Ceremony Invitation",
+    "Sri Lanka Wedding Tech",
+    "RSVP Wedding Dashboard",
+    "Homecoming Invitation",
+  ],
   openGraph: {
-    title: "Sandharu & Sanduni's Wedding & Homecoming Invitation",
-    description: "You are cordially invited to celebrate the homecoming of Sandharu & Sanduni.",
+    title: "INVITATION.LK | Digital Wedding Invitations for Sri Lankan Weddings",
+    description: "Your wedding invitation, delivered on WhatsApp. Personal guest links, live RSVP, countdown and seating. From Rs. 5,000.",
     images: [
       {
         url: "/images/couple-share.png",
         width: 1200,
         height: 630,
-        alt: "Sandharu & Sanduni's Homecoming Invitation",
+        alt: "INVITATION.LK - Digital Wedding Invitations",
       },
     ],
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Sandharu & Sanduni's Wedding & Homecoming Invitation",
-    description: "You are cordially invited to celebrate the homecoming of Sandharu & Sanduni.",
+    title: "INVITATION.LK | Digital Wedding Invitations for Sri Lankan Weddings",
+    description: "Your wedding invitation, delivered on WhatsApp. Personal guest links, live RSVP, countdown and seating. From Rs. 5,000.",
     images: ["/images/couple-share.png"],
   },
 };

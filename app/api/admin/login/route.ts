@@ -1,6 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyManagerCredentials, createManagerSession } from "@/lib/auth";
 
+function isDatabaseUnavailable(error: unknown) {
+  const candidate = error as { code?: string; message?: string } | null;
+  return (
+    candidate?.code === "P1001" ||
+    candidate?.code === "P1002" ||
+    candidate?.message?.includes("Can't reach database server")
+  );
+}
+
 export async function POST(req: NextRequest) {
   try {
     const { username, password } = await req.json();
@@ -24,13 +33,20 @@ export async function POST(req: NextRequest) {
         role: manager.role,
       },
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("Login error:", err);
+    if (isDatabaseUnavailable(err)) {
+      return NextResponse.json(
+        { error: "Authentication service is temporarily unavailable" },
+        { status: 503 }
+      );
+    }
+
     return NextResponse.json(
       {
         error: "Authentication failed",
-        details: err?.message || String(err),
-        code: err?.code || "INTERNAL_ERROR",
+        details: err instanceof Error ? err.message : String(err),
+        code: (err as { code?: string })?.code || "INTERNAL_ERROR",
       },
       { status: 500 }
     );

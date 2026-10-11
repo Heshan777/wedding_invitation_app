@@ -1526,7 +1526,7 @@ export default function InvitationView({
               {/* Continuous Vertical Golden Timeline Ribbon Line */}
               <div className="absolute left-2 sm:left-3 top-3 bottom-3 w-0.5 bg-gradient-to-b from-[#bda06d]/20 via-[#dfba73] to-[#bda06d]/20 pointer-events-none" />
 
-              {parsedTimeline.map((evt: { time?: string; title?: string; desc?: string }, idx: number) => (
+              {parsedTimeline.map((evt: { time?: string; title?: string; desc?: string; location?: string; mapUrl?: string }, idx: number) => (
                 <ScrollReveal
                   key={idx}
                   variant="fade-up"
@@ -1544,12 +1544,29 @@ export default function InvitationView({
                         {evt.time}
                       </div>
                       <div className="flex-1">
-                        <h4 className="font-cinzel text-xs sm:text-sm font-bold text-[#1a1517] group-hover:text-[#800020] transition-colors">
-                          {evt.title}
-                        </h4>
+                        <div className="flex items-center justify-between gap-2 flex-wrap">
+                          <h4 className="font-cinzel text-xs sm:text-sm font-bold text-[#1a1517] group-hover:text-[#800020] transition-colors">
+                            {evt.title}
+                          </h4>
+                          {evt.location && (
+                            <span className="text-[10px] font-sans text-[#800020] bg-[#800020]/10 px-2 py-0.5 rounded-md flex items-center gap-1 font-semibold shrink-0">
+                              <MapPin className="w-2.5 h-2.5" /> {evt.location}
+                            </span>
+                          )}
+                        </div>
                         <p className="text-[11px] sm:text-xs text-[#5a483e] font-sans mt-0.5 leading-relaxed">
                           {evt.desc}
                         </p>
+                        {evt.mapUrl && (
+                          <a
+                            href={evt.mapUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-[10px] text-[#800020] hover:text-[#dfba73] font-cinzel font-bold mt-1.5 transition"
+                          >
+                            <MapPin className="w-3 h-3" /> Get Venue Directions →
+                          </a>
+                        )}
                       </div>
                     </div>
                   </div>
