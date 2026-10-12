@@ -21,10 +21,24 @@ export async function GET(req: NextRequest) {
       select: { id: true },
     });
 
+    let suggestedSlug: string | undefined = undefined;
+    if (existing) {
+      const year = new Date().getFullYear();
+      const candidate = `${cleanSlug}-${year}`;
+      const candidateCheck = await prisma.weddingEvent.findUnique({
+        where: { slug: candidate },
+        select: { id: true },
+      });
+      suggestedSlug = candidateCheck ? `${cleanSlug}-${Math.floor(100 + Math.random() * 900)}` : candidate;
+    }
+
     return NextResponse.json({
       available: !existing,
       slug: cleanSlug,
-      message: existing ? "This link is already taken." : "This link is available!",
+      suggestedSlug,
+      message: existing
+        ? `This link is already reserved. Try "${suggestedSlug}" instead.`
+        : "This link is available!",
     });
   } catch (error: any) {
     return NextResponse.json({ available: false, error: error.message }, { status: 500 });

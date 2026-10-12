@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import QRCode from "qrcode";
 import {
   uploadToCloudinary,
@@ -1714,6 +1715,35 @@ export default function AdminDashboard() {
       )}
 
       <div className="max-w-6xl mx-auto">
+        {/* Tier 0: Official WedLink Brand Banner */}
+        <div className="flex items-center justify-between pb-3 mb-3 border-b border-[#c5a059]/20">
+          <Link href="/" className="flex items-center gap-2.5 group">
+            <div className="relative h-7 sm:h-8 w-28 sm:w-36 overflow-hidden rounded-lg shadow-sm">
+              <Image
+                src="/images/wedlink-logo.png"
+                alt="WedLink.lk"
+                fill
+                priority
+                sizes="144px"
+                className="object-contain object-left group-hover:scale-105 transition drop-shadow"
+              />
+            </div>
+            <span className="text-[10px] uppercase tracking-widest text-[#dfba73] font-cinzel font-semibold hidden sm:inline border-l border-[#dfba73]/30 pl-2">
+              Management Suite
+            </span>
+          </Link>
+          <div className="flex items-center gap-3 text-xs font-cinzel text-[#dfba73]">
+            <Link
+              href="/"
+              target="_blank"
+              className="hover:underline flex items-center gap-1 opacity-80 hover:opacity-100 transition"
+            >
+              <span>Visit WedLink.lk</span>
+              <ExternalLink className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+        </div>
+
         {/* Tier 1: Top Navigation Bar (Manager Identity + System Actions & Switcher) */}
         <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-[#c5a059]/25">
           {/* Left: Event Manager Profile Avatar & Interactive Identity Hub */}
@@ -5527,39 +5557,55 @@ export default function AdminDashboard() {
                         : "border-[#c5a059]/30 hover:border-[#dfba73]/70 hover:shadow-xl"
                     }`}
                   >
-                    {/* Visual Mockup Header */}
+                    {/* Visual Mockup Header with Actual Phone Preview */}
                     <div
-                      className="p-6 relative overflow-hidden flex flex-col items-center justify-center text-center min-h-[160px]"
+                      className="relative overflow-hidden flex flex-col items-center justify-center text-center h-[200px] group/card"
                       style={{
                         background: `linear-gradient(145deg, ${tpl.primaryColor} 0%, #110d10 100%)`,
                       }}
                     >
-                      <div className="absolute top-3 left-3">
-                        <span className="px-2.5 py-1 rounded-full text-[10px] font-cinzel font-bold tracking-wider uppercase bg-black/40 text-[#fdfbf7] border border-white/20 backdrop-blur-sm">
+                      {tpl.previewImage ? (
+                        <div className="relative w-full h-full flex items-center justify-center p-2 bg-gradient-to-b from-black/40 via-transparent to-black/80">
+                          <div className="relative w-28 h-44 rounded-2xl overflow-hidden shadow-2xl border border-white/20 transform group-hover/card:scale-105 transition-transform duration-300">
+                            <Image
+                              src={tpl.previewImage}
+                              alt={tpl.name}
+                              fill
+                              className="object-cover"
+                              sizes="112px"
+                            />
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="p-6 w-full h-full flex flex-col items-center justify-center">
+                          {/* Mockup Wax Seal */}
+                          <div
+                            className={`w-14 h-14 rounded-full flex items-center justify-center shadow-2xl border-2 mb-2 ${tpl.styles.waxSealGradient}`}
+                            style={{
+                              borderColor: tpl.accentColor,
+                            }}
+                          >
+                            <Crown className="w-6 h-6 text-white drop-shadow-md" />
+                          </div>
+                          <span className="text-[11px] font-cinzel tracking-widest uppercase font-semibold text-white/90">
+                            {tpl.tagline}
+                          </span>
+                        </div>
+                      )}
+
+                      <div className="absolute top-3 left-3 z-10">
+                        <span className="px-2.5 py-1 rounded-full text-[10px] font-cinzel font-bold tracking-wider uppercase bg-black/60 text-[#fdfbf7] border border-white/20 backdrop-blur-sm">
                           {tpl.categoryLabel}
                         </span>
                       </div>
 
                       {isActive && (
-                        <div className="absolute top-3 right-3">
-                          <span className="px-2.5 py-1 rounded-full text-[10px] font-cinzel font-bold tracking-wider uppercase bg-emerald-500/30 text-emerald-300 border border-emerald-400/50 backdrop-blur-sm flex items-center gap-1">
+                        <div className="absolute top-3 right-3 z-10">
+                          <span className="px-2.5 py-1 rounded-full text-[10px] font-cinzel font-bold tracking-wider uppercase bg-emerald-500/80 text-emerald-100 border border-emerald-300/50 backdrop-blur-sm flex items-center gap-1 shadow-lg">
                             <Check className="w-3 h-3" /> Active
                           </span>
                         </div>
                       )}
-
-                      {/* Mockup Wax Seal */}
-                      <div
-                        className={`w-14 h-14 rounded-full flex items-center justify-center shadow-2xl border-2 mb-2 ${tpl.styles.waxSealGradient}`}
-                        style={{
-                          borderColor: tpl.accentColor,
-                        }}
-                      >
-                        <Crown className="w-6 h-6 text-white drop-shadow-md" />
-                      </div>
-                      <span className="text-[11px] font-cinzel tracking-widest uppercase font-semibold text-white/90">
-                        {tpl.tagline}
-                      </span>
                     </div>
 
                     {/* Card Content */}

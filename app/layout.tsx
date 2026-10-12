@@ -39,9 +39,10 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || "https://wedding-invitation-app-silk.vercel.app"),
-  title: "INVITATION.LK | Digital Wedding Invitations for Sri Lankan Weddings",
+  title: "WedLink.lk | Digital Wedding Invitations for Sri Lankan Weddings",
   description: "Your wedding invitation, delivered on WhatsApp. Beautiful digital wedding invitation websites with live RSVP, Poruwa schedules, seating, and personalized guest links. From Rs. 5,000.",
   keywords: [
+    "WedLink.lk",
     "Digital Wedding Invitation Sri Lanka",
     "invitation.lk",
     "Wedding Invitation WhatsApp",
@@ -50,24 +51,28 @@ export const metadata: Metadata = {
     "RSVP Wedding Dashboard",
     "Homecoming Invitation",
   ],
+  icons: {
+    icon: "/images/wedlink-logo.png",
+    apple: "/images/wedlink-logo.png",
+  },
   openGraph: {
-    title: "INVITATION.LK | Digital Wedding Invitations for Sri Lankan Weddings",
+    title: "WedLink.lk | Digital Wedding Invitations for Sri Lankan Weddings",
     description: "Your wedding invitation, delivered on WhatsApp. Personal guest links, live RSVP, countdown and seating. From Rs. 5,000.",
     images: [
       {
-        url: "/images/couple-share.png",
-        width: 1200,
-        height: 630,
-        alt: "INVITATION.LK - Digital Wedding Invitations",
+        url: "/images/wedlink-logo.png",
+        width: 848,
+        height: 170,
+        alt: "WedLink.lk - Official Logo",
       },
     ],
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "INVITATION.LK | Digital Wedding Invitations for Sri Lankan Weddings",
+    title: "WedLink.lk | Digital Wedding Invitations for Sri Lankan Weddings",
     description: "Your wedding invitation, delivered on WhatsApp. Personal guest links, live RSVP, countdown and seating. From Rs. 5,000.",
-    images: ["/images/couple-share.png"],
+    images: ["/images/wedlink-logo.png"],
   },
 };
 
@@ -96,7 +101,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           }}
         />
       </head>
-      <body className={`${cinzel.variable} ${playfair.variable} ${alex.variable} ${plusJakarta.variable} min-h-full flex flex-col bg-[#121013] text-[#fdfbf7] selection:bg-[#c5a059]/30 selection:text-[#f7e4be]`}>
+      <body
+        suppressHydrationWarning
+        className={`${cinzel.variable} ${playfair.variable} ${alex.variable} ${plusJakarta.variable} min-h-full flex flex-col bg-[#121013] text-[#fdfbf7] selection:bg-[#c5a059]/30 selection:text-[#f7e4be]`}
+      >
         {children}
       </body>
     </html>

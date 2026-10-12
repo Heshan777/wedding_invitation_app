@@ -12,14 +12,19 @@ export default async function WeddingPreviewPage({
   const { slug } = await params;
 
   // Find the specific wedding event by slug
-  const event = await prisma.weddingEvent.findUnique({
-    where: { slug },
-    include: {
-      photos: {
-        orderBy: { order: "asc" },
+  let event = null;
+  try {
+    event = await prisma.weddingEvent.findUnique({
+      where: { slug },
+      include: {
+        photos: {
+          orderBy: { order: "asc" },
+        },
       },
-    },
-  });
+    });
+  } catch (error) {
+    console.warn("Database connection issue when loading wedding event:", error);
+  }
 
   if (!event) {
     notFound();

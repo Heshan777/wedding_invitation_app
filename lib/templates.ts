@@ -8,12 +8,17 @@ export interface InvitationTemplate {
   name: string;
   tagline: string;
   description: string;
-  category: "classic" | "modern" | "botanical" | "celestial";
+  category: "classic" | "modern" | "botanical" | "celestial" | "traditional" | "luxury" | "minimalist";
   categoryLabel: string;
   badge?: string;
   primaryColor: string;
   accentColor: string;
   palette: ColorSwatch[];
+  coupleDemoNames: string;
+  demoDate: string;
+  coverStyle: "mandala" | "arch-doors" | "wax-envelope" | "floral-silk" | "luxury-gate" | "minimalist-modern";
+  previewAccentRgb?: string;
+  previewImage?: string;
   styles: {
     // Page & Backdrop
     pageBg: string;
@@ -48,6 +53,239 @@ export interface InvitationTemplate {
 }
 
 export const INVITATION_TEMPLATES: Record<string, InvitationTemplate> = {
+  // 1. Traditional Poruwa & Gold Mandala (Screen 1 from user photo: Nethmi & Sanuja)
+  "golden-mandala-heritage": {
+    id: "golden-mandala-heritage",
+    name: "Golden Mandala & Silk",
+    tagline: "Auspicious Poruwa Mandala & Gilded Silk Brocade",
+    description: "Ornate traditional Sri Lankan aesthetic with intricate sacred mandala filigree, draping cream silk curtains, and auspicious golden typography.",
+    category: "traditional",
+    categoryLabel: "Traditional Sri Lankan",
+    badge: "Trending in Colombo",
+    primaryColor: "#c5a059",
+    accentColor: "#8b1e2a",
+    coupleDemoNames: "Nethmi & Sanuja",
+    demoDate: "Saturday, 12th December 2026",
+    coverStyle: "mandala",
+    previewAccentRgb: "197, 160, 89",
+    previewImage: "/images/templates/thumb-golden-mandala.png",
+    palette: [
+      { name: "Gilded Mandala", hex: "#c5a059" },
+      { name: "Cream Silk", hex: "#fcf8f0" },
+      { name: "Crimson Maroon", hex: "#8b1e2a" },
+      { name: "Warm Champagne", hex: "#edd892" },
+      { name: "Antique Filigree", hex: "#9e7834" },
+    ],
+    styles: {
+      pageBg: "bg-[#fcf8f0]",
+      radialGlow: "rgba(197, 160, 89, 0.3)",
+      envelopeBoxGradient: "from-[#f7eedf] via-[#efe3cc] to-[#e4d2b2]",
+      envelopeFlapGradient: "from-[#edd892] via-[#dfba73] to-[#c5a059]",
+      envelopePocketGradient: "from-[#e8d5b5] via-[#f2e6d3] to-[#fcf8f0]",
+      envelopeBorder: "border-[#c5a059]",
+      waxSealGradient: "bg-gradient-to-br from-[#c5a059] via-[#edd892] to-[#9e7834]",
+      waxSealBorder: "border-[#ffd700]",
+      waxSealGlow: "rgba(197, 160, 89, 0.4)",
+      waxSealText: "text-[#422c07]",
+      cardBg: "from-[#fffdfa] via-[#fcf8f0] to-[#f6ecda]",
+      cardBorder: "border-[#c5a059]",
+      cornerFlourishColor: "#c5a059",
+      headerAccentColor: "#8b1e2a",
+      textPrimary: "#362208",
+      textSecondary: "#8a5d20",
+      buttonShimmerGradient: "from-[#c5a059] via-[#dfba73] to-[#a87e2e]",
+      buttonText: "text-[#362208]",
+      fallingDecorType: "petals",
+    },
+    features: [
+      "Sacred Gold Mandala Heading",
+      "Draping Ivory Silk Fabric Texture",
+      "Traditional Poruwa Auspicious Timings",
+      "Sinhala & English Bilingual Invitation",
+      "Custom Guest Salutations & Table Cards",
+    ],
+    recommendedMusicTitle: "Auspicious Poruwa Flute & Magul Bera",
+    defaultDressCode: {
+      title: "Traditional Splendor / Kandyan Silk",
+      description: "Osariya or traditional national attire with ivory, gold, or champagne accents.",
+    },
+  },
+
+  // 2. Botanical Silk Sage (Screen 2 from user photo: Sanduni & Ravindu)
+  "botanical-silk-sanduni": {
+    id: "botanical-silk-sanduni",
+    name: "Botanical Silk & Gold",
+    tagline: "Eucalyptus Foliage, Gold Mandala & Pure Ivory Silk",
+    description: "A harmonious fusion of Sri Lankan golden mandala crest with soft watercolor eucalyptus greenery and ripples of elegant ivory satin fabric.",
+    category: "botanical",
+    categoryLabel: "Garden & Botanical",
+    badge: "Eco-Luxury",
+    primaryColor: "#2d6a4f",
+    accentColor: "#c5a059",
+    coupleDemoNames: "Sanduni & Ravindu",
+    demoDate: "Saturday, 12th December 2026",
+    coverStyle: "floral-silk",
+    previewAccentRgb: "45, 106, 79",
+    previewImage: "/images/templates/thumb-botanical-silk.png",
+    palette: [
+      { name: "Eucalyptus Green", hex: "#2d6a4f" },
+      { name: "Mandala Gold", hex: "#c5a059" },
+      { name: "Soft Silk Cream", hex: "#fbfcf9" },
+      { name: "Champagne Glow", hex: "#e9d8a6" },
+      { name: "Sage Mist", hex: "#52796f" },
+    ],
+    styles: {
+      pageBg: "bg-[#f8faf7]",
+      radialGlow: "rgba(45, 106, 79, 0.25)",
+      envelopeBoxGradient: "from-[#ecf3eb] via-[#dfebde] to-[#d3e3d2]",
+      envelopeFlapGradient: "from-[#c5a059] via-[#edd892] to-[#a87e2e]",
+      envelopePocketGradient: "from-[#dce9da] via-[#eaf2e9] to-[#f8faf7]",
+      envelopeBorder: "border-[#2d6a4f]/60",
+      waxSealGradient: "bg-gradient-to-br from-[#2d6a4f] via-[#40916c] to-[#1b4332]",
+      waxSealBorder: "border-[#e9d8a6]",
+      waxSealGlow: "rgba(45, 106, 79, 0.4)",
+      waxSealText: "text-[#f8faf7]",
+      cardBg: "from-[#ffffff] via-[#f7faf6] to-[#eef4ee]",
+      cardBorder: "border-[#2d6a4f]/40",
+      cornerFlourishColor: "#2d6a4f",
+      headerAccentColor: "#c5a059",
+      textPrimary: "#1b4332",
+      textSecondary: "#40916c",
+      buttonShimmerGradient: "from-[#2d6a4f] via-[#52796f] to-[#1b4332]",
+      buttonText: "text-[#ffffff]",
+      fallingDecorType: "leaves",
+    },
+    features: [
+      "Watercolor Botanical Foliage Corners",
+      "Gilded Auspicious Crest & Monogram",
+      "Interactive Google Maps Directions",
+      "Live RSVP Status with Dietary Options",
+      "Guest Personalized WhatsApp Share",
+    ],
+    recommendedMusicTitle: "Acoustic Forest Symphony & Spanish Guitar",
+    defaultDressCode: {
+      title: "Garden Elegance & Earth Tones",
+      description: "Semi-formal garden attire or tropical linen in natural tones of sage, ivory, and champagne.",
+    },
+  },
+
+  // 3. Cathedral White Palace Doors (Screen 3 from user photo: Shenali & Rovan)
+  "cathedral-palace-doors": {
+    id: "cathedral-palace-doors",
+    name: "Cathedral Palace Doors",
+    tagline: "Grand Ivory Carved French Doors & Gilded Brass Handles",
+    description: "A show-stopping interactive cathedral opening. Guests tap the antique brass door knockers as the regal double doors swing open to reveal the wedding decree.",
+    category: "classic",
+    categoryLabel: "Classic Royal",
+    badge: "Interactive Doors",
+    primaryColor: "#4a3b32",
+    accentColor: "#c5a059",
+    coupleDemoNames: "Shenali & Rovan",
+    demoDate: "Saturday, 12th December 2026",
+    coverStyle: "arch-doors",
+    previewAccentRgb: "197, 160, 89",
+    previewImage: "/images/templates/thumb-cathedral-doors.png",
+    palette: [
+      { name: "French Palace Ivory", hex: "#fcfaf7" },
+      { name: "Carved Wood Cream", hex: "#eee6dc" },
+      { name: "Antique Brass Gold", hex: "#c5a059" },
+      { name: "Deep Charcoal", hex: "#2b2623" },
+      { name: "Quatrefoil Gold", hex: "#edd892" },
+    ],
+    styles: {
+      pageBg: "bg-[#fcfaf7]",
+      radialGlow: "rgba(197, 160, 89, 0.3)",
+      envelopeBoxGradient: "from-[#f5eee6] via-[#eae0d5] to-[#decbc0]",
+      envelopeFlapGradient: "from-[#edd892] via-[#dfba73] to-[#c5a059]",
+      envelopePocketGradient: "from-[#decbc0] via-[#ede4da] to-[#fcfaf7]",
+      envelopeBorder: "border-[#c5a059]",
+      waxSealGradient: "bg-gradient-to-br from-[#c5a059] via-[#dfba73] to-[#9e7834]",
+      waxSealBorder: "border-[#ffffff]",
+      waxSealGlow: "rgba(197, 160, 89, 0.4)",
+      waxSealText: "text-[#2b2623]",
+      cardBg: "from-[#ffffff] via-[#fbf8f4] to-[#f4eee6]",
+      cardBorder: "border-[#c5a059]",
+      cornerFlourishColor: "#c5a059",
+      headerAccentColor: "#2b2623",
+      textPrimary: "#2b2623",
+      textSecondary: "#8a6d3b",
+      buttonShimmerGradient: "from-[#2b2623] via-[#4a3b32] to-[#1c1815]",
+      buttonText: "text-[#edd892]",
+      fallingDecorType: "sparkles",
+    },
+    features: [
+      "Interactive 3D Opening Double Cathedral Doors",
+      "Antique Brass Door Handles & Quatrefoil Carvings",
+      "Cathedral Organ & Romantic Strings Audio",
+      "Church Nuptials & Sacred Mass Schedules",
+      "Table Seating Arrangement Cards",
+    ],
+    recommendedMusicTitle: "Pachelbel Canon in D & Royal Strings",
+    defaultDressCode: {
+      title: "Black Tie & Elegant Church Attire",
+      description: "Sophisticated formal evening wear, dark suits or tuxedos, and graceful long gowns.",
+    },
+  },
+
+  // 4. Embossed Floral Wax Envelope (Screen 4 from user photo: Hiruni & Kavindu)
+  "embossed-ivory-envelope": {
+    id: "embossed-ivory-envelope",
+    name: "Embossed Pearl & Wax Seal",
+    tagline: "Textured Floral Blind-Deboss & Champagne Wax Stamp",
+    description: "The epitome of timeless luxury stationery. Heavyweight textured cotton paper with tactile embossed botanical relief and a realistic wax medallion.",
+    category: "luxury",
+    categoryLabel: "Modern Luxe",
+    badge: "Haute Couture",
+    primaryColor: "#574d43",
+    accentColor: "#d6a97a",
+    coupleDemoNames: "Hiruni & Kavindu",
+    demoDate: "23 . 01 . 2027",
+    coverStyle: "wax-envelope",
+    previewAccentRgb: "214, 169, 122",
+    previewImage: "/images/templates/thumb-embossed-ivory.png",
+    palette: [
+      { name: "Pearl Cotton Paper", hex: "#f9f8f5" },
+      { name: "Debossed Shadow", hex: "#e7e4dc" },
+      { name: "Champagne Wax", hex: "#d6a97a" },
+      { name: "Sepia Slate", hex: "#574d43" },
+      { name: "Soft Silk Ribbon", hex: "#faf5ed" },
+    ],
+    styles: {
+      pageBg: "bg-[#f9f8f5]",
+      radialGlow: "rgba(214, 169, 122, 0.3)",
+      envelopeBoxGradient: "from-[#f2eee7] via-[#e5ded3] to-[#d8d0c2]",
+      envelopeFlapGradient: "from-[#f9f8f5] via-[#eee7db] to-[#e0d7c7]",
+      envelopePocketGradient: "from-[#ded6c7] via-[#ece4d7] to-[#f9f8f5]",
+      envelopeBorder: "border-[#d6a97a]/50",
+      waxSealGradient: "bg-gradient-to-br from-[#edd892] via-[#d6a97a] to-[#ab8055]",
+      waxSealBorder: "border-[#ffffff]",
+      waxSealGlow: "rgba(214, 169, 122, 0.5)",
+      waxSealText: "text-[#403426]",
+      cardBg: "from-[#ffffff] via-[#faf8f5] to-[#f3efe8]",
+      cardBorder: "border-[#e0d7c7]",
+      cornerFlourishColor: "#d6a97a",
+      headerAccentColor: "#574d43",
+      textPrimary: "#403426",
+      textSecondary: "#8a7560",
+      buttonShimmerGradient: "from-[#574d43] via-[#75685a] to-[#403426]",
+      buttonText: "text-[#ffffff]",
+      fallingDecorType: "petals",
+    },
+    features: [
+      "Tactile 3D Floral Blind-Deboss Texture",
+      "Botanical Olive Branch Wax Medallion",
+      "Interactive Wax Peeling & Flap Unfolding Animation",
+      "Clean Minimalist Editorial Typography",
+      "Personalized Guest Table Cards & QR Access",
+    ],
+    recommendedMusicTitle: "Romantic Acoustic Piano Serenade",
+    defaultDressCode: {
+      title: "Neutral Elegance & Champagne Tones",
+      description: "Classy cocktail or formal attire in warm neutral shades of beige, champagne, and ivory.",
+    },
+  },
+
+  // 5. Royal Velvet Crimson & Gold (Our Signature Classic)
   "royal-heritage": {
     id: "royal-heritage",
     name: "Royal Heritage",
@@ -58,6 +296,10 @@ export const INVITATION_TEMPLATES: Record<string, InvitationTemplate> = {
     badge: "Most Popular",
     primaryColor: "#800020",
     accentColor: "#dfba73",
+    coupleDemoNames: "Kasun & Dinithi",
+    demoDate: "Saturday, 28th November 2026",
+    coverStyle: "wax-envelope",
+    previewAccentRgb: "223, 186, 115",
     palette: [
       { name: "Royal Velvet", hex: "#800020" },
       { name: "Imperial Gold", hex: "#dfba73" },
@@ -101,6 +343,7 @@ export const INVITATION_TEMPLATES: Record<string, InvitationTemplate> = {
     },
   },
 
+  // 6. Celestial Midnight Sapphire
   "celestial-midnight": {
     id: "celestial-midnight",
     name: "Celestial Midnight",
@@ -108,9 +351,13 @@ export const INVITATION_TEMPLATES: Record<string, InvitationTemplate> = {
     description: "An enchanting evening wedding celebration under the starlit sky. Rich midnight navy and indigo textures infused with glittering diamond stardust and radiant silver filigrees.",
     category: "celestial",
     categoryLabel: "Evening & Celestial",
-    badge: "New Release",
+    badge: "Night Romance",
     primaryColor: "#0f172a",
     accentColor: "#38bdf8",
+    coupleDemoNames: "Akash & Tara",
+    demoDate: "Friday, 18th December 2026",
+    coverStyle: "wax-envelope",
+    previewAccentRgb: "56, 189, 248",
     palette: [
       { name: "Midnight Navy", hex: "#0b1329" },
       { name: "Twilight Indigo", hex: "#1e293b" },
@@ -154,59 +401,7 @@ export const INVITATION_TEMPLATES: Record<string, InvitationTemplate> = {
     },
   },
 
-  "emerald-botanical": {
-    id: "emerald-botanical",
-    name: "Emerald Botanical",
-    tagline: "Enchanted Forest Jade & Warm Champagne Gold",
-    description: "Designed for garden, outdoor, and eco-luxury weddings. Lush deep emerald greens harmonious with champagne gold leaves, organic botanical curves, and soothing earthy warmth.",
-    category: "botanical",
-    categoryLabel: "Garden & Botanical",
-    badge: "Trending",
-    primaryColor: "#064e3b",
-    accentColor: "#d4af37",
-    palette: [
-      { name: "Forest Emerald", hex: "#06231a" },
-      { name: "Deep Jade", hex: "#064e3b" },
-      { name: "Champagne Gold", hex: "#d4af37" },
-      { name: "Botanical Cream", hex: "#f4f7f4" },
-      { name: "Sage Earth", hex: "#2d6a4f" },
-    ],
-    styles: {
-      pageBg: "bg-[#061510]",
-      radialGlow: "rgba(6, 78, 59, 0.45)",
-      envelopeBoxGradient: "from-[#0c2a20] via-[#071913] to-[#030d0a]",
-      envelopeFlapGradient: "from-[#133d2e] via-[#0e2c21] to-[#081b14]",
-      envelopePocketGradient: "from-[#05140f] via-[#0b261d] to-[#103528]",
-      envelopeBorder: "border-[#d4af37]/80",
-      waxSealGradient: "bg-gradient-to-br from-[#047857] via-[#064e3b] to-[#022c22]",
-      waxSealBorder: "border-[#fef08a]/90",
-      waxSealGlow: "rgba(212, 175, 55, 0.5)",
-      waxSealText: "text-[#ecfdf5]",
-      cardBg: "from-[#fbfdfb] via-[#f2f7f2] to-[#e5eee5]",
-      cardBorder: "border-[#a7f3d0]",
-      cornerFlourishColor: "#059669",
-      headerAccentColor: "#d4af37",
-      textPrimary: "#06231a",
-      textSecondary: "#047857",
-      buttonShimmerGradient: "from-[#064e3b] via-[#047857] to-[#065f46]",
-      buttonText: "text-[#fef08a]",
-      fallingDecorType: "leaves",
-    },
-    features: [
-      "Natural Emerald & Gold Seal Crest",
-      "Floating Golden Leaves & Petals",
-      "Organic Vine Frame Accents",
-      "Lush Botanical Countdown",
-      "Integrated Directions & Navigation",
-      "Acoustic Guitar Romance Audio",
-    ],
-    recommendedMusicTitle: "Acoustic Forest Symphony & Spanish Guitar",
-    defaultDressCode: {
-      title: "Garden Elegance & Earth Tones",
-      description: "Semi-formal garden attire or tropical linen suits in natural tones of sage, eucalyptus, ivory, and warm champagne.",
-    },
-  },
-
+  // 7. Ethereal Blush & Cherry Blossoms
   "ethereal-blush": {
     id: "ethereal-blush",
     name: "Ethereal Rose & Blush",
@@ -214,9 +409,13 @@ export const INVITATION_TEMPLATES: Record<string, InvitationTemplate> = {
     description: "An intimate, delicate fairy-tale dreamscape. Tender pastel rose hues, shimmering rose gold calligraphy accents, and romantic fluttering cherry blossom petals.",
     category: "modern",
     categoryLabel: "Modern Luxe",
-    badge: "Romantic",
+    badge: "Fairy Tale",
     primaryColor: "#be185d",
     accentColor: "#f472b6",
+    coupleDemoNames: "Nisali & Tharindu",
+    demoDate: "Sunday, 14th February 2027",
+    coverStyle: "floral-silk",
+    previewAccentRgb: "244, 114, 182",
     palette: [
       { name: "Dusty Rose", hex: "#be185d" },
       { name: "Pastel Blush", hex: "#fbcfe8" },
@@ -260,16 +459,21 @@ export const INVITATION_TEMPLATES: Record<string, InvitationTemplate> = {
     },
   },
 
+  // 8. Modern Obsidian & Ivory
   "modern-ivory": {
     id: "modern-ivory",
     name: "Modern Obsidian & Ivory",
     tagline: "High-Fashion Minimalist & Platinum Champagne",
     description: "Sleek, avant-garde black-tie luxury. Clean geometric typography, stark obsidian contrasting against brilliant alabaster cardstock, and understated brushed champagne borders.",
-    category: "modern",
-    categoryLabel: "Modern Luxe",
-    badge: "Minimalist",
+    category: "minimalist",
+    categoryLabel: "Minimalist Luxe",
+    badge: "Editorial Chic",
     primaryColor: "#09090b",
     accentColor: "#d4af37",
+    coupleDemoNames: "Malik & Sara",
+    demoDate: "Saturday, 5th June 2027",
+    coverStyle: "minimalist-modern",
+    previewAccentRgb: "212, 175, 55",
     palette: [
       { name: "Obsidian Jet", hex: "#09090b" },
       { name: "Alabaster White", hex: "#f8fafc" },
@@ -312,16 +516,84 @@ export const INVITATION_TEMPLATES: Record<string, InvitationTemplate> = {
       description: "Sharp black-tie attire, modern tuxedos, and sleek monochrome or jewel-toned formal evening gowns.",
     },
   },
+
+  // 8. Velvet Homecoming (Amaya & Dinuka - Matching user's exact uploaded screenshots)
+  "velvet-homecoming": {
+    id: "velvet-homecoming",
+    name: "Velvet Homecoming",
+    tagline: "Rich Burgundy Dahlias, Gilded Borders & Red Butterflies",
+    description: "A cinematic celebration of love, family, and new beginnings. Luxurious deep burgundy dahlia blooms, delicate crimson butterflies, warm golden foil typography, and an interactive attendance counter.",
+    category: "luxury",
+    categoryLabel: "Velvet Homecoming",
+    badge: "Trending Homecoming",
+    primaryColor: "#541221",
+    accentColor: "#c5a059",
+    coupleDemoNames: "Amaya & Dinuka",
+    demoDate: "Saturday, 12th December 2026",
+    coverStyle: "wax-envelope",
+    previewAccentRgb: "84, 18, 33",
+    previewImage: "/images/templates/thumb-velvet-homecoming.png",
+    palette: [
+      { name: "Burgundy Dahlia", hex: "#541221" },
+      { name: "Vintage Cream", hex: "#faf5eb" },
+      { name: "Gilded Gold", hex: "#c5a059" },
+      { name: "Crimson Butterfly", hex: "#b91c1c" },
+    ],
+    styles: {
+      pageBg: "bg-[#fffdfa]",
+      radialGlow: "rgba(84, 18, 33, 0.45)",
+      envelopeBoxGradient: "from-[#380612] via-[#541221] to-[#25040b]",
+      envelopeFlapGradient: "from-[#6e162a] via-[#541221] to-[#380612]",
+      envelopePocketGradient: "from-[#25040b] via-[#380612] to-[#541221]",
+      envelopeBorder: "border-[#c5a059]",
+      waxSealGradient: "bg-gradient-to-br from-[#73172c] via-[#541221] to-[#360914]",
+      waxSealBorder: "border-[#c5a059]",
+      waxSealGlow: "rgba(197, 160, 89, 0.5)",
+      waxSealText: "text-[#ffd700]",
+      cardBg: "from-[#fffdfa] via-[#faf5eb] to-[#f4ebe0]",
+      cardBorder: "border-[#c5a059]",
+      cornerFlourishColor: "#c5a059",
+      headerAccentColor: "#541221",
+      textPrimary: "#3b1720",
+      textSecondary: "#7a4855",
+      buttonShimmerGradient: "from-[#541221] via-[#73172c] to-[#380612]",
+      buttonText: "text-[#edd892]",
+      fallingDecorType: "petals",
+    },
+    features: [
+      "Velvet Burgundy Dahlia & Floral Border Accents",
+      "Fluttering Red Butterfly Details",
+      "Interactive Joyfully Accept / Regretfully Decline RSVP",
+      "Guest Number Selector with Send Button",
+      "Water's Edge Battaramulla Google Maps Integration",
+      "Atmospheric Cinematic Background Instrumental",
+    ],
+    recommendedMusicTitle: "Enchanted Strings & Romantic Flute Melody",
+    defaultDressCode: {
+      title: "Formal Evening / Black Tie or Rich Jewel Tones",
+      description: "Guests are warmly encouraged to wear deep burgundy, ruby, emerald, or sophisticated evening wear.",
+    },
+  },
 };
 
 export const TEMPLATE_LIST: InvitationTemplate[] = Object.values(INVITATION_TEMPLATES);
 
 /**
- * Safely resolves a template by ID, falling back to Royal Heritage if invalid or missing.
+ * Safely resolves a template by ID, falling back to Golden Mandala or Royal Heritage if invalid or missing.
  */
 export function getTemplate(id?: string | null): InvitationTemplate {
-  if (!id) return INVITATION_TEMPLATES["royal-heritage"];
-  return INVITATION_TEMPLATES[id] || INVITATION_TEMPLATES["royal-heritage"];
+  if (!id) return INVITATION_TEMPLATES["golden-mandala-heritage"] || INVITATION_TEMPLATES["royal-heritage"];
+  if (INVITATION_TEMPLATES[id]) return INVITATION_TEMPLATES[id];
+
+  // Map preset IDs to catalog templates
+  if (id === "velvet-homecoming" || id === "homecoming-reception" || id === "amaya-and-dinuka") {
+    return INVITATION_TEMPLATES["velvet-homecoming"];
+  }
+  if (id === "nilame-traditional") return INVITATION_TEMPLATES["golden-mandala-heritage"];
+  if (id === "emerald-elegance") return INVITATION_TEMPLATES["botanical-silk-sanduni"];
+  if (id === "modern-floral-romance") return INVITATION_TEMPLATES["embossed-ivory-envelope"];
+
+  return INVITATION_TEMPLATES["golden-mandala-heritage"] || INVITATION_TEMPLATES["royal-heritage"];
 }
 
 /**

@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
+import Link from "next/link";
 import { ShieldCheck, User, Lock, Eye, EyeOff, Sparkles, AlertCircle, ArrowRight } from "lucide-react";
 import RoyalThemeToggle from "@/components/RoyalThemeToggle";
 
@@ -45,56 +47,39 @@ export default function AdminLoginPage() {
 
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center bg-[#121013] text-[#fdfbf7] px-3 sm:px-4 py-8 sm:py-12 overflow-hidden">
-      {/* Background ambient lighting */}
-      <div className="absolute top-1/4 -left-32 w-96 h-96 bg-[#800020]/25 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-1/4 -right-32 w-96 h-96 bg-[#c5a059]/15 rounded-full blur-3xl pointer-events-none" />
-
-      {/* Floating Gold Sparkles Overlay */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden z-0" aria-hidden="true">
-        {[...Array(12)].map((_, i) => (
-          <div
-            key={i}
-            className="absolute text-[#dfba73] opacity-20 select-none animate-fall"
-            style={{
-              left: `${5 + (i * 7.8) % 92}%`,
-              top: `-10px`,
-              fontSize: `${10 + (i % 4) * 4}px`,
-              animationDuration: `${8 + (i % 5) * 2.5}s`,
-              animationDelay: `${(i * 0.7) % 6}s`,
-            }}
-          >
-            {['✦', '✧', '◇', '❋', '✦', '◆', '✧', '❖', '✦', '◇', '❋', '✧'][i % 12]}
-          </div>
-        ))}
-      </div>
-
-      {/* Floating Theme Switcher */}
-      <div className="absolute top-4 right-4 z-20">
-        <RoyalThemeToggle variant="floating" />
-      </div>
+    <div className="relative min-h-screen flex items-center justify-center bg-white text-[#111827] px-3 sm:px-4 py-8 sm:py-12 overflow-hidden selection:bg-[#fcecef] selection:text-[#d62851]">
+      {/* Background soft ambient radial glow matching invitation.lk */}
+      <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#fff0f3] via-[#ffffff] to-[#ffffff] -z-10" />
 
       <div className="relative z-10 w-full max-w-md">
-        {/* Luxury Glassmorphism Login Card */}
-        <div className="rounded-3xl bg-[#1a1519]/90 border border-[#c5a059]/40 p-6 sm:p-10 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.7),0_0_30px_rgba(197,160,89,0.15)] backdrop-blur-xl">
-          {/* Header Monogram / Icon */}
-          <div className="text-center mb-6">
-            <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-[#800020] to-[#4a0013] border border-[#dfba73]/50 shadow-lg mb-3">
-              <ShieldCheck className="w-7 h-7 text-[#dfba73]" />
-            </div>
-            <h1 className="font-cinzel text-2xl sm:text-3xl font-bold text-[#fdfbf7] tracking-wide">
+        {/* Clean Modern Login Card */}
+        <div className="rounded-3xl bg-white border border-gray-100 p-6 sm:p-10 shadow-xl shadow-rose-950/5">
+          {/* Header Logo */}
+          <div className="text-center mb-6 flex flex-col items-center">
+            <Link href="/" className="inline-block group mb-3">
+              <div className="relative h-12 w-48 overflow-hidden group-hover:scale-105 transition">
+                <Image
+                  src="/images/wedlink-logo.png"
+                  alt="WedLink.lk"
+                  fill
+                  priority
+                  sizes="192px"
+                  className="object-contain"
+                />
+              </div>
+            </Link>
+            <h1 className="text-2xl font-extrabold text-[#111827] tracking-tight">
               Executive Portal
             </h1>
-            <p className="text-xs uppercase tracking-[0.25em] text-[#dfba73] font-cinzel font-semibold mt-1">
+            <p className="text-xs text-[#6b7280] font-medium mt-1">
               Wedding Invitation Management
             </p>
           </div>
 
-
           {/* Error Alert */}
           {error && (
-            <div className="mb-5 text-xs text-rose-200 bg-rose-950/70 border border-rose-800/80 rounded-xl px-3.5 py-2.5 flex items-center gap-2 animate-shake">
-              <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+            <div className="mb-5 text-xs text-rose-700 bg-rose-50 border border-rose-200 rounded-xl px-3.5 py-2.5 flex items-center gap-2 animate-shake">
+              <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
               <span>{error}</span>
             </div>
           )}
@@ -102,11 +87,11 @@ export default function AdminLoginPage() {
           {/* Login Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-xs uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold mb-1.5">
+              <label className="block text-xs font-semibold text-[#111827] mb-1.5">
                 Admin Username
               </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#c5a059]/60">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#9ca3af]">
                   <User className="w-4 h-4" />
                 </div>
                 <input
@@ -115,17 +100,17 @@ export default function AdminLoginPage() {
                   placeholder="Enter admin username"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 rounded-xl bg-[#231a20]/90 border border-[#c5a059]/40 text-sm text-[#fdfbf7] placeholder-[#fdfbf7]/30 focus:outline-none focus:border-[#dfba73] focus:ring-1 focus:ring-[#dfba73] transition"
+                  className="w-full pl-10 pr-4 py-3 rounded-xl bg-white border border-gray-200 text-sm text-[#111827] placeholder-gray-400 focus:outline-none focus:border-[#d62851] focus:ring-2 focus:ring-[#fcecef] transition shadow-sm"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold mb-1.5">
+              <label className="block text-xs font-semibold text-[#111827] mb-1.5">
                 Admin Password
               </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#c5a059]/60">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#9ca3af]">
                   <Lock className="w-4 h-4" />
                 </div>
                 <input
@@ -134,12 +119,12 @@ export default function AdminLoginPage() {
                   placeholder="Enter admin password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-11 py-3 rounded-xl bg-[#231a20]/90 border border-[#c5a059]/40 text-sm text-[#fdfbf7] placeholder-[#fdfbf7]/30 focus:outline-none focus:border-[#dfba73] focus:ring-1 focus:ring-[#dfba73] transition"
+                  className="w-full pl-10 pr-11 py-3 rounded-xl bg-white border border-gray-200 text-sm text-[#111827] placeholder-gray-400 focus:outline-none focus:border-[#d62851] focus:ring-2 focus:ring-[#fcecef] transition shadow-sm"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-[#c5a059]/70 hover:text-[#dfba73] cursor-pointer min-w-[40px] min-h-[40px] justify-center"
+                  className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-[#9ca3af] hover:text-[#111827] cursor-pointer min-w-[40px] min-h-[40px] justify-center"
                   aria-label={showPassword ? "Hide password" : "Show password"}
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -150,11 +135,11 @@ export default function AdminLoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full mt-2 py-3.5 rounded-xl btn-gold-shimmer text-xs uppercase tracking-[0.15em] font-cinzel font-bold flex items-center justify-center gap-2 shadow-xl disabled:opacity-50 cursor-pointer min-h-[44px] touch-manipulation"
+              className="w-full mt-2 py-3.5 rounded-xl bg-[#d62851] hover:bg-[#b81d42] text-xs font-bold text-white flex items-center justify-center gap-2 shadow-lg shadow-[#d62851]/25 disabled:opacity-50 cursor-pointer min-h-[44px] transition active:scale-98"
             >
               {loading ? (
                 <>
-                  <span className="w-4 h-4 border-2 border-[#121013] border-t-transparent rounded-full animate-spin" />
+                  <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                   Authenticating...
                 </>
               ) : (
@@ -166,19 +151,19 @@ export default function AdminLoginPage() {
           </form>
 
           {/* Registration Link */}
-          <div className="text-center mt-5 pt-4 border-t border-[#c5a059]/20">
-            <p className="text-xs text-[#edd892]/70 font-sans mb-2">
+          <div className="text-center mt-5 pt-4 border-t border-gray-100">
+            <p className="text-xs text-[#6b7280] font-sans mb-2">
               Need an account for your events company?
             </p>
             <a
               href="/admin/register"
-              className="inline-flex items-center justify-center gap-1.5 text-xs font-cinzel font-bold text-[#ffd700] hover:underline min-h-[38px] touch-manipulation"
+              className="inline-flex items-center justify-center gap-1.5 text-xs font-semibold text-[#d62851] hover:underline min-h-[38px]"
             >
-              <Sparkles className="w-3.5 h-3.5 text-[#ffd700]" />
+              <Sparkles className="w-3.5 h-3.5 text-[#d62851]" />
               Create Event Manager Account
             </a>
-            <p className="text-[10px] text-[#fdfbf7]/40 font-sans mt-3">
-              Protected & encrypted multi-tenant session management.
+            <p className="text-[11px] text-[#9ca3af] font-sans mt-3">
+              Protected &amp; encrypted multi-tenant session management.
             </p>
           </div>
         </div>

@@ -63,8 +63,13 @@ export async function POST(req: NextRequest) {
     });
 
     if (existingSlug) {
+      const year = new Date().getFullYear();
+      const suggestedSlug = `${cleanSlug}-${year}`;
       return NextResponse.json(
-        { error: `The custom link "invitation.lk/e/${cleanSlug}" is already reserved. Please choose a slightly different link.` },
+        {
+          error: `The custom link "wedlink.lk/e/${cleanSlug}" is already reserved. Please choose a slightly different link.`,
+          suggestedSlug,
+        },
         { status: 409 }
       );
     }

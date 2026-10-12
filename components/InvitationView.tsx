@@ -2514,9 +2514,18 @@ export default function InvitationView({
           </ScrollReveal>
 
           {/* Footer Branding */}
-          <div className="text-center pt-8">
-            <p className="text-[10px] text-[#1a1517]/50 font-sans tracking-wider uppercase">
-              Developed by Sachintha Heshan • Royal Digital Wedding Suite
+          <div className="text-center pt-8 flex flex-col items-center justify-center gap-1.5">
+            <div className="relative h-7 w-28 opacity-85 hover:opacity-100 transition">
+              <Image
+                src="/images/wedlink-logo.png"
+                alt="WedLink.lk"
+                fill
+                sizes="112px"
+                className="object-contain drop-shadow-xs"
+              />
+            </div>
+            <p className="text-[10px] text-[#1a1517]/60 font-sans tracking-wider">
+              Powered by WedLink.lk • Sri Lanka&apos;s Royal Wedding Platform
             </p>
           </div>
         </div>
