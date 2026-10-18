@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 30" width="200" height="30" fill="none">
+  <!-- Left stem -->
+  <path d="M 20 15 C 50 14, 75 16, 90 15" stroke="#7a927a" stroke-width="1.2" stroke-linecap="round"/>
+  <!-- Left leaves -->
+  <path d="M 35 15 C 38 10, 48 10, 48 14 C 44 15, 38 16, 35 15 Z" fill="#9db19d" opacity="0.85"/>
+  <path d="M 45 15 C 48 19, 58 19, 58 16 C 54 15, 48 14, 45 15 Z" fill="#7a927a" opacity="0.9"/>
+  <path d="M 60 15 C 63 9, 73 9, 73 14 C 69 15, 63 16, 60 15 Z" fill="#9db19d" opacity="0.85"/>
+  <path d="M 72 15 C 75 20, 84 20, 84 16 C 80 15, 75 14, 72 15 Z" fill="#7a927a" opacity="0.9"/>
+  
+  <!-- Right stem -->
+  <path d="M 110 15 C 125 16, 150 14, 180 15" stroke="#7a927a" stroke-width="1.2" stroke-linecap="round"/>
+  <!-- Right leaves -->
+  <path d="M 165 15 C 162 10, 152 10, 152 14 C 156 15, 162 16, 165 15 Z" fill="#9db19d" opacity="0.85"/>
+  <path d="M 155 15 C 152 19, 142 19, 142 16 C 146 15, 152 14, 155 15 Z" fill="#7a927a" opacity="0.9"/>
+  <path d="M 140 15 C 137 9, 127 9, 127 14 C 131 15, 137 16, 140 15 Z" fill="#9db19d" opacity="0.85"/>
+  <path d="M 128 15 C 125 20, 116 20, 116 16 C 120 15, 125 14, 128 15 Z" fill="#7a927a" opacity="0.9"/>
+
+  <!-- Center Rosebud & Calyx -->
+  <path d="M 96 17 C 98 21, 102 21, 104 17" fill="#698269"/>
+  <!-- Rose petals layered -->
+  <circle cx="100" cy="14" r="5" fill="#f0a8b8"/>
+  <path d="M 97 15 C 97 12, 103 12, 103 15 C 101 17, 99 17, 97 15 Z" fill="#e27c96"/>
+  <path d="M 98 13 C 99 11, 102 11, 102 13 C 101 14, 99 14, 98 13 Z" fill="#b94a69"/>
+  <circle cx="100" cy="13" r="1.5" fill="#8b2944"/>
+</svg>

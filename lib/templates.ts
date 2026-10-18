@@ -224,21 +224,21 @@ export const INVITATION_TEMPLATES: Record<string, InvitationTemplate> = {
     },
   },
 
-  // 4. Embossed Floral Wax Envelope (Screen 4 from user photo: Hiruni & Kavindu)
+  // 4. Tuscan Villa Romance (Sophia & Marcus)
   "embossed-ivory-envelope": {
     id: "embossed-ivory-envelope",
-    name: "Embossed Pearl & Wax Seal",
-    tagline: "Textured Floral Blind-Deboss & Champagne Wax Stamp",
-    description: "The epitome of timeless luxury stationery. Heavyweight textured cotton paper with tactile embossed botanical relief and a realistic wax medallion.",
+    name: "Tuscan Villa Romance",
+    tagline: "Italian Riviera Fresco, Terracotta Rose & Lake Como Splendor",
+    description: "Inspired by sun-drenched Italian lake villas. Elegant fresco architecture, warm terracotta rose accents, alternating love story years, and classic Roman typography.",
     category: "luxury",
-    categoryLabel: "Modern Luxe",
-    badge: "Haute Couture",
-    primaryColor: "#574d43",
-    accentColor: "#d6a97a",
-    coupleDemoNames: "Hiruni & Kavindu",
-    demoDate: "23 . 01 . 2027",
+    categoryLabel: "Italian Villa",
+    badge: "Riviera Luxe",
+    primaryColor: "#5c1c2e",
+    accentColor: "#dfba73",
+    coupleDemoNames: "Sophia & Marcus",
+    demoDate: "Saturday, 24th October 2026",
     coverStyle: "wax-envelope",
-    previewAccentRgb: "214, 169, 122",
+    previewAccentRgb: "155, 67, 86",
     palette: [
       { name: "Pearl Cotton Paper", hex: "#f9f8f5" },
       { name: "Debossed Shadow", hex: "#e7e4dc" },
@@ -513,19 +513,19 @@ export const INVITATION_TEMPLATES: Record<string, InvitationTemplate> = {
     },
   },
 
-  // 8. Velvet Homecoming (Amaya & Dinuka - Matching user's exact uploaded screenshots)
+  // 8. Blush Floral & Coastal Romance (Sachin & Kavindi - Matching user's exact uploaded design)
   "velvet-homecoming": {
     id: "velvet-homecoming",
-    name: "Velvet Homecoming",
-    tagline: "Rich Burgundy Dahlias, Gilded Borders & Red Butterflies",
-    description: "A cinematic celebration of love, family, and new beginnings. Luxurious deep burgundy dahlia blooms, delicate crimson butterflies, warm golden foil typography, and an interactive attendance counter.",
+    name: "Blush Floral Romance",
+    tagline: "Pastel English Roses, White Anemones & Hikkaduwa Beach Sunset",
+    description: "A romantic seaside celebration framed in watercolor pastel English roses, creamy white anemones, eucalyptus greens, and classic typography.",
     category: "luxury",
-    categoryLabel: "Velvet Homecoming",
-    badge: "Trending Homecoming",
-    primaryColor: "#541221",
-    accentColor: "#c5a059",
-    coupleDemoNames: "Amaya & Dinuka",
-    demoDate: "Saturday, 12th December 2026",
+    categoryLabel: "Blush Floral Romance",
+    badge: "Trending Romance",
+    primaryColor: "#8a3b53",
+    accentColor: "#d6a57c",
+    coupleDemoNames: "Sachin & Kavindi",
+    demoDate: "Saturday, 14th November 2026",
     coverStyle: "wax-envelope",
     previewAccentRgb: "84, 18, 33",
     palette: [

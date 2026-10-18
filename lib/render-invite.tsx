@@ -4,6 +4,8 @@ import { notFound } from "next/navigation";
 import InvitationView from "@/components/InvitationView";
 import BotanicalLaceInvitationView from "@/components/templates/BotanicalLaceInvitationView";
 import NoirCathedralInvitationView from "@/components/templates/NoirCathedralInvitationView";
+import TuscanVillaInvitationView from "@/components/templates/TuscanVillaInvitationView";
+import BlushFloralInvitationView from "@/components/templates/BlushFloralInvitationView";
 import { resolveTemplateIdFromParam } from "@/lib/templates";
 
 export interface RenderInviteOptions {
@@ -116,7 +118,7 @@ export async function renderInvitePage({
     if (effectiveTemplateId === "golden-mandala-heritage" || effectiveTemplateId === "nilame-traditional") {
       heroPhoto = data.cartoonCoupleArt || "/images/templates/kandyan/couple-art.png";
     } else if (effectiveTemplateId === "velvet-homecoming") {
-      heroPhoto = "/images/templates/velvet-homecoming/card-front.png";
+      heroPhoto = "/images/templates/blush-floral/floral-header-arch.png";
     } else if (!heroPhoto) {
       heroPhoto = "/images/couple-kiss.jpg";
     }
@@ -170,6 +172,14 @@ export async function renderInvitePage({
 
   if (effectiveTemplateId === "cathedral-palace-doors") {
     return <NoirCathedralInvitationView guest={guest} settings={settings} photos={photos} />;
+  }
+
+  if (effectiveTemplateId === "embossed-ivory-envelope") {
+    return <TuscanVillaInvitationView guest={guest} settings={settings} photos={photos} />;
+  }
+
+  if (effectiveTemplateId === "velvet-homecoming") {
+    return <BlushFloralInvitationView guest={guest} settings={settings} photos={photos} />;
   }
 
   return <InvitationView guest={guest} settings={settings} photos={photos} />;

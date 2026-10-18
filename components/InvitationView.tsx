@@ -84,6 +84,8 @@ import {
 import { getTemplate } from "@/lib/templates";
 import BotanicalLaceInvitationView from "./templates/BotanicalLaceInvitationView";
 import NoirCathedralInvitationView from "./templates/NoirCathedralInvitationView";
+import TuscanVillaInvitationView from "./templates/TuscanVillaInvitationView";
+import BlushFloralInvitationView from "./templates/BlushFloralInvitationView";
 
 function FloralDivider({
   className = "",
@@ -1018,6 +1020,14 @@ export default function InvitationView({
 
   if (isCathedral) {
     return <NoirCathedralInvitationView guest={guest} settings={settings} photos={photos} />;
+  }
+
+  if (activeTemplate.id === "embossed-ivory-envelope") {
+    return <TuscanVillaInvitationView guest={guest} settings={settings} photos={photos} />;
+  }
+
+  if (activeTemplate.id === "velvet-homecoming") {
+    return <BlushFloralInvitationView guest={guest} settings={settings} photos={photos} />;
   }
 
   return (
