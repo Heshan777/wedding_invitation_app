@@ -68,7 +68,6 @@ export const INVITATION_TEMPLATES: Record<string, InvitationTemplate> = {
     demoDate: "Saturday, 12th December 2026",
     coverStyle: "mandala",
     previewAccentRgb: "197, 160, 89",
-    previewImage: "/images/templates/thumb-golden-mandala.png",
     palette: [
       { name: "Gilded Mandala", hex: "#c5a059" },
       { name: "Cream Silk", hex: "#fcf8f0" },
@@ -126,7 +125,6 @@ export const INVITATION_TEMPLATES: Record<string, InvitationTemplate> = {
     demoDate: "Saturday, 12th December 2026",
     coverStyle: "floral-silk",
     previewAccentRgb: "45, 106, 79",
-    previewImage: "/images/templates/thumb-botanical-silk.png",
     palette: [
       { name: "Eucalyptus Green", hex: "#2d6a4f" },
       { name: "Mandala Gold", hex: "#c5a059" },
@@ -180,11 +178,10 @@ export const INVITATION_TEMPLATES: Record<string, InvitationTemplate> = {
     badge: "Interactive Doors",
     primaryColor: "#4a3b32",
     accentColor: "#c5a059",
-    coupleDemoNames: "Shenali & Rovan",
-    demoDate: "Saturday, 12th December 2026",
+    coupleDemoNames: "Kavindi & Shenal",
+    demoDate: "Sunday, 27th December 2026",
     coverStyle: "arch-doors",
     previewAccentRgb: "197, 160, 89",
-    previewImage: "/images/templates/thumb-cathedral-doors.png",
     palette: [
       { name: "French Palace Ivory", hex: "#fcfaf7" },
       { name: "Carved Wood Cream", hex: "#eee6dc" },
@@ -242,7 +239,6 @@ export const INVITATION_TEMPLATES: Record<string, InvitationTemplate> = {
     demoDate: "23 . 01 . 2027",
     coverStyle: "wax-envelope",
     previewAccentRgb: "214, 169, 122",
-    previewImage: "/images/templates/thumb-embossed-ivory.png",
     palette: [
       { name: "Pearl Cotton Paper", hex: "#f9f8f5" },
       { name: "Debossed Shadow", hex: "#e7e4dc" },
@@ -532,7 +528,6 @@ export const INVITATION_TEMPLATES: Record<string, InvitationTemplate> = {
     demoDate: "Saturday, 12th December 2026",
     coverStyle: "wax-envelope",
     previewAccentRgb: "84, 18, 33",
-    previewImage: "/images/templates/thumb-velvet-homecoming.png",
     palette: [
       { name: "Burgundy Dahlia", hex: "#541221" },
       { name: "Vintage Cream", hex: "#faf5eb" },
@@ -603,3 +598,63 @@ export function getTemplatesByCategory(category?: string): InvitationTemplate[] 
   if (!category || category === "all") return TEMPLATE_LIST;
   return TEMPLATE_LIST.filter((t) => t.category === category);
 }
+
+/**
+ * Mapping of numeric indices (invite1, invite2...) and short slugs to actual template IDs.
+ */
+export const TEMPLATE_ENDPOINT_MAP: Record<string, string> = {
+  "1": "golden-mandala-heritage",
+  "2": "botanical-silk-sanduni",
+  "3": "cathedral-palace-doors",
+  "4": "embossed-ivory-envelope",
+  "5": "velvet-homecoming",
+  "6": "modern-ivory",
+  "7": "celestial-midnight",
+  "8": "ethereal-blush",
+  "9": "royal-heritage",
+  // Common aliases & short slugs
+  "mandala": "golden-mandala-heritage",
+  "poruwa": "golden-mandala-heritage",
+  "traditional": "golden-mandala-heritage",
+  "botanical": "botanical-silk-sanduni",
+  "eucalyptus": "botanical-silk-sanduni",
+  "cathedral": "cathedral-palace-doors",
+  "church": "cathedral-palace-doors",
+  "doors": "cathedral-palace-doors",
+  "embossed": "embossed-ivory-envelope",
+  "ivory": "embossed-ivory-envelope",
+  "velvet": "velvet-homecoming",
+  "homecoming": "velvet-homecoming",
+  "modern": "modern-ivory",
+  "obsidian": "modern-ivory",
+  "minimalist": "modern-ivory",
+  "celestial": "celestial-midnight",
+  "midnight": "celestial-midnight",
+  "starlight": "celestial-midnight",
+  "blush": "ethereal-blush",
+  "ethereal": "ethereal-blush",
+  "rose": "ethereal-blush",
+  "royal": "royal-heritage",
+};
+
+export function resolveTemplateIdFromParam(param?: string | null): string | undefined {
+  if (!param) return undefined;
+  const clean = param.toLowerCase().trim();
+  if (TEMPLATE_ENDPOINT_MAP[clean]) return TEMPLATE_ENDPOINT_MAP[clean];
+  if (INVITATION_TEMPLATES[clean]) return clean;
+  return undefined;
+}
+
+export const TEMPLATE_TO_ENDPOINT_NUMBER: Record<string, number> = {
+  "golden-mandala-heritage": 1,
+  "botanical-silk-sanduni": 2,
+  "cathedral-palace-doors": 3,
+  "embossed-ivory-envelope": 4,
+  "velvet-homecoming": 5,
+  "modern-ivory": 6,
+  "celestial-midnight": 7,
+  "ethereal-blush": 8,
+  "royal-heritage": 9,
+};
+
+

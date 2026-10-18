@@ -24,12 +24,30 @@ export async function GET(req: NextRequest) {
     let suggestedSlug: string | undefined = undefined;
     if (existing) {
       const year = new Date().getFullYear();
-      const candidate = `${cleanSlug}-${year}`;
-      const candidateCheck = await prisma.weddingEvent.findUnique({
+      let candidate = `${cleanSlug}-${year}`;
+      let candidateCheck = await prisma.weddingEvent.findUnique({
         where: { slug: candidate },
         select: { id: true },
       });
-      suggestedSlug = candidateCheck ? `${cleanSlug}-${Math.floor(100 + Math.random() * 900)}` : candidate;
+
+      if (!candidateCheck) {
+        suggestedSlug = candidate;
+      } else {
+        let counter = 2;
+        while (candidateCheck) {
+          candidate = `${cleanSlug}-${year}-${counter}`;
+          candidateCheck = await prisma.weddingEvent.findUnique({
+            where: { slug: candidate },
+            select: { id: true },
+          });
+          counter++;
+          if (counter > 50) {
+            candidate = `${cleanSlug}-${Math.floor(100 + Math.random() * 900)}`;
+            break;
+          }
+        }
+        suggestedSlug = candidate;
+      }
     }
 
     return NextResponse.json({

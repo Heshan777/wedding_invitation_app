@@ -17,6 +17,7 @@ import {
   getTemplate,
   InvitationTemplate,
 } from "@/lib/templates";
+import { getWedLinkTemplate } from "@/lib/template-engine";
 import InvitationView from "@/components/InvitationView";
 
 export default function TemplatePreviewPage({
@@ -55,44 +56,66 @@ export default function TemplatePreviewPage({
       rsvpMessage: null,
       rsvpSubmittedAt: null,
       viewedAt: null,
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      createdAt: new Date("2026-11-01T00:00:00.000Z"),
+      updatedAt: new Date("2026-11-01T00:00:00.000Z"),
     }),
     []
   );
 
-  // Sample event settings reflecting the active template
-  const sampleSettings = useMemo(
-    () => ({
+  // Sample event settings reflecting the active template with deterministic date & authentic theme content
+  const sampleSettings = useMemo(() => {
+    const wedlinkTheme = getWedLinkTemplate(template.id);
+    const data = wedlinkTheme.sampleData;
+
+    // Use authentic hero photo for this specific template
+    let heroPhoto = data.heroPhoto;
+    if (template.id === "golden-mandala-heritage" || template.id === "nilame-traditional") {
+      heroPhoto = data.cartoonCoupleArt || "/images/templates/kandyan/couple-art.png";
+    } else if (template.id === "velvet-homecoming") {
+      heroPhoto = "/images/templates/velvet-homecoming/card-front.png";
+    } else if (!heroPhoto) {
+      heroPhoto = "/images/couple-kiss.jpg";
+    }
+
+    // Format authentic timeline schedules
+    const schedulesList = data.schedules && data.schedules.length > 0
+      ? data.schedules.map((s) => ({
+          time: s.time,
+          title: s.title,
+          desc: s.description,
+        }))
+      : [
+          { time: "09:18 AM", title: "Auspicious Vows", desc: data.venueName || "Grand Ballroom" },
+          { time: "06:30 PM", title: "Celebratory Reception", desc: "Dinner & Dance" },
+        ];
+
+    return {
       id: "preview-event",
-      coupleNames: "Sandharu & Sanduni",
-      hostIntro: "Together with our families, we joyfully invite you to celebrate the homecoming of",
-      invitationBody: "to witness our eternal vows and celebrate an unforgettable evening of sacred love and union.",
-      eventDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30), // 30 days in future
-      venueName: "Shangri-La Ballroom, Colombo",
-      venueAddress: "1 Galle Face, Colombo 02, Sri Lanka",
+      coupleNames: template.coupleDemoNames || data.coupleNames,
+      hostIntro: data.heroGreeting
+        ? `${data.heroGreeting} • ${data.heroSubtitle || "You are cordially invited"}`
+        : "Together with our families, we joyfully invite you to celebrate the marriage of",
+      invitationBody: data.vowQuote || "to witness our eternal vows and celebrate an unforgettable evening of sacred love and union.",
+      eventDate: new Date(data.eventDate ? `${data.eventDate}T12:00:00.000Z` : "2026-12-18T18:30:00.000Z"),
+      venueName: data.venueName || "Grand Ballroom, Colombo",
+      venueAddress: data.venueAddress || "Colombo, Sri Lanka",
       venueLat: 6.9271,
       venueLng: 79.8426,
       contactPhone: "+94 77 123 4567",
-      heroImageUrl: "/images/couple-kiss.jpg",
+      heroImageUrl: heroPhoto,
       heroVideoUrl: null,
-      videoThumbnailUrl: "/images/couple-kiss.jpg",
-      welcomeImageUrl: "/images/couple-kiss.jpg",
-      placeCardImageUrl: "/images/couple-kiss.jpg",
+      videoThumbnailUrl: heroPhoto,
+      welcomeImageUrl: heroPhoto,
+      placeCardImageUrl: heroPhoto,
       placeCardNote: "Thank you for sharing in our joy and celebrating our royal beginning!",
-      blessingImageUrl: "/images/couple-kiss.jpg",
-      musicUrl: "/audio/background.mp3",
-      dressCodeTitle: template.defaultDressCode.title,
-      dressCodeDescription: template.defaultDressCode.description,
-      timelineJson: JSON.stringify([
-        { time: "05:00 PM", title: "Royal Guest Arrival", desc: "Welcome refreshments and traditional registration." },
-        { time: "06:00 PM", title: "Poruwa & Sacred Vows", desc: "Auspicious blessings and ring exchange." },
-        { time: "07:30 PM", title: "The Grand Reception", desc: "Champagne toast, celebratory dinner & live music." },
-      ]),
+      blessingImageUrl: heroPhoto,
+      musicUrl: data.musicUrl || "/audio/background.mp3",
+      dressCodeTitle: data.dressCodeTitle || template.defaultDressCode.title,
+      dressCodeDescription: data.dressCodeDescription || template.defaultDressCode.description,
+      timelineJson: JSON.stringify(schedulesList),
       templateId: template.id,
-    }),
-    [template]
-  );
+    };
+  }, [template]);
 
   const samplePhotos = useMemo(
     () => [

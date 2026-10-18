@@ -57,25 +57,43 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Check if slug is already taken
+    // Check if slug is already taken, and find a guaranteed unique available slug
+    let finalSlug = cleanSlug;
     const existingSlug = await prisma.weddingEvent.findUnique({
       where: { slug: cleanSlug },
+      select: { id: true },
     });
 
     if (existingSlug) {
       const year = new Date().getFullYear();
-      const suggestedSlug = `${cleanSlug}-${year}`;
-      return NextResponse.json(
-        {
-          error: `The custom link "wedlink.lk/e/${cleanSlug}" is already reserved. Please choose a slightly different link.`,
-          suggestedSlug,
-        },
-        { status: 409 }
-      );
+      let candidate = `${cleanSlug}-${year}`;
+      let check = await prisma.weddingEvent.findUnique({
+        where: { slug: candidate },
+        select: { id: true },
+      });
+
+      if (!check) {
+        finalSlug = candidate;
+      } else {
+        let counter = 2;
+        while (check) {
+          candidate = `${cleanSlug}-${year}-${counter}`;
+          check = await prisma.weddingEvent.findUnique({
+            where: { slug: candidate },
+            select: { id: true },
+          });
+          counter++;
+          if (counter > 50) {
+            candidate = `${cleanSlug}-${Math.floor(100 + Math.random() * 900)}`;
+            break;
+          }
+        }
+        finalSlug = candidate;
+      }
     }
 
     // Generate credentials
-    const cleanUsername = cleanSlug.slice(0, 25);
+    const cleanUsername = finalSlug.slice(0, 25);
     const cleanPassword = password && password.length >= 6 ? password : "wedding2026";
     const hashedPassword = await bcrypt.hash(cleanPassword, 10);
 
@@ -137,7 +155,7 @@ export async function POST(req: NextRequest) {
     // Create WeddingEvent
     const weddingEvent = await prisma.weddingEvent.create({
       data: {
-        slug: cleanSlug,
+        slug: finalSlug,
         managerId: newManager.id,
         templateId: templateId || "royal-heritage",
         coupleNames: resolvedCoupleNames,

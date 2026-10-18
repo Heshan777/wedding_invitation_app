@@ -408,26 +408,140 @@ export default function EnvelopeOpening({
         <div className="relative w-full max-w-lg flex flex-col items-center justify-center">
           {stage === "couple" ? (
             <div className="w-full flex flex-col items-center animate-stage-appear">
-              <CoupleWalkAndKiss
-                coupleNames={coupleNames}
-                isOpening={isOpening}
-                onStoryComplete={handleStoryComplete}
-              />
+              {template.coverStyle === "arch-doors" ? (
+                /* 1. CATHEDRAL PALACE ARMORED DOORS */
+                <div className="relative w-full max-w-sm aspect-[4/5] rounded-[36px] bg-[#2b2623] p-3 border-2 border-[#c5a059] shadow-2xl overflow-hidden flex flex-col justify-between items-center text-center">
+                  {/* French Arched Double Doors */}
+                  <div className="absolute inset-2 rounded-t-[50px] border-2 border-[#c5a059]/60 flex overflow-hidden">
+                    <div className="w-1/2 h-full bg-[#fcfaf5] border-r-2 border-[#c5a059]/50 flex flex-col items-center justify-center p-2 shadow-inner">
+                      <div className="w-16 h-28 border-2 border-[#c5a059]/40 rounded-t-full mb-auto mt-4" />
+                      <div className="w-10 h-10 rounded-full border-2 border-[#c5a059] flex items-center justify-center my-auto shadow-md bg-[#fffdf8]">
+                        <div className="w-4 h-4 rounded-full bg-[#c5a059]" />
+                      </div>
+                      <div className="w-16 h-20 border-2 border-[#c5a059]/40 rounded-sm mt-auto mb-4" />
+                    </div>
+                    <div className="w-1/2 h-full bg-[#fcfaf5] flex flex-col items-center justify-center p-2 shadow-inner">
+                      <div className="w-16 h-28 border-2 border-[#c5a059]/40 rounded-t-full mb-auto mt-4" />
+                      <div className="w-10 h-10 rounded-full border-2 border-[#c5a059] flex items-center justify-center my-auto shadow-md bg-[#fffdf8]">
+                        <div className="w-4 h-4 rounded-full bg-[#c5a059]" />
+                      </div>
+                      <div className="w-16 h-20 border-2 border-[#c5a059]/40 rounded-sm mt-auto mb-4" />
+                    </div>
+                  </div>
 
-              {/* Action row below couple animation */}
-              <div className="flex flex-col items-center gap-2 mt-5">
-                <button
-                  type="button"
-                  onClick={handleAdvanceToEnvelope}
-                  className="btn-gold-shimmer px-7 py-2.5 rounded-full font-cinzel text-xs tracking-[0.15em] uppercase font-bold flex items-center justify-center gap-2 shadow-[0_10px_25px_rgba(197,160,89,0.35)] hover:scale-105 active:scale-95 transition cursor-pointer border border-[#fff2cf]/50 min-h-[42px] touch-manipulation"
-                >
-                  <span>{t.continueToInvitation}</span>
-                  <ChevronDown className="w-4 h-4 text-[#1a1517] animate-bounce flex-shrink-0" />
-                </button>
-                <span className="text-[10px] uppercase font-cinzel tracking-widest text-[#dfba73]/80 animate-pulse">
-                  {t.scrollOrTapToOpen}
-                </span>
-              </div>
+                  {/* Center Plaque */}
+                  <div className="relative z-10 my-auto bg-white/95 backdrop-blur-md px-5 py-4 rounded-2xl border border-[#c5a059] shadow-xl max-w-[240px]">
+                    <span className="text-[9px] uppercase tracking-[0.25em] text-[#8a6d3b] font-cinzel font-bold block">
+                      Holy Matrimony
+                    </span>
+                    <h3 className="font-serif italic text-2xl font-bold text-[#2b2623] mt-1 leading-tight">
+                      {coupleNames}
+                    </h3>
+                    <p className="text-[10px] text-[#574d43] font-sans mt-1">
+                      Tap to swing open cathedral doors
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleAdvanceToEnvelope}
+                    className="relative z-10 mb-2 px-6 py-2.5 rounded-full bg-[#8a6d3b] hover:bg-[#6b5229] text-white font-cinzel font-bold text-xs tracking-wider shadow-xl transition cursor-pointer border border-[#dfba73]"
+                  >
+                    🚪 Swing Open Cathedral Doors
+                  </button>
+                </div>
+              ) : template.coverStyle === "mandala" ? (
+                /* 2. SACRED MANDALA PORUWA STAGE */
+                <div className="relative w-full max-w-sm aspect-[4/5] rounded-[36px] bg-gradient-to-b from-[#fffbf2] via-[#f7eedf] to-[#e8d5b5] p-5 border-2 border-[#c5a059] shadow-2xl overflow-hidden flex flex-col justify-between items-center text-center">
+                  {/* Rotating Mandala */}
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 pointer-events-none opacity-30">
+                    <svg viewBox="0 0 200 200" className="w-full h-full text-[#c5a059] animate-spin-slow">
+                      <circle cx="100" cy="100" r="85" fill="none" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3 3" />
+                      <circle cx="100" cy="100" r="76" fill="none" stroke="currentColor" strokeWidth="2.5" />
+                      <circle cx="100" cy="100" r="66" fill="none" stroke="currentColor" strokeWidth="1.5" />
+                      {[...Array(16)].map((_, i) => (
+                        <path key={i} d="M 100 100 L 100 25 Q 107 40 100 55" fill="none" stroke="currentColor" strokeWidth="1.5" transform={`rotate(${i * 22.5} 100 100)`} />
+                      ))}
+                    </svg>
+                  </div>
+
+                  <div className="relative z-10 pt-2 space-y-1">
+                    <span className="text-[12px] font-bold tracking-[0.2em] text-[#8b1e2a] font-serif block">
+                      ශ්‍රී සුභ මංගලම්
+                    </span>
+                    <span className="text-[9px] uppercase tracking-[0.25em] text-[#8a5d20] font-cinzel font-semibold">
+                      Traditional Poruwa Ceremony
+                    </span>
+                  </div>
+
+                  <div className="relative z-10 my-auto space-y-2">
+                    <div className="w-12 h-px bg-[#c5a059] mx-auto" />
+                    <h2 className="font-serif italic text-3xl font-bold text-[#8b1e2a] leading-tight">
+                      {coupleNames}
+                    </h2>
+                    <div className="w-12 h-px bg-[#c5a059] mx-auto" />
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleAdvanceToEnvelope}
+                    className="relative z-10 mb-2 px-6 py-2.5 rounded-full bg-gradient-to-r from-[#8b1e2a] to-[#c5a059] text-white font-cinzel font-bold text-xs tracking-wider shadow-xl transition cursor-pointer border border-[#ffd700]"
+                  >
+                    ⚜ Open Auspicious Envelope
+                  </button>
+                </div>
+              ) : template.coverStyle === "floral-silk" ? (
+                /* 3. BOTANICAL SILK GREENERY STAGE */
+                <div className="relative w-full max-w-sm aspect-[4/5] rounded-[36px] bg-gradient-to-b from-[#ffffff] via-[#f7faf6] to-[#edf4ed] p-5 border-2 border-[#2d6a4f]/50 shadow-2xl overflow-hidden flex flex-col justify-between items-center text-center">
+                  <div className="relative z-10 pt-2 flex items-center justify-center gap-1.5 text-[#2d6a4f]">
+                    <span className="text-sm">❦</span>
+                    <span className="text-xs">🌿</span>
+                    <span className="text-sm">❦</span>
+                  </div>
+
+                  <div className="relative z-10 my-auto space-y-2">
+                    <p className="text-[9px] uppercase tracking-[0.25em] text-[#40916c] font-cinzel font-bold">
+                      Botanical Garden Nuptials
+                    </p>
+                    <h2 className="font-serif italic text-3xl font-bold text-[#1b4332] leading-tight">
+                      {coupleNames}
+                    </h2>
+                    <div className="w-10 h-0.5 bg-[#2d6a4f]/50 mx-auto" />
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleAdvanceToEnvelope}
+                    className="relative z-10 mb-2 px-6 py-2.5 rounded-full bg-[#2d6a4f] hover:bg-[#1b4332] text-white font-cinzel font-bold text-xs tracking-wider shadow-xl transition cursor-pointer border border-[#e9d8a6]/40"
+                  >
+                    🌿 Open Botanical Envelope
+                  </button>
+                </div>
+              ) : (
+                /* 4. CLASSIC ROMANCE COUPLE STORY */
+                <>
+                  <CoupleWalkAndKiss
+                    coupleNames={coupleNames}
+                    isOpening={isOpening}
+                    onStoryComplete={handleStoryComplete}
+                  />
+
+                  {/* Action row below couple animation */}
+                  <div className="flex flex-col items-center gap-2 mt-5">
+                    <button
+                      type="button"
+                      onClick={handleAdvanceToEnvelope}
+                      className="btn-gold-shimmer px-7 py-2.5 rounded-full font-cinzel text-xs tracking-[0.15em] uppercase font-bold flex items-center justify-center gap-2 shadow-[0_10px_25px_rgba(197,160,89,0.35)] hover:scale-105 active:scale-95 transition cursor-pointer border border-[#fff2cf]/50 min-h-[42px] touch-manipulation"
+                    >
+                      <span>{t.continueToInvitation}</span>
+                      <ChevronDown className="w-4 h-4 text-[#1a1517] animate-bounce flex-shrink-0" />
+                    </button>
+                    <span className="text-[10px] uppercase font-cinzel tracking-widest text-[#dfba73]/80 animate-pulse">
+                      {t.scrollOrTapToOpen}
+                    </span>
+                  </div>
+                </>
+              )}
             </div>
           ) : (
             <div className="w-full flex flex-col items-center animate-stage-appear">

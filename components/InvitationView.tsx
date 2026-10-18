@@ -82,6 +82,8 @@ import {
   GildedCardBorder,
 } from "./RoyalDecorations";
 import { getTemplate } from "@/lib/templates";
+import BotanicalLaceInvitationView from "./templates/BotanicalLaceInvitationView";
+import NoirCathedralInvitationView from "./templates/NoirCathedralInvitationView";
 
 function FloralDivider({
   className = "",
@@ -212,6 +214,16 @@ export default function InvitationView({
     () => getTemplate(urlTemplateId || settings.templateId),
     [urlTemplateId, settings.templateId]
   );
+
+  const isModern = activeTemplate.id === "modern-ivory" || activeTemplate.category === "minimalist";
+  const isBotanical = activeTemplate.id === "botanical-silk-sanduni" || activeTemplate.category === "botanical";
+  const isCelestial = activeTemplate.id === "celestial-midnight" || activeTemplate.category === "celestial";
+  const isVelvet = activeTemplate.id === "velvet-homecoming";
+  const isCathedral = activeTemplate.id === "cathedral-palace-doors";
+  const isTraditional = activeTemplate.id === "golden-mandala-heritage" || activeTemplate.category === "traditional";
+  const isEthereal = activeTemplate.id === "ethereal-blush";
+
+
   const [isSlideshowPlaying, setIsSlideshowPlaying] = useState(true);
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
   const [floatingHearts, setFloatingHearts] = useState<{ id: number; left: number; size: number }[]>([]);
@@ -391,6 +403,120 @@ export default function InvitationView({
   };
 
   const t = translations[locale] || translations.en;
+
+  const themeCardStyles = useMemo(() => {
+    if (isModern) {
+      return {
+        cardBg: "bg-[#09090b] text-[#f4f4f5] border border-white/15 shadow-2xl",
+        titleColor: "text-white",
+        subtitleColor: "text-[#c5a059]",
+        badgePill: "bg-white/10 text-[#c5a059] border border-[#c5a059]/40",
+        badgeText: "✦ HIGH-FASHION MINIMALIST WEDDING ✦",
+        flourishColor: "#71717a",
+        introColor: "text-[#a1a1aa]",
+        decreeCard: "bg-[#121216] border border-white/10 text-[#f4f4f5]",
+        guestPill: "bg-[#c5a059] text-black border border-[#c5a059]",
+        buttonClass: "bg-neutral-900 hover:bg-neutral-800 text-[#ffd700] border border-[#ffd700]/40",
+      };
+    }
+    if (isBotanical) {
+      return {
+        cardBg: "bg-gradient-to-b from-[#ffffff] via-[#f7faf6] to-[#eef4ee] text-[#1b4332] border-2 border-[#2d6a4f]/40 shadow-2xl",
+        titleColor: "text-[#1b4332]",
+        subtitleColor: "text-[#2d6a4f]",
+        badgePill: "bg-[#2d6a4f]/10 text-[#2d6a4f] border border-[#2d6a4f]/30",
+        badgeText: "✦ BOTANICAL GARDEN CELEBRATION ✦",
+        flourishColor: "#2d6a4f",
+        introColor: "text-[#40916c]",
+        decreeCard: "bg-[#f4f8f4] border border-[#2d6a4f]/30 text-[#1b4332]",
+        guestPill: "bg-[#2d6a4f] text-white border border-[#2d6a4f]",
+        buttonClass: "bg-[#2d6a4f] hover:bg-[#1b4332] text-white border border-[#52796f]",
+      };
+    }
+    if (isCelestial) {
+      return {
+        cardBg: "bg-gradient-to-b from-[#0b1329] via-[#0f1d3b] to-[#040812] text-[#f8fafc] border-2 border-[#38bdf8]/50 shadow-[0_0_40px_rgba(56,189,248,0.2)]",
+        titleColor: "text-[#38bdf8]",
+        subtitleColor: "text-[#93c5fd]",
+        badgePill: "bg-[#38bdf8]/15 text-[#38bdf8] border border-[#38bdf8]/40",
+        badgeText: "✦ CELESTIAL STARRY NIGHT UNION ✦",
+        flourishColor: "#38bdf8",
+        introColor: "text-[#cbd5e1]",
+        decreeCard: "bg-[#0f1d3b] border border-[#38bdf8]/30 text-[#f8fafc]",
+        guestPill: "bg-gradient-to-r from-[#1e3a8a] to-[#2563eb] text-white border border-[#60a5fa]",
+        buttonClass: "bg-gradient-to-r from-[#1e3a8a] to-[#2563eb] text-white border border-[#60a5fa]",
+      };
+    }
+    if (isVelvet) {
+      return {
+        cardBg: "bg-gradient-to-b from-[#fffdfa] via-[#faf5eb] to-[#f4ebe0] text-[#3b1720] border-2 border-[#c5a059] shadow-2xl ring-1 ring-[#541221]/30",
+        titleColor: "text-[#541221]",
+        subtitleColor: "text-[#8a5d20]",
+        badgePill: "bg-[#541221]/10 text-[#541221] border border-[#c5a059]/50",
+        badgeText: "✦ THE HOMECOMING CELEBRATION ✦",
+        flourishColor: "#c5a059",
+        introColor: "text-[#7a4855]",
+        decreeCard: "royal-decree-card text-[#3b1720]",
+        guestPill: "bg-gradient-to-r from-[#541221] to-[#73172c] text-[#edd892] border border-[#c5a059]",
+        buttonClass: "bg-gradient-to-r from-[#541221] to-[#73172c] text-[#edd892] border border-[#c5a059]",
+      };
+    }
+    if (isTraditional) {
+      return {
+        cardBg: "bg-gradient-to-b from-[#fffdfa] via-[#fcf8f0] to-[#f6ecda] text-[#362208] border-2 border-[#c5a059] shadow-2xl",
+        titleColor: "text-[#8b1e2a]",
+        subtitleColor: "text-[#c5a059]",
+        badgePill: "bg-[#8b1e2a]/10 text-[#8b1e2a] border border-[#c5a059]/60",
+        badgeText: "✦ ශ්‍රී සුභ මංගලම් • AUSPICIOUS WEDDING ✦",
+        flourishColor: "#c5a059",
+        introColor: "text-[#8a5d20]",
+        decreeCard: "royal-decree-card text-[#362208]",
+        guestPill: "bg-gradient-to-r from-[#8b1e2a] via-[#c5a059] to-[#8b1e2a] text-white border border-[#ffd700]",
+        buttonClass: "bg-gradient-to-r from-[#c5a059] via-[#dfba73] to-[#8b1e2a] text-[#362208] border border-[#ffd700]",
+      };
+    }
+    if (isCathedral) {
+      return {
+        cardBg: "bg-gradient-to-b from-[#ffffff] via-[#fbf8f4] to-[#f4eee6] text-[#2b2623] border-2 border-[#c5a059] shadow-2xl",
+        titleColor: "text-[#2b2623]",
+        subtitleColor: "text-[#8a6d3b]",
+        badgePill: "bg-[#4a3b32]/10 text-[#2b2623] border border-[#c5a059]/50",
+        badgeText: "✦ CATHEDRAL SACRED SOLEMNIZATION ✦",
+        flourishColor: "#c5a059",
+        introColor: "text-[#8a6d3b]",
+        decreeCard: "royal-decree-card text-[#2b2623]",
+        guestPill: "bg-[#2b2623] text-[#edd892] border border-[#c5a059]",
+        buttonClass: "bg-[#2b2623] hover:bg-[#4a3b32] text-[#edd892] border border-[#c5a059]",
+      };
+    }
+    if (isEthereal) {
+      return {
+        cardBg: "bg-gradient-to-b from-[#fffbfa] via-[#fdf2f4] to-[#f9e7ea] text-[#290916] border-2 border-[#fbcfe8] shadow-2xl",
+        titleColor: "text-[#be185d]",
+        subtitleColor: "text-[#fb7185]",
+        badgePill: "bg-[#be185d]/10 text-[#be185d] border border-[#f472b6]/40",
+        badgeText: "✦ ENCHANTED FAIRY-TALE ROMANCE ✦",
+        flourishColor: "#e11d48",
+        introColor: "text-[#9f1239]",
+        decreeCard: "bg-[#fff0f5] border border-[#fbcfe8] text-[#290916]",
+        guestPill: "bg-gradient-to-r from-[#be185d] to-[#db2777] text-white border border-[#fbcfe8]",
+        buttonClass: "bg-gradient-to-r from-[#be185d] to-[#db2777] text-white border border-[#fbcfe8]",
+      };
+    }
+    // Default Royal Heritage
+    return {
+      cardBg: "parchment-card text-[#1a1517]",
+      titleColor: "text-[#661022]",
+      subtitleColor: "text-[#8c6a2b]",
+      badgePill: "bg-gradient-to-r from-[#661022]/10 via-[#dfba73]/25 to-[#661022]/10 border border-[#bda06d]/40 text-[#8c6a2b]",
+      badgeText: `✦ ${t.royalHomecoming} ✦`,
+      flourishColor: "#c5a059",
+      introColor: "text-[#4a3b42]",
+      decreeCard: "royal-decree-card text-[#1a1517]",
+      guestPill: "bg-gradient-to-r from-[#661022] via-[#800020] to-[#661022] text-[#ffd700] border border-[#ffd700]/50",
+      buttonClass: "bg-gradient-to-r from-[#800020] to-[#6b0f24] text-[#ffd700] border border-[#ffd700]",
+    };
+  }, [activeTemplate, isModern, isBotanical, isCelestial, isVelvet, isTraditional, isCathedral, isEthereal, t.royalHomecoming]);
 
   function handleToggleVideoAudio(e?: React.MouseEvent) {
     e?.stopPropagation();
@@ -705,33 +831,43 @@ export default function InvitationView({
     settings.venueName
   )}`;
 
-  // Google Calendar direct web URL
-  const eventDateObj = new Date(settings.eventDate);
-  const gCalStart = eventDateObj.toISOString().replace(/-|:|\.\d\d\d/g, "");
-  const gCalEnd = new Date(eventDateObj.getTime() + 5 * 60 * 60 * 1000)
-    .toISOString()
-    .replace(/-|:|\.\d\d\d/g, "");
-  const googleCalendarWebUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(
-    `${settings.coupleNames} — ${t.homecomingCelebration}`
-  )}&dates=${gCalStart}/${gCalEnd}&details=${encodeURIComponent(
-    `${t.homecomingCelebration} for ${settings.coupleNames}`
-  )}&location=${encodeURIComponent(
-    `${settings.venueName}, ${settings.venueAddress}`
-  )}`;
+  // Google Calendar & web calendar URLs with deterministic date computation
+  const { googleCalendarWebUrl, yahooCalendarWebUrl, outlookCalendarWebUrl } = useMemo(() => {
+    const eventDateObj = new Date(settings.eventDate);
+    const validTime = isNaN(eventDateObj.getTime()) ? new Date("2026-12-18T18:30:00.000Z") : eventDateObj;
+    const gCalStart = validTime.toISOString().replace(/-|:|\.\d\d\d/g, "");
+    const gCalEnd = new Date(validTime.getTime() + 5 * 60 * 60 * 1000)
+      .toISOString()
+      .replace(/-|:|\.\d\d\d/g, "");
 
-  const yahooCalendarWebUrl = `https://calendar.yahoo.com/?v=60&title=${encodeURIComponent(
-    `${settings.coupleNames} — ${t.homecomingCelebration}`
-  )}&st=${gCalStart}&et=${gCalEnd}&desc=${encodeURIComponent(
-    `${t.homecomingCelebration} for ${settings.coupleNames}`
-  )}&in_loc=${encodeURIComponent(`${settings.venueName}, ${settings.venueAddress}`)}`;
+    const gUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(
+      `${settings.coupleNames} — ${t.homecomingCelebration}`
+    )}&dates=${gCalStart}/${gCalEnd}&details=${encodeURIComponent(
+      `${t.homecomingCelebration} for ${settings.coupleNames}`
+    )}&location=${encodeURIComponent(
+      `${settings.venueName}, ${settings.venueAddress}`
+    )}`;
 
-  const outlookCalendarWebUrl = `https://outlook.live.com/calendar/0/deeplink/compose?path=/calendar/action/compose&rru=addevent&subject=${encodeURIComponent(
-    `${settings.coupleNames} — ${t.homecomingCelebration}`
-  )}&startdt=${eventDateObj.toISOString()}&enddt=${new Date(
-    eventDateObj.getTime() + 5 * 60 * 60 * 1000
-  ).toISOString()}&body=${encodeURIComponent(
-    `${t.homecomingCelebration} for ${settings.coupleNames}`
-  )}&location=${encodeURIComponent(`${settings.venueName}, ${settings.venueAddress}`)}`;
+    const yUrl = `https://calendar.yahoo.com/?v=60&title=${encodeURIComponent(
+      `${settings.coupleNames} — ${t.homecomingCelebration}`
+    )}&st=${gCalStart}&et=${gCalEnd}&desc=${encodeURIComponent(
+      `${t.homecomingCelebration} for ${settings.coupleNames}`
+    )}&in_loc=${encodeURIComponent(`${settings.venueName}, ${settings.venueAddress}`)}`;
+
+    const oUrl = `https://outlook.live.com/calendar/0/deeplink/compose?path=/calendar/action/compose&rru=addevent&subject=${encodeURIComponent(
+      `${settings.coupleNames} — ${t.homecomingCelebration}`
+    )}&startdt=${validTime.toISOString()}&enddt=${new Date(
+      validTime.getTime() + 5 * 60 * 60 * 1000
+    ).toISOString()}&body=${encodeURIComponent(
+      `${t.homecomingCelebration} for ${settings.coupleNames}`
+    )}&location=${encodeURIComponent(`${settings.venueName}, ${settings.venueAddress}`)}`;
+
+    return {
+      googleCalendarWebUrl: gUrl,
+      yahooCalendarWebUrl: yUrl,
+      outlookCalendarWebUrl: oUrl,
+    };
+  }, [settings.eventDate, settings.coupleNames, settings.venueName, settings.venueAddress, t.homecomingCelebration]);
 
   // Generate dynamic QR Code for guest VIP pass
   useEffect(() => {
@@ -876,6 +1012,14 @@ export default function InvitationView({
     }
   };
 
+  if (isBotanical) {
+    return <BotanicalLaceInvitationView guest={guest} settings={settings} photos={photos} />;
+  }
+
+  if (isCathedral) {
+    return <NoirCathedralInvitationView guest={guest} settings={settings} photos={photos} />;
+  }
+
   return (
     <div className={`relative min-h-screen ${activeTemplate.styles.pageBg} text-[#fdfbf7] selection:bg-[#c5a059]/30 selection:text-[#f7e4be] overflow-x-hidden transition-colors duration-700`}>
       {/* 3D Wax Seal Envelope Entrance Overlay */}
@@ -922,46 +1066,141 @@ export default function InvitationView({
 
       {/* Main Luxury Invitation Container */}
       <div className="relative z-10 max-w-xl mx-auto px-3 sm:px-6 py-6 sm:py-16">
-        {/* Parchment Invitation Card Frame */}
-        <div className="parchment-card rounded-2xl sm:rounded-3xl p-4 sm:p-10 text-[#1a1517] relative overflow-hidden">
-          {/* Ornate Gold Filigree Corners */}
-          <RoyalCornerFlourish position="top-left" size={68} />
-          <RoyalCornerFlourish position="top-right" size={68} />
-          <RoyalCornerFlourish position="bottom-left" size={68} />
-          <RoyalCornerFlourish position="bottom-right" size={68} />
+        {/* Dynamic Themed Invitation Card Frame */}
+        <div className={`${themeCardStyles.cardBg} rounded-2xl sm:rounded-3xl p-4 sm:p-10 relative overflow-hidden transition-all duration-500`}>
+          {/* Theme-Adaptive Corner Flourishes or Modern Brackets */}
+          {!isModern ? (
+            <>
+              <RoyalCornerFlourish position="top-left" size={68} />
+              <RoyalCornerFlourish position="top-right" size={68} />
+              <RoyalCornerFlourish position="bottom-left" size={68} />
+              <RoyalCornerFlourish position="bottom-right" size={68} />
+              <GildedCardBorder />
+            </>
+          ) : (
+            <>
+              {/* Modern Minimalist Geometric Corner Brackets */}
+              <div className="absolute top-3 left-3 w-6 h-6 border-t-2 border-l-2 border-[#c5a059] pointer-events-none" />
+              <div className="absolute top-3 right-3 w-6 h-6 border-t-2 border-r-2 border-[#c5a059] pointer-events-none" />
+              <div className="absolute bottom-3 left-3 w-6 h-6 border-b-2 border-l-2 border-[#c5a059] pointer-events-none" />
+              <div className="absolute bottom-3 right-3 w-6 h-6 border-b-2 border-r-2 border-[#c5a059] pointer-events-none" />
+              <div className="absolute inset-2.5 rounded-2xl border border-white/10 pointer-events-none" />
+            </>
+          )}
 
-          {/* Gilded Dual-Layer Border with Corner Diamonds */}
-          <GildedCardBorder />
-
-          {/* Ambient Gold Radiance Top Sheen */}
+          {/* Ambient Top Radiance Sheen */}
           <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-[#ffd700]/70 to-transparent pointer-events-none" />
 
           {/* Header Monogram & Title with Scroll Reveal */}
           <ScrollReveal variant="fade-up" duration={750}>
-            <div className="text-center pt-3 sm:pt-5 mb-4">
-              {/* Royal Crest with Couple Monogram */}
-              <div className="flex justify-center mb-3">
-                <RoyalCrest monogram={monogram} size={76} />
-              </div>
+            {isTraditional ? (
+              <div className="text-center pt-2 sm:pt-4 mb-4">
+                {/* Rotating 24K Auspicious Poruwa Mandala Filigree */}
+                <div className="relative w-20 h-20 sm:w-24 sm:h-24 mx-auto mb-3 flex items-center justify-center">
+                  <div className="absolute inset-0 rounded-full border-2 border-dashed border-[#c5a059] animate-spin-slow opacity-60" />
+                  <RoyalCrest monogram={monogram} size={64} />
+                </div>
 
-              {/* Royal Homecoming Ribbon Pill */}
-              <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-gradient-to-r from-[#661022]/10 via-[#dfba73]/25 to-[#661022]/10 border border-[#bda06d]/40 shadow-2xs mb-2 text-[#8c6a2b] font-cinzel text-[9px] sm:text-[10px] tracking-[0.3em] uppercase font-bold">
-                <span className="text-[10px] text-[#ffd700]">✦</span>
-                <span>{t.royalHomecoming}</span>
-                <span className="text-[10px] text-[#ffd700]">✦</span>
-              </div>
+                <div className="inline-flex items-center gap-2 px-4 py-1 rounded-full bg-[#8b1e2a]/15 text-[#8b1e2a] border border-[#c5a059]/60 shadow-xs mb-2 font-serif text-[11px] sm:text-xs tracking-[0.2em] font-bold">
+                  <span>ශ්‍රී සුභ මංගලම් • SRI SUBA MANGALAM</span>
+                </div>
 
-              <h1 className="font-serif italic text-3xl sm:text-5xl text-[#661022] font-bold mt-1 tracking-tight drop-shadow-xs">
-                {t.invitationTitle}
-              </h1>
-            </div>
+                <h1 className="font-serif italic text-3xl sm:text-5xl text-[#8b1e2a] font-bold mt-1 tracking-tight drop-shadow-xs">
+                  {settings.coupleNames}
+                </h1>
+                <p className="text-center text-xs sm:text-sm text-[#8a5d20] font-serif leading-relaxed max-w-md mx-auto mt-2 italic font-semibold">
+                  Auspicious Poruwa Ceremony &amp; Sacred Customs
+                </p>
+              </div>
+            ) : isBotanical ? (
+              <div className="text-center pt-2 sm:pt-4 mb-4">
+                <div className="flex items-center justify-center gap-2 text-[#2d6a4f] text-sm mb-2">
+                  <span>❦</span>
+                  <span>🌿</span>
+                  <span className="text-xs uppercase tracking-[0.25em] font-cinzel font-bold text-[#2d6a4f]">Botanical Garden</span>
+                  <span>🌿</span>
+                  <span>❦</span>
+                </div>
+
+                <h1 className="font-serif italic text-3xl sm:text-5xl text-[#1b4332] font-bold mt-1 tracking-tight">
+                  {settings.coupleNames}
+                </h1>
+                <p className="text-center text-xs sm:text-sm text-[#40916c] font-sans leading-relaxed max-w-md mx-auto mt-2 italic">
+                  Together in Nature&apos;s Embrace • Wedding Celebration
+                </p>
+              </div>
+            ) : isCathedral ? (
+              <div className="text-center pt-2 sm:pt-4 mb-4">
+                <div className="text-base text-[#c5a059] mb-1">⚜</div>
+                <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#4a3b32]/10 text-[#2b2623] border border-[#c5a059]/50 mb-2 font-cinzel text-[10px] tracking-[0.25em] uppercase font-bold">
+                  <span>Holy Matrimony</span>
+                </div>
+                <h1 className="font-serif text-3xl sm:text-5xl text-[#2b2623] font-bold mt-1 tracking-wide">
+                  {settings.coupleNames}
+                </h1>
+                <p className="text-center text-xs sm:text-sm text-[#8a6d3b] font-serif leading-relaxed max-w-md mx-auto mt-2 italic">
+                  In the presence of God &amp; our families, we exchange sacred vows
+                </p>
+              </div>
+            ) : isCelestial ? (
+              <div className="text-center pt-2 sm:pt-4 mb-4">
+                <div className="text-sm text-[#38bdf8] mb-1 animate-pulse">✨ ✦ ✨</div>
+                <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#38bdf8]/15 text-[#38bdf8] border border-[#38bdf8]/40 mb-2 font-cinzel text-[10px] tracking-[0.25em] uppercase font-bold">
+                  <span>Written in the Stars</span>
+                </div>
+                <h1 className="font-serif italic text-3xl sm:text-5xl text-[#f8fafc] font-bold mt-1 tracking-tight drop-shadow-[0_2px_12px_rgba(56,189,248,0.5)]">
+                  {settings.coupleNames}
+                </h1>
+                <p className="text-center text-xs sm:text-sm text-[#93c5fd] font-sans leading-relaxed max-w-md mx-auto mt-2 italic">
+                  Under a canopy of stars, we unite our souls in eternal love
+                </p>
+              </div>
+            ) : isVelvet ? (
+              <div className="text-center pt-2 sm:pt-4 mb-4">
+                <div className="text-lg text-[#dfba73] mb-1">👑</div>
+                <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#541221]/15 text-[#541221] border border-[#c5a059]/50 mb-2 font-cinzel text-[10px] tracking-[0.25em] uppercase font-bold">
+                  <span>The Homecoming Celebration</span>
+                </div>
+                <h1 className="font-serif italic text-3xl sm:text-5xl text-[#541221] font-bold mt-1 tracking-tight">
+                  {settings.coupleNames}
+                </h1>
+                <p className="text-center text-xs sm:text-sm text-[#7a4855] font-sans leading-relaxed max-w-md mx-auto mt-2 italic">
+                  A grand evening of romance, champagne toasts, &amp; banquet dance
+                </p>
+              </div>
+            ) : isModern ? (
+              <div className="text-center pt-2 sm:pt-4 mb-4">
+                <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white/10 text-[#c5a059] border border-[#c5a059]/40 mb-2 font-mono text-[9px] tracking-[0.3em] uppercase font-bold">
+                  <span>BLACK TIE • MINIMAL</span>
+                </div>
+                <h1 className="font-serif text-3xl sm:text-5xl text-white font-bold mt-1 tracking-wide uppercase">
+                  {settings.coupleNames}
+                </h1>
+                <p className="text-center text-xs sm:text-sm text-[#a1a1aa] font-mono leading-relaxed max-w-md mx-auto mt-2 tracking-wider">
+                  CELEBRATION OF MARRIAGE &amp; UNION
+                </p>
+              </div>
+            ) : (
+              <div className="text-center pt-3 sm:pt-5 mb-4">
+                <div className="flex justify-center mb-3">
+                  <RoyalCrest monogram={monogram} size={76} />
+                </div>
+                <div className={`inline-flex items-center gap-2 px-3.5 py-1 rounded-full ${themeCardStyles.badgePill} shadow-2xs mb-2 font-cinzel text-[9px] sm:text-[10px] tracking-[0.3em] uppercase font-bold`}>
+                  <span className="text-[10px] text-[#ffd700]">✦</span>
+                  <span>{themeCardStyles.badgeText}</span>
+                  <span className="text-[10px] text-[#ffd700]">✦</span>
+                </div>
+                <h1 className={`font-serif italic text-3xl sm:text-5xl ${themeCardStyles.titleColor} font-bold mt-1 tracking-tight drop-shadow-xs`}>
+                  {settings.coupleNames}
+                </h1>
+                <p className={`text-center text-xs sm:text-sm ${themeCardStyles.introColor} font-sans leading-relaxed max-w-md mx-auto mb-4 italic`}>
+                  {settings.hostIntro || t.familyIntro}
+                </p>
+              </div>
+            )}
 
             {/* Symmetrical Royal Flourish Divider */}
-            <RoyalFlourishDivider variant="crown" className="!my-2.5 !sm:my-3" />
-
-            <p className="text-center text-xs sm:text-sm text-[#4a3b42] font-sans leading-relaxed max-w-md mx-auto mb-4 italic">
-              {t.familyIntro}
-            </p>
+            <RoyalFlourishDivider variant={isBotanical ? "lotus" : isCelestial ? "heart" : "crown"} className="!my-2.5 !sm:my-3" />
           </ScrollReveal>
 
           {/* Interactive Pre-Shoot Film / Couple Photo Switcher Pills */}
@@ -1123,11 +1362,11 @@ export default function InvitationView({
                         </p>
                         <div className="flex items-center justify-center gap-2 sm:gap-3 flex-wrap">
                           <h2 className="font-serif italic text-3xl sm:text-4xl text-[#fff8ea] font-bold tracking-tight drop-shadow-lg">
-                            {settings.coupleNames.split("&")[0]?.trim() || "Sandharu"}
+                            {groomFirstName}
                           </h2>
                           <span className="font-alex text-3xl sm:text-4xl text-[#edd892] drop-shadow-lg">&</span>
                           <h2 className="font-serif italic text-3xl sm:text-4xl text-[#fff8ea] font-bold tracking-tight drop-shadow-lg">
-                            {settings.coupleNames.split("&")[1]?.trim() || "Sanduni"}
+                            {brideFirstName}
                           </h2>
                         </div>
                       </div>
@@ -1136,18 +1375,35 @@ export default function InvitationView({
                 </div>
               ) : (
                 /* HIGH-RES COUPLE PHOTO MODE (Fallback) */
-                <div className="relative h-72 sm:h-96 w-full overflow-hidden">
+                <div className={`relative h-72 sm:h-96 w-full overflow-hidden ${
+                  isTraditional && heroImageSrc.includes("couple-art.png")
+                    ? "bg-gradient-to-b from-[#2a040e] via-[#1a0208] to-[#0c0104]"
+                    : ""
+                }`}>
                   <Image
                     src={heroImageSrc}
                     alt={settings.coupleNames}
                     fill
                     sizes="(max-width: 640px) 100vw, 550px"
-                    className="object-cover object-top transition duration-700 group-hover:scale-105"
+                    className={`${
+                      isTraditional && heroImageSrc.includes("couple-art.png")
+                        ? "object-contain object-center p-3"
+                        : "object-cover object-top"
+                    } transition duration-700 group-hover:scale-105`}
                     priority
                   />
 
                   <div className="absolute inset-0 bg-gradient-to-t from-[#12080c] via-[#12080c]/30 to-transparent" />
 
+                  {/* Traditional Corner Accents on Art Frame */}
+                  {isTraditional && (
+                    <>
+                      <div className="absolute top-2 left-2 text-[#ffd700] text-sm select-none pointer-events-none opacity-80">⚜</div>
+                      <div className="absolute top-2 right-2 text-[#ffd700] text-sm select-none pointer-events-none opacity-80">⚜</div>
+                      <div className="absolute bottom-12 left-2 text-[#ffd700] text-sm select-none pointer-events-none opacity-80">⚜</div>
+                      <div className="absolute bottom-12 right-2 text-[#ffd700] text-sm select-none pointer-events-none opacity-80">⚜</div>
+                    </>
+                  )}
 
                   {/* Lightbox Trigger Button */}
                   <button
@@ -1162,15 +1418,23 @@ export default function InvitationView({
                   {/* Couple Names Calligraphy Overlaid at base of photo */}
                   <div className="absolute bottom-0 inset-x-0 p-4 sm:p-6 text-center text-[#fdfbf7]">
                     <p className="text-[10px] sm:text-xs uppercase tracking-[0.3em] text-[#edd892] font-cinzel font-semibold mb-1">
-                      {t.happyCouple}
+                      {isTraditional
+                        ? "✦ මංගල යුවල • THE BRIDE & GROOM ✦"
+                        : isBotanical
+                        ? "✦ NATURAL HARMONY • THE BRIDE & GROOM ✦"
+                        : isCathedral
+                        ? "✦ SACRED MATRIMONY • THE BRIDE & GROOM ✦"
+                        : isCelestial
+                        ? "✦ WRITTEN IN THE STARS ✦"
+                        : t.happyCouple}
                     </p>
                     <div className="flex items-center justify-center gap-2 sm:gap-3 flex-wrap">
                       <h2 className="font-serif italic text-3xl sm:text-4xl text-[#fff8ea] font-bold tracking-tight drop-shadow-md">
-                        {settings.coupleNames.split("&")[0]?.trim() || "Sandharu"}
+                        {groomFirstName}
                       </h2>
                       <span className="font-alex text-3xl sm:text-4xl text-[#edd892] drop-shadow">&</span>
                       <h2 className="font-serif italic text-3xl sm:text-4xl text-[#fff8ea] font-bold tracking-tight drop-shadow-md">
-                        {settings.coupleNames.split("&")[1]?.trim() || "Sanduni"}
+                        {brideFirstName}
                       </h2>
                     </div>
                   </div>
@@ -1185,32 +1449,36 @@ export default function InvitationView({
 
           {/* Host Intro & Personalized Guest Salutation Card with Scroll Reveal */}
           <ScrollReveal variant="fade-up" duration={750}>
-            <div className="royal-decree-card relative text-center my-6 sm:my-8 px-5 py-7 sm:px-8 sm:py-9 rounded-2xl sm:rounded-3xl overflow-hidden transition-all duration-300 hover:shadow-xl">
+            <div className={`${themeCardStyles.decreeCard} relative text-center my-6 sm:my-8 px-5 py-7 sm:px-8 sm:py-9 rounded-2xl sm:rounded-3xl overflow-hidden transition-all duration-300 hover:shadow-xl`}>
               {/* Corner Filigree Mini-Ornaments on Guest Card */}
-              <RoyalCornerFlourish position="top-left" size={44} />
-              <RoyalCornerFlourish position="top-right" size={44} />
-              <RoyalCornerFlourish position="bottom-left" size={44} />
-              <RoyalCornerFlourish position="bottom-right" size={44} />
+              {!isModern && (
+                <>
+                  <RoyalCornerFlourish position="top-left" size={44} />
+                  <RoyalCornerFlourish position="top-right" size={44} />
+                  <RoyalCornerFlourish position="bottom-left" size={44} />
+                  <RoyalCornerFlourish position="bottom-right" size={44} />
+                </>
+              )}
 
               {/* Top ambient gold highlight */}
               <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-[#dfba73]/70 to-transparent pointer-events-none" />
 
               {/* Host Intro Narrative */}
               {settings.hostIntro && (
-                <p className="text-xs sm:text-sm text-[#5a483e] font-sans leading-relaxed max-w-md mx-auto mb-4 italic">
+                <p className={`text-xs sm:text-sm ${themeCardStyles.introColor} font-sans leading-relaxed max-w-md mx-auto mb-4 italic`}>
                   &ldquo;{settings.hostIntro}&rdquo;
                 </p>
               )}
 
               {/* Regal Ribbon Badge */}
-              <div className="inline-flex items-center gap-1.5 px-4 py-1 rounded-full bg-gradient-to-r from-[#661022] via-[#800020] to-[#661022] text-[#ffd700] text-[10px] sm:text-xs font-cinzel font-bold tracking-[0.25em] uppercase shadow-md border border-[#ffd700]/50 mb-3">
+              <div className={`inline-flex items-center gap-1.5 px-4 py-1 rounded-full ${themeCardStyles.guestPill} text-[10px] sm:text-xs font-cinzel font-bold tracking-[0.25em] uppercase shadow-md mb-3`}>
                 <Sparkles className="w-3 h-3 text-[#ffd700]" />
                 <span>{t.honouredGuest}</span>
                 <Sparkles className="w-3 h-3 text-[#ffd700]" />
               </div>
 
               {/* Personalized Guest Name in Grand Calligraphy */}
-              <div className="font-serif italic text-2xl sm:text-4xl text-[#661022] font-bold tracking-wide my-1 drop-shadow-xs">
+              <div className={`font-serif italic text-2xl sm:text-4xl ${themeCardStyles.titleColor} font-bold tracking-wide my-1 drop-shadow-xs`}>
                 {formatInviteLine(guest)}
               </div>
 
@@ -1597,7 +1865,7 @@ export default function InvitationView({
                   {t.colorPaletteTitle}
                 </span>
                 <div className="flex items-center justify-center gap-3 sm:gap-4 flex-wrap">
-                  {t.paletteColors.map((c, i) => (
+                  {(activeTemplate.palette && activeTemplate.palette.length > 0 ? activeTemplate.palette : t.paletteColors).map((c, i) => (
                     <div
                       key={i}
                       className="flex flex-col items-center gap-1.5 transition-transform hover:scale-110"
@@ -1936,6 +2204,7 @@ export default function InvitationView({
                   href={googleCalendarWebUrl}
                   target="_blank"
                   rel="noopener noreferrer"
+                  suppressHydrationWarning
                   className="py-2.5 px-2.5 rounded-xl bg-[#800020] text-[#fdfbf7] hover:bg-[#5c0017] text-[11px] font-cinzel font-semibold flex items-center justify-center gap-1.5 shadow transition min-h-[42px] touch-manipulation"
                 >
                   <Calendar className="w-3.5 h-3.5 text-[#edd892]" /> {t.googleCalendar}
@@ -1950,6 +2219,7 @@ export default function InvitationView({
                   href={outlookCalendarWebUrl}
                   target="_blank"
                   rel="noopener noreferrer"
+                  suppressHydrationWarning
                   className="py-2.5 px-2.5 rounded-xl bg-[#0078d4] text-white hover:bg-[#005a9e] text-[11px] font-cinzel font-semibold flex items-center justify-center gap-1.5 shadow transition min-h-[42px] touch-manipulation"
                 >
                   <Calendar className="w-3.5 h-3.5" /> {t.outlookCalendar}
@@ -1958,6 +2228,7 @@ export default function InvitationView({
                   href={yahooCalendarWebUrl}
                   target="_blank"
                   rel="noopener noreferrer"
+                  suppressHydrationWarning
                   className="py-2.5 px-2.5 rounded-xl bg-[#5f01d1] text-white hover:bg-[#4900a3] text-[11px] font-cinzel font-semibold flex items-center justify-center gap-1.5 shadow transition min-h-[42px] touch-manipulation"
                 >
                   <Calendar className="w-3.5 h-3.5" /> {t.yahooCalendar}
