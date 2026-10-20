@@ -87,6 +87,10 @@ import BotanicalLaceInvitationView from "./templates/BotanicalLaceInvitationView
 import NoirCathedralInvitationView from "./templates/NoirCathedralInvitationView";
 import TuscanVillaInvitationView from "./templates/TuscanVillaInvitationView";
 import BlushFloralInvitationView from "./templates/BlushFloralInvitationView";
+import ModernIvoryInvitationView from "./templates/ModernIvoryInvitationView";
+import CelestialMidnightInvitationView from "./templates/CelestialMidnightInvitationView";
+import EtherealBlushInvitationView from "./templates/EtherealBlushInvitationView";
+import RoyalHeritageInvitationView from "./templates/RoyalHeritageInvitationView";
 
 function FloralDivider({
   className = "",
@@ -1033,6 +1037,22 @@ export default function InvitationView({
 
   if (activeTemplate.id === "velvet-homecoming") {
     return <BlushFloralInvitationView guest={guest} settings={settings} photos={photos} />;
+  }
+
+  if (isModern || activeTemplate.id === "modern-ivory") {
+    return <ModernIvoryInvitationView guest={guest} settings={settings} photos={photos} />;
+  }
+
+  if (isCelestial || activeTemplate.id === "celestial-midnight") {
+    return <CelestialMidnightInvitationView guest={guest} settings={settings} photos={photos} />;
+  }
+
+  if (isEthereal || activeTemplate.id === "ethereal-blush") {
+    return <EtherealBlushInvitationView guest={guest} settings={settings} photos={photos} />;
+  }
+
+  if (activeTemplate.id === "royal-heritage") {
+    return <RoyalHeritageInvitationView guest={guest} settings={settings} photos={photos} />;
   }
 
   return (

@@ -7,6 +7,10 @@ import BotanicalLaceInvitationView from "@/components/templates/BotanicalLaceInv
 import NoirCathedralInvitationView from "@/components/templates/NoirCathedralInvitationView";
 import TuscanVillaInvitationView from "@/components/templates/TuscanVillaInvitationView";
 import BlushFloralInvitationView from "@/components/templates/BlushFloralInvitationView";
+import ModernIvoryInvitationView from "@/components/templates/ModernIvoryInvitationView";
+import CelestialMidnightInvitationView from "@/components/templates/CelestialMidnightInvitationView";
+import EtherealBlushInvitationView from "@/components/templates/EtherealBlushInvitationView";
+import RoyalHeritageInvitationView from "@/components/templates/RoyalHeritageInvitationView";
 import { resolveTemplateIdFromParam } from "@/lib/templates";
 
 export interface RenderInviteOptions {
@@ -185,6 +189,22 @@ export async function renderInvitePage({
 
   if (effectiveTemplateId === "velvet-homecoming") {
     return <BlushFloralInvitationView guest={guest} settings={settings} photos={photos} />;
+  }
+
+  if (effectiveTemplateId === "modern-ivory") {
+    return <ModernIvoryInvitationView guest={guest} settings={settings} photos={photos} />;
+  }
+
+  if (effectiveTemplateId === "celestial-midnight") {
+    return <CelestialMidnightInvitationView guest={guest} settings={settings} photos={photos} />;
+  }
+
+  if (effectiveTemplateId === "ethereal-blush") {
+    return <EtherealBlushInvitationView guest={guest} settings={settings} photos={photos} />;
+  }
+
+  if (effectiveTemplateId === "royal-heritage") {
+    return <RoyalHeritageInvitationView guest={guest} settings={settings} photos={photos} />;
   }
 
   return <InvitationView guest={guest} settings={settings} photos={photos} />;
