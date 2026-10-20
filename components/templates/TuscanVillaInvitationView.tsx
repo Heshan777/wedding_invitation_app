@@ -156,6 +156,26 @@ export default function TuscanVillaInvitationView({
 
   // Gallery items for "CAPTURED MOMENTS" (2 rows x 3 columns)
   const galleryItems = useMemo(() => {
+    if (photos && photos.length >= 6) {
+      return photos.slice(0, 6).map((p, idx) => ({
+        src: p.imageUrl || p.url || `/images/templates/tuscan/moment-${idx + 1}.jpg`,
+        caption: p.caption || "Special moment",
+      }));
+    }
+    if (photos && photos.length > 0) {
+      const fallbackList = [
+        { src: "/images/templates/tuscan/moment-1.jpg", caption: "Sun-drenched romance" },
+        { src: "/images/templates/tuscan/moment-2.jpg", caption: "Villa gardens" },
+        { src: "/images/templates/tuscan/moment-3.jpg", caption: "Sweet laughter" },
+        { src: "/images/templates/tuscan/moment-4.jpg", caption: "Lakeside promenade" },
+        { src: "/images/templates/tuscan/moment-5.jpg", caption: "Golden hour vows" },
+        { src: "/images/templates/tuscan/moment-6.jpg", caption: "Together forever" },
+      ];
+      return fallbackList.map((item, idx) => ({
+        src: photos[idx]?.imageUrl || photos[idx]?.url || item.src,
+        caption: photos[idx]?.caption || item.caption,
+      }));
+    }
     return [
       { src: "/images/templates/tuscan/moment-1.jpg", caption: "Sun-drenched romance" },
       { src: "/images/templates/tuscan/moment-2.jpg", caption: "Villa gardens" },
@@ -164,7 +184,31 @@ export default function TuscanVillaInvitationView({
       { src: "/images/templates/tuscan/moment-5.jpg", caption: "Golden hour vows" },
       { src: "/images/templates/tuscan/moment-6.jpg", caption: "Together forever" },
     ];
-  }, []);
+  }, [photos]);
+
+  // Dynamic Timeline events parsed from settings or fallback
+  const timelineEvents = useMemo(() => {
+    if (settings?.timelineJson) {
+      try {
+        const parsed = JSON.parse(settings.timelineJson);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed.map((evt: any, idx: number) => ({
+            num: String(idx + 1),
+            title: evt.title || `EVENT ${idx + 1}`,
+            time: evt.time || "12:00 PM",
+            desc: evt.desc || evt.description || "",
+          }));
+        }
+      } catch (e) {
+        // Fall back to default order of the day
+      }
+    }
+    return [
+      { num: "1", title: "CEREMONY", time: "03:00 PM", desc: "Exchange of eternal vows & cathedral rings" },
+      { num: "2", title: "COCKTAIL HOUR", time: "04:30 PM", desc: "Aperol spritz, prosecco & string quartet melodies" },
+      { num: "3", title: "RECEPTION", time: "06:30 PM", desc: "Fine dining, heartfelt toasts, dancing & celebrations" },
+    ];
+  }, [settings?.timelineJson]);
 
   const handleRsvpSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -255,7 +299,7 @@ export default function TuscanVillaInvitationView({
           {/* Villa Fresco / Italian Riviera Landscape Background */}
           <div className="absolute inset-0 z-0">
             <Image
-              src="/images/templates/tuscan/villa-hero.jpg"
+              src={settings?.heroImageUrl || "/images/templates/tuscan/villa-hero.jpg"}
               alt="Italian villa landscape"
               fill
               priority
@@ -445,11 +489,7 @@ export default function TuscanVillaInvitationView({
           </h2>
 
           <div className="space-y-6 max-w-[360px] mx-auto text-left">
-            {[
-              { num: "1", title: "CEREMONY", time: "03:00 PM", desc: "Exchange of eternal vows & cathedral rings" },
-              { num: "2", title: "COCKTAIL HOUR", time: "04:30 PM", desc: "Aperol spritz, prosecco & string quartet melodies" },
-              { num: "3", title: "RECEPTION", time: "06:30 PM", desc: "Fine dining, heartfelt toasts, dancing & celebrations" },
-            ].map((evt, idx) => (
+            {timelineEvents.map((evt, idx) => (
               <div key={idx} className="flex items-start gap-4">
                 {/* Circular Rose-Burgundy Icon Badge */}
                 <div className="w-9 h-9 rounded-full bg-[#9b4356] text-white flex items-center justify-center font-cinzel text-xs font-bold shrink-0 shadow-sm mt-0.5">
@@ -528,7 +568,7 @@ export default function TuscanVillaInvitationView({
           </span>
 
           <h2 className="font-serif text-2xl sm:text-3xl text-[#3d2b24] tracking-[0.2em] uppercase mb-1 font-normal">
-            The Grand Pavilion
+            {settings?.venueName || "The Grand Pavilion"}
           </h2>
 
           <p className="font-serif italic text-xs text-[#9b4356] mb-6">

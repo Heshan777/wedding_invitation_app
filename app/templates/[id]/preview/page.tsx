@@ -72,7 +72,7 @@ export default function TemplatePreviewPage({
     if (template.id === "golden-mandala-heritage" || template.id === "nilame-traditional") {
       heroPhoto = data.cartoonCoupleArt || "/images/templates/kandyan/couple-art.png";
     } else if (template.id === "velvet-homecoming") {
-      heroPhoto = "/images/templates/velvet-homecoming/card-front.png";
+      heroPhoto = "/images/templates/blush-floral/floral-header-arch.png";
     } else if (!heroPhoto) {
       heroPhoto = "/images/couple-kiss.jpg";
     }

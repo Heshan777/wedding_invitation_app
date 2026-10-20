@@ -189,29 +189,65 @@ export default function BlushFloralInvitationView({
     }
   };
 
-  // Order of the Day events
-  const itinerary = [
-    {
-      time: "02:00 PM",
-      title: "Poruwa Ceremony",
-      desc: "Traditional Sri Lankan blessings, exchange of rings & family unity",
-    },
-    {
-      time: "03:30 PM",
-      title: "Cocktail Hour",
-      desc: "Tropical refreshments, coconut canapés & beachside acoustic music",
-    },
-    {
-      time: "05:00 PM",
-      title: "Grand Reception",
-      desc: "Exquisite dinner buffet, heartfelt speeches & champagne celebration",
-    },
-    {
-      time: "07:30 PM",
-      title: "Dance & Celebration",
-      desc: "First dance, live music, beachside dancing & midnight fireworks",
-    },
-  ];
+  // Order of the Day events (parsed from settings.timelineJson or fallback)
+  const itinerary = useMemo(() => {
+    if (settings?.timelineJson) {
+      try {
+        const parsed = JSON.parse(settings.timelineJson);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed.map((item: any) => ({
+            time: item.time || "12:00 PM",
+            title: item.title || "Wedding Milestone",
+            desc: item.desc || item.description || "",
+          }));
+        }
+      } catch (err) {
+        // Fall back to default
+      }
+    }
+    return [
+      {
+        time: "02:00 PM",
+        title: "Poruwa Ceremony",
+        desc: "Traditional Sri Lankan blessings, exchange of rings & family unity",
+      },
+      {
+        time: "03:30 PM",
+        title: "Cocktail Hour",
+        desc: "Tropical refreshments, coconut canapés & beachside acoustic music",
+      },
+      {
+        time: "05:00 PM",
+        title: "Grand Reception",
+        desc: "Exquisite dinner buffet, heartfelt speeches & champagne celebration",
+      },
+      {
+        time: "07:30 PM",
+        title: "Dance & Celebration",
+        desc: "First dance, live music, beachside dancing & midnight fireworks",
+      },
+    ];
+  }, [settings?.timelineJson]);
+
+  // Formatted Wedding Date
+  const formattedWeddingDate = useMemo(() => {
+    const months = [
+      "JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE",
+      "JULY", "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER"
+    ];
+    const d = new Date(settings?.eventDate || "2026-11-14T14:00:00");
+    const validDate = isNaN(d.getTime()) ? new Date("2026-11-14T14:00:00") : d;
+    return `${months[validDate.getMonth()]} ${validDate.getDate()}, ${validDate.getFullYear()}`;
+  }, [settings?.eventDate]);
+
+  // Google Maps URL
+  const googleMapsUrl = useMemo(() => {
+    if (settings?.googleMapsUrl) return settings.googleMapsUrl;
+    const query = encodeURIComponent(
+      `${settings?.venueName || "Hikkaduwa Beach Resort"}, ${settings?.venueAddress || "Galle Road, Hikkaduwa, Sri Lanka"}`
+    );
+    return `https://maps.google.com/?q=${query}`;
+  }, [settings?.googleMapsUrl, settings?.venueName, settings?.venueAddress]);
 
   return (
     <div className="relative min-h-screen bg-[#fcf8f3] text-[#3e1b24] font-sans overflow-x-hidden selection:bg-[#f0a8b8]/40 selection:text-[#541221]">
@@ -300,7 +336,7 @@ export default function BlushFloralInvitationView({
           {/* Wedding Date */}
           <div className="inline-block px-5 py-1.5 rounded-full bg-[#f4ece3] border border-[#e8d5c4] mb-3">
             <p className="text-xs sm:text-sm font-serif tracking-[0.18em] text-[#541221] font-medium">
-              NOVEMBER 14, 2026
+              {formattedWeddingDate}
             </p>
           </div>
 
@@ -622,11 +658,11 @@ export default function BlushFloralInvitationView({
           </p>
 
           <h2 className="text-2xl sm:text-3xl font-serif text-[#421424] mb-1 font-normal">
-            Hikkaduwa Beach Resort
+            {settings?.venueName || "Hikkaduwa Beach Resort"}
           </h2>
 
           <p className="text-xs text-[#7a4855] tracking-wide mb-3">
-            Galle Road, Hikkaduwa, Southern Province, Sri Lanka
+            {settings?.venueAddress || "Galle Road, Hikkaduwa, Southern Province, Sri Lanka"}
           </p>
 
           {/* Floral Divider */}
@@ -644,7 +680,7 @@ export default function BlushFloralInvitationView({
           <div className="max-w-[380px] mx-auto mb-5 rounded-2xl overflow-hidden border border-[#eddcd2] shadow-sm bg-[#f5ede4] relative aspect-[16/10]">
             <iframe
               title="Venue Map Location"
-              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3967.652156857186!2d80.0988582!3d6.1362846!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3ae178351bb23455%3A0xb304cfdd8cb78619!2sHikkaduwa%20Beach!5e0!3m2!1sen!2slk!4v1700000000000"
+              src={settings?.mapEmbedUrl || "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3967.652156857186!2d80.0988582!3d6.1362846!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3ae178351bb23455%3A0xb304cfdd8cb78619!2sHikkaduwa%20Beach!5e0!3m2!1sen!2slk!4v1700000000000"}
               className="w-full h-full border-0"
               loading="lazy"
               referrerPolicy="no-referrer-when-downgrade"
@@ -653,7 +689,7 @@ export default function BlushFloralInvitationView({
 
           {/* Get Directions Button */}
           <a
-            href="https://maps.google.com/?q=Hikkaduwa+Beach+Resort+Sri+Lanka"
+            href={googleMapsUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-white border border-[#eddcd2] shadow-xs hover:shadow-md transition-all text-[#541221] text-xs font-serif tracking-wider font-semibold hover:bg-[#fff9f6]"

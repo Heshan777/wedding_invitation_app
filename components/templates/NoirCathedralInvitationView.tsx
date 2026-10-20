@@ -153,13 +153,42 @@ export default function NoirCathedralInvitationView({
 
   // Editorial photo gallery items
   const galleryItems = useMemo(() => {
+    if (photos && photos.length >= 4) {
+      return photos.slice(0, 4).map((p, idx) => ({
+        src: p.imageUrl || p.url || `/images/templates/noir/noir-gallery-${idx + 1}.jpg`,
+        caption: p.caption || "Special Moment",
+      }));
+    }
     return [
       { src: "/images/templates/noir/noir-gallery-1.jpg", caption: "Eternal Embrace in the Woodlands" },
       { src: "/images/templates/noir/noir-gallery-2.jpg", caption: "A Whisper of Forever" },
       { src: "/images/templates/noir/noir-gallery-3.jpg", caption: "Under the Midnight Light" },
       { src: "/images/templates/noir/noir-gallery-4.jpg", caption: "Laughter and Golden Promises" },
     ];
-  }, []);
+  }, [photos]);
+
+  // Dynamic Timeline Events
+  const timelineEvents = useMemo(() => {
+    if (settings?.timelineJson) {
+      try {
+        const parsed = JSON.parse(settings.timelineJson);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed.map((item: any) => ({
+            time: item.time || "12:00 PM",
+            title: (item.title || "Wedding Milestone").toUpperCase(),
+            desc: item.desc || item.description || "",
+          }));
+        }
+      } catch (err) {}
+    }
+    return [
+      { time: "04:00 PM", title: "GUEST ARRIVAL & RED CARPET", desc: "Welcome cocktail & classical violin accompaniments" },
+      { time: "05:00 PM", title: "SOLEMN MATRIMONY & VOWS", desc: "Exchange of eternal wedding rings & ceremony blessing" },
+      { time: "06:30 PM", title: "CHAMPAGNE COCKTAIL HOUR", desc: "Hors d'oeuvres & bridal party photo moments" },
+      { time: "07:30 PM", title: "GRAND BANQUET DINNER", desc: "Curated fine dining, toasts & royal wedding cake cutting" },
+      { time: "09:30 PM", title: "FIRST DANCE & SOIREE", desc: "Live jazz band, midnight dancing & sparkler farewell" },
+    ];
+  }, [settings?.timelineJson]);
 
   const handleRsvpSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -354,13 +383,7 @@ export default function NoirCathedralInvitationView({
           </h2>
 
           <div className="relative max-w-[340px] mx-auto space-y-6">
-            {[
-              { time: "04:00 PM", title: "GUEST ARRIVAL & RED CARPET", desc: "Welcome cocktail & classical violin accompaniments" },
-              { time: "05:00 PM", title: "SOLEMN MATRIMONY & VOWS", desc: "Exchange of eternal wedding rings & ceremony blessing" },
-              { time: "06:30 PM", title: "CHAMPAGNE COCKTAIL HOUR", desc: "Hors d'oeuvres & bridal party photo moments" },
-              { time: "07:30 PM", title: "GRAND BANQUET DINNER", desc: "Curated fine dining, toasts & royal wedding cake cutting" },
-              { time: "09:30 PM", title: "FIRST DANCE & SOIREE", desc: "Live jazz band, midnight dancing & sparkler farewell" },
-            ].map((item, idx) => (
+            {timelineEvents.map((item, idx) => (
               <div
                 key={idx}
                 className="p-4 rounded-xl bg-[#131218] border border-white/5 shadow-md text-left flex items-start gap-4 transition-transform hover:scale-[1.01]"

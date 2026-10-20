@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
 import { createManagerSession } from "@/lib/auth";
+import { resolveTemplateIdFromParam } from "@/lib/templates";
 
 export async function POST(req: NextRequest) {
   try {
@@ -152,12 +153,27 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    // Resolve template ID safely
+    const resolvedTemplateId = resolveTemplateIdFromParam(templateId) || templateId || "golden-mandala-heritage";
+    let defaultHeroImage = "/images/couple-kiss.jpg";
+    if (resolvedTemplateId === "golden-mandala-heritage") {
+      defaultHeroImage = "/images/templates/kandyan/couple-art.png";
+    } else if (resolvedTemplateId === "botanical-silk-sanduni") {
+      defaultHeroImage = "/images/templates/botanical/hydrangea-garden.jpg";
+    } else if (resolvedTemplateId === "cathedral-palace-doors") {
+      defaultHeroImage = "/images/templates/noir/noir-hero.jpg";
+    } else if (resolvedTemplateId === "embossed-ivory-envelope") {
+      defaultHeroImage = "/images/templates/tuscan/villa-hero.jpg";
+    } else if (resolvedTemplateId === "velvet-homecoming") {
+      defaultHeroImage = "/images/templates/blush-floral/floral-header-arch.png";
+    }
+
     // Create WeddingEvent
     const weddingEvent = await prisma.weddingEvent.create({
       data: {
         slug: finalSlug,
         managerId: newManager.id,
-        templateId: templateId || "royal-heritage",
+        templateId: resolvedTemplateId,
         coupleNames: resolvedCoupleNames,
         hostIntro: hostIntro || "With joyful hearts and the blessings of our parents, we cordially invite",
         invitationBody: invitationBody || "to share in our joy as we celebrate the sacred union of our lives...",
@@ -167,6 +183,9 @@ export async function POST(req: NextRequest) {
         venueLat: 6.9271,
         venueLng: 79.8612,
         contactPhone: phone?.trim() || "+94 77 123 4567",
+        heroImageUrl: defaultHeroImage,
+        videoThumbnailUrl: defaultHeroImage,
+        welcomeImageUrl: defaultHeroImage,
         dressCodeTitle: dressCodeTitle || "Traditional Sri Lankan Elegance or Black Tie",
         dressCodeDescription: dressCodeDescription || "Formal evening attire in warm tones of gold, burgundy, and ivory.",
         musicUrl: musicUrl || "/audio/background.mp3",
@@ -175,7 +194,7 @@ export async function POST(req: NextRequest) {
     });
 
     // Create default sample VIP guest for the couple
-    await prisma.guest.create({
+    const sampleGuest = await prisma.guest.create({
       data: {
         eventId: weddingEvent.id,
         displayName: "Honored Guest",
@@ -200,6 +219,7 @@ export async function POST(req: NextRequest) {
       success: true,
       slug: cleanSlug,
       eventId: weddingEvent.id,
+      guestToken: sampleGuest.token,
       username: finalUsername,
       message: "Wedding invitation created successfully!",
       redirectUrl: "/admin/dashboard",

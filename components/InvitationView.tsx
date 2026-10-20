@@ -82,6 +82,7 @@ import {
   GildedCardBorder,
 } from "./RoyalDecorations";
 import { getTemplate } from "@/lib/templates";
+import GoldenMandalaInvitationView from "./templates/GoldenMandalaInvitationView";
 import BotanicalLaceInvitationView from "./templates/BotanicalLaceInvitationView";
 import NoirCathedralInvitationView from "./templates/NoirCathedralInvitationView";
 import TuscanVillaInvitationView from "./templates/TuscanVillaInvitationView";
@@ -1013,6 +1014,10 @@ export default function InvitationView({
       setSubmittingRsvp(false);
     }
   };
+
+  if (isTraditional || activeTemplate.id === "golden-mandala-heritage" || activeTemplate.id === "nilame-traditional") {
+    return <GoldenMandalaInvitationView guest={guest} settings={settings} photos={photos} />;
+  }
 
   if (isBotanical) {
     return <BotanicalLaceInvitationView guest={guest} settings={settings} photos={photos} />;

@@ -31,6 +31,7 @@ import {
   getTemplate,
   InvitationTemplate,
   TEMPLATE_TO_ENDPOINT_NUMBER,
+  resolveTemplateIdFromParam,
 } from "@/lib/templates";
 import SriLankanPlanningTools from "@/components/SriLankanPlanningTools";
 import DashboardTemplatePhoneMockup from "@/components/DashboardTemplatePhoneMockup";
@@ -1074,8 +1075,10 @@ export default function AdminDashboard() {
     setLoading(true);
     setAppBaseUrl(getAppBaseUrl());
     try {
+      const urlParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
+      const urlEventId = urlParams?.get("eventId") || null;
       const savedEventId = typeof window !== "undefined" ? localStorage.getItem("active_wedding_event_id") : null;
-      const queryEventId = targetEventId || activeEventId || savedEventId || "";
+      const queryEventId = targetEventId || urlEventId || activeEventId || savedEventId || "";
       const url = queryEventId
         ? `/api/admin/bootstrap?eventId=${encodeURIComponent(queryEventId)}`
         : "/api/admin/bootstrap";
@@ -1509,12 +1512,14 @@ export default function AdminDashboard() {
 
   function inviteLink(token: string) {
     const base = getAppBaseUrl();
-    const endpointNum = TEMPLATE_TO_ENDPOINT_NUMBER[settings.templateId || "velvet-homecoming"] || 5;
+    const resolvedTpl = resolveTemplateIdFromParam(settings.templateId) || settings.templateId || "golden-mandala-heritage";
+    const endpointNum = TEMPLATE_TO_ENDPOINT_NUMBER[resolvedTpl] || 1;
     return `${base}/invite${endpointNum}/${token}`;
   }
 
   function previewInviteLink(token: string) {
-    const endpointNum = TEMPLATE_TO_ENDPOINT_NUMBER[settings.templateId || "velvet-homecoming"] || 5;
+    const resolvedTpl = resolveTemplateIdFromParam(settings.templateId) || settings.templateId || "golden-mandala-heritage";
+    const endpointNum = TEMPLATE_TO_ENDPOINT_NUMBER[resolvedTpl] || 1;
     return `/invite${endpointNum}/${token}`;
   }
 

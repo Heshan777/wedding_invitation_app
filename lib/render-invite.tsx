@@ -2,6 +2,7 @@ import React from "react";
 import { prisma } from "@/lib/db";
 import { notFound } from "next/navigation";
 import InvitationView from "@/components/InvitationView";
+import GoldenMandalaInvitationView from "@/components/templates/GoldenMandalaInvitationView";
 import BotanicalLaceInvitationView from "@/components/templates/BotanicalLaceInvitationView";
 import NoirCathedralInvitationView from "@/components/templates/NoirCathedralInvitationView";
 import TuscanVillaInvitationView from "@/components/templates/TuscanVillaInvitationView";
@@ -164,6 +165,10 @@ export async function renderInvitePage({
     } catch (err) {
       console.warn("Failed to update guest view timestamp:", err);
     }
+  }
+
+  if (effectiveTemplateId === "golden-mandala-heritage" || effectiveTemplateId === "nilame-traditional") {
+    return <GoldenMandalaInvitationView guest={guest} settings={settings} photos={photos} />;
   }
 
   if (effectiveTemplateId === "botanical-silk-sanduni") {

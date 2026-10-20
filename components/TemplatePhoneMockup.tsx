@@ -132,17 +132,40 @@ export default function TemplatePhoneMockup({
                     </div>
                   )}
 
-                  {/* 2. VELVET HOMECOMING EXACT SCREEN */}
+                  {/* 2. BLUSH FLORAL ROMANCE (Sachin & Kavindi) */}
                   {template.id === "velvet-homecoming" && (
-                    <div className="absolute inset-0 z-10 flex flex-col items-center justify-between p-2.5 bg-[#faf5eb]">
-                      <div className="relative w-full h-full rounded-2xl overflow-hidden shadow-inner">
+                    <div className="absolute inset-0 z-10 flex flex-col items-center justify-between p-3 bg-gradient-to-b from-[#faf6f0] via-[#fcf8f3] to-[#f4ebe1]">
+                      {/* Top floral arch */}
+                      <div className="relative w-full h-24 -mt-2 pointer-events-none">
                         <Image
-                          src="/images/templates/velvet-homecoming/actual-template-screen.png"
-                          alt="Velvet Homecoming actual template preview"
+                          src="/images/templates/blush-floral/floral-header-arch.png"
+                          alt="Blush Floral Header Arch"
                           fill
                           priority
-                          className="object-cover"
-                          sizes="280px"
+                          className="object-contain object-top"
+                        />
+                      </div>
+
+                      <div className="relative z-10 flex flex-col items-center justify-center my-auto">
+                        <span className="text-[8.5px] uppercase tracking-[0.25em] text-[#8a3b53] font-sans font-semibold mb-1">
+                          The Wedding Of
+                        </span>
+                        <h3 className="font-serif text-2xl text-[#421424] font-normal leading-tight">
+                          {template.coupleDemoNames}
+                        </h3>
+                        <p className="text-[9.5px] text-[#7a4855] font-serif mt-1 tracking-wider">
+                          {template.demoDate}
+                        </p>
+                      </div>
+
+                      {/* Bottom floral bouquet */}
+                      <div className="relative w-full h-20 -mb-2 pointer-events-none">
+                        <Image
+                          src="/images/templates/blush-floral/floral-bouquet.png"
+                          alt="Blush Floral Bouquet"
+                          fill
+                          priority
+                          className="object-contain object-bottom"
                         />
                       </div>
                     </div>

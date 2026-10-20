@@ -152,8 +152,38 @@ export default function BotanicalLaceInvitationView({
     return `https://www.google.com/maps/search/?api=1&query=${query}`;
   }, [settings?.googleMapsUrl, settings?.venueName, settings?.venueAddress]);
 
+  // Dynamic Timeline Events
+  const timelineEvents = useMemo(() => {
+    if (settings?.timelineJson) {
+      try {
+        const parsed = JSON.parse(settings.timelineJson);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed.map((item: any, idx: number) => ({
+            time: item.time || "12:00 PM",
+            title: (item.title || `EVENT ${idx + 1}`).toUpperCase(),
+            icon: String(idx + 1),
+          }));
+        }
+      } catch (err) {}
+    }
+    return [
+      { time: "09:30 AM", title: "GUEST ARRIVAL", icon: "1" },
+      { time: "10:24 AM", title: "SACRED CEREMONY", icon: "2" },
+      { time: "12:00 PM", title: "COCKTAIL HOUR", icon: "3" },
+      { time: "01:30 PM", title: "WEDDING DINNER", icon: "4" },
+      { time: "03:30 PM", title: "CAKE CUTTING", icon: "5" },
+      { time: "04:30 PM", title: "DANCE & CELEBRATION", icon: "6" },
+    ];
+  }, [settings?.timelineJson]);
+
   // Black and white gallery items
   const galleryItems = useMemo(() => {
+    if (photos && photos.length >= 5) {
+      return photos.slice(0, 5).map((p, idx) => ({
+        src: p.imageUrl || p.url || `/images/templates/botanical/bw-${(idx % 3) + 1}.jpg`,
+        title: p.caption || "Special Memory",
+      }));
+    }
     return [
       { src: "/images/templates/botanical/bw-1.jpg", title: "A Sacred Promise" },
       { src: "/images/templates/botanical/bw-2.jpg", title: "Whispers of Forever" },
@@ -161,7 +191,7 @@ export default function BotanicalLaceInvitationView({
       { src: "/images/templates/botanical/polaroid-1.jpg", title: "Where Love Began" },
       { src: "/images/templates/botanical/polaroid-2.jpg", title: "Two Hearts as One" },
     ];
-  }, []);
+  }, [photos]);
 
   const handleRsvpSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -422,14 +452,7 @@ export default function BotanicalLaceInvitationView({
 
             {/* Timeline Milestones */}
             <div className="space-y-10">
-              {[
-                { time: "09:30 AM", title: "GUEST ARRIVAL", icon: "1" },
-                { time: "10:24 AM", title: "SACRED CEREMONY", icon: "2" },
-                { time: "12:00 PM", title: "COCKTAIL HOUR", icon: "3" },
-                { time: "01:30 PM", title: "WEDDING DINNER", icon: "4" },
-                { time: "03:30 PM", title: "CAKE CUTTING", icon: "5" },
-                { time: "04:30 PM", title: "DANCE & CELEBRATION", icon: "6" },
-              ].map((item, idx) => (
+              {timelineEvents.map((item, idx) => (
                 <div key={idx} className="relative flex flex-col items-center">
                   {/* Circular Node */}
                   <div className="relative z-10 w-7 h-7 rounded-full bg-[#f7f4ed] border-2 border-[#5b7891] flex items-center justify-center text-[10px] font-cinzel font-bold text-[#395368] shadow-xs mb-2">

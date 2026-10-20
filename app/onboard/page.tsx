@@ -24,7 +24,7 @@ import {
   Volume2,
   VolumeX,
 } from "lucide-react";
-import { TEMPLATE_LIST, getTemplate, InvitationTemplate } from "@/lib/templates";
+import { TEMPLATE_LIST, getTemplate, InvitationTemplate, resolveTemplateIdFromParam } from "@/lib/templates";
 import { getWedLinkTemplate } from "@/lib/template-engine";
 import ThemedPhoneInvitationBody from "@/components/ThemedPhoneInvitationBody";
 import RoyalThemeToggle from "@/components/RoyalThemeToggle";
@@ -77,13 +77,45 @@ export default function OnboardWizardPage() {
   const [slugMessage, setSlugMessage] = useState<string>("This link is ready for your wedding!");
   const [suggestedSlug, setSuggestedSlug] = useState<string>("");
 
+  const applyTemplateSelection = (rawTemplateId: string) => {
+    const resolvedId = resolveTemplateIdFromParam(rawTemplateId) || rawTemplateId || "golden-mandala-heritage";
+    const wedlinkTheme = getWedLinkTemplate(resolvedId);
+    const tmplMeta = getTemplate(resolvedId);
+    const data = wedlinkTheme.sampleData;
+
+    setFormData((prev) => {
+      const demoNames = (tmplMeta.coupleDemoNames || data.coupleNames || "").split(/&|and|\+/i).map((s: string) => s.trim());
+      const groom = demoNames[0] || "Groom";
+      const bride = demoNames[1] || "Bride";
+      const autoSlug = `${groom.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-and-${bride.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-2026`;
+
+      return {
+        ...prev,
+        templateId: resolvedId,
+        groomName: groom,
+        brideName: bride,
+        slug: autoSlug,
+        eventDate: data.eventDate || "2026-11-28",
+        venueName: data.venueName || "Grand Ballroom",
+        venueAddress: data.venueAddress || "Colombo, Sri Lanka",
+        hostIntro: data.heroGreeting
+          ? `${data.heroGreeting} • ${data.heroSubtitle || "You are cordially invited"}`
+          : prev.hostIntro,
+        invitationBody: data.vowQuote || prev.invitationBody,
+        musicUrl: data.musicUrl || "/audio/background.mp3",
+        dressCodeTitle: data.dressCodeTitle || tmplMeta.defaultDressCode?.title || prev.dressCodeTitle,
+        dressCodeDescription: data.dressCodeDescription || tmplMeta.defaultDressCode?.description || prev.dressCodeDescription,
+      };
+    });
+  };
+
   useEffect(() => {
     if (typeof window !== "undefined") {
       const sp = new URLSearchParams(window.location.search);
-      const t = sp.get("template");
+      const t = sp.get("template") || sp.get("t") || sp.get("style");
       const p = sp.get("plan");
       if (t) {
-        setFormData((prev) => ({ ...prev, templateId: t }));
+        applyTemplateSelection(t);
         setCurrentStep(2);
       }
       if (p === "complete") {
@@ -234,8 +266,11 @@ export default function OnboardWizardPage() {
         throw new Error(data.error || "Failed to create your invitation.");
       }
 
-      // Successfully created! Redirect directly into the management dashboard
-      router.push(data.redirectUrl || "/admin/dashboard");
+      // Successfully created! Store active event ID so dashboard opens this newly created wedding
+      if (typeof window !== "undefined" && data.eventId) {
+        localStorage.setItem("active_wedding_event_id", data.eventId);
+      }
+      router.push(`/admin/dashboard?eventId=${data.eventId}`);
     } catch (err: any) {
       setErrorMessage(err.message || "An unexpected error occurred.");
       setSubmitting(false);
@@ -346,7 +381,7 @@ export default function OnboardWizardPage() {
                   return (
                     <div
                       key={template.id}
-                      onClick={() => setFormData({ ...formData, templateId: template.id })}
+                      onClick={() => applyTemplateSelection(template.id)}
                       className={`p-5 rounded-2xl border cursor-pointer transition-all duration-200 flex flex-col justify-between ${
                         isSelected
                           ? "bg-[#fff7f8] border-[#d62851] shadow-lg shadow-[#d62851]/10 ring-2 ring-[#d62851]"
