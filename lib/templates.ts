@@ -67,6 +67,7 @@ export const INVITATION_TEMPLATES: Record<string, InvitationTemplate> = {
     coupleDemoNames: "Nethmi & Sanuja",
     demoDate: "Saturday, 12th December 2026",
     coverStyle: "mandala",
+    previewImage: "/images/templates/covers/golden-mandala.jpg",
     previewAccentRgb: "197, 160, 89",
     palette: [
       { name: "Gilded Mandala", hex: "#c5a059" },
@@ -124,6 +125,7 @@ export const INVITATION_TEMPLATES: Record<string, InvitationTemplate> = {
     coupleDemoNames: "Sanduni & Ravindu",
     demoDate: "Saturday, 12th December 2026",
     coverStyle: "floral-silk",
+    previewImage: "/images/templates/covers/botanical-silk.jpg",
     previewAccentRgb: "45, 106, 79",
     palette: [
       { name: "Eucalyptus Green", hex: "#2d6a4f" },
@@ -181,6 +183,7 @@ export const INVITATION_TEMPLATES: Record<string, InvitationTemplate> = {
     coupleDemoNames: "Kavindi & Shenal",
     demoDate: "Sunday, 27th December 2026",
     coverStyle: "arch-doors",
+    previewImage: "/images/templates/covers/cathedral-doors.jpg",
     previewAccentRgb: "197, 160, 89",
     palette: [
       { name: "French Palace Ivory", hex: "#fcfaf7" },
@@ -238,6 +241,7 @@ export const INVITATION_TEMPLATES: Record<string, InvitationTemplate> = {
     coupleDemoNames: "Sophia & Marcus",
     demoDate: "Saturday, 24th October 2026",
     coverStyle: "wax-envelope",
+    previewImage: "/images/templates/covers/tuscan-villa.jpg",
     previewAccentRgb: "155, 67, 86",
     palette: [
       { name: "Pearl Cotton Paper", hex: "#f9f8f5" },
@@ -295,6 +299,7 @@ export const INVITATION_TEMPLATES: Record<string, InvitationTemplate> = {
     coupleDemoNames: "Kasun & Dinithi",
     demoDate: "Saturday, 28th November 2026",
     coverStyle: "wax-envelope",
+    previewImage: "/images/templates/covers/royal-heritage.jpg",
     previewAccentRgb: "223, 186, 115",
     palette: [
       { name: "Royal Velvet", hex: "#800020" },
@@ -353,6 +358,7 @@ export const INVITATION_TEMPLATES: Record<string, InvitationTemplate> = {
     coupleDemoNames: "Akash & Tara",
     demoDate: "Friday, 18th December 2026",
     coverStyle: "wax-envelope",
+    previewImage: "/images/templates/covers/celestial-midnight.jpg",
     previewAccentRgb: "56, 189, 248",
     palette: [
       { name: "Midnight Navy", hex: "#0b1329" },
@@ -411,6 +417,7 @@ export const INVITATION_TEMPLATES: Record<string, InvitationTemplate> = {
     coupleDemoNames: "Nisali & Tharindu",
     demoDate: "Sunday, 14th February 2027",
     coverStyle: "floral-silk",
+    previewImage: "/images/templates/covers/ethereal-blush.jpg",
     previewAccentRgb: "244, 114, 182",
     palette: [
       { name: "Dusty Rose", hex: "#be185d" },
@@ -469,6 +476,7 @@ export const INVITATION_TEMPLATES: Record<string, InvitationTemplate> = {
     coupleDemoNames: "Malik & Sara",
     demoDate: "Saturday, 5th June 2027",
     coverStyle: "minimalist-modern",
+    previewImage: "/images/templates/covers/modern-ivory.jpg",
     previewAccentRgb: "212, 175, 55",
     palette: [
       { name: "Obsidian Jet", hex: "#09090b" },
@@ -527,6 +535,7 @@ export const INVITATION_TEMPLATES: Record<string, InvitationTemplate> = {
     coupleDemoNames: "Sachin & Kavindi",
     demoDate: "Saturday, 14th November 2026",
     coverStyle: "wax-envelope",
+    previewImage: "/images/templates/covers/blush-floral.jpg",
     previewAccentRgb: "84, 18, 33",
     palette: [
       { name: "Burgundy Dahlia", hex: "#541221" },
