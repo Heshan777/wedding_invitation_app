@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { isAdminAuthenticated } from "@/lib/auth";
+import { isAdminAuthenticated, getAuthenticatedManager } from "@/lib/auth";
 import { getCloudinaryConfig, uploadBufferToCloudinary } from "@/lib/cloudinary";
+import { prisma } from "@/lib/db";
+import { getEventPlan } from "@/lib/plan";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 
@@ -44,6 +46,24 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   try {
     if (!(await isAdminAuthenticated())) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Verify SaaS Tier: custom media uploads require paid plan
+    const manager = await getAuthenticatedManager();
+    if (manager && manager.role !== "SUPER_ADMIN") {
+      const ownEvent = await prisma.weddingEvent.findFirst({
+        where: { managerId: manager.id },
+      });
+      if (ownEvent && getEventPlan(ownEvent) === "FREE") {
+        return NextResponse.json(
+          {
+            error: "Custom photo and video uploads require a Paid Tier (Silver, Gold, or Platinum). Upgrade to upload your high-resolution wedding memories.",
+            upgradeRequired: true,
+            plan: "FREE",
+          },
+          { status: 403 }
+        );
+      }
     }
 
     const formData = await req.formData();

@@ -190,6 +190,9 @@ export async function POST(req: NextRequest) {
         dressCodeDescription: dressCodeDescription || "Formal evening attire in warm tones of gold, burgundy, and ivory.",
         musicUrl: musicUrl || "/audio/background.mp3",
         timelineJson: JSON.stringify(timelineData),
+        plan: ["SILVER", "GOLD", "PLATINUM"].includes(String(body.plan || "").toUpperCase())
+          ? String(body.plan).toUpperCase()
+          : "FREE",
       },
     });
 

@@ -135,23 +135,19 @@ export default function TemplatePhoneMockup({
                     </div>
                   )}
 
-                  {/* Interactive Floating Center Wax Seal Medallion */}
-                  <div className="absolute inset-0 z-20 flex flex-col items-center justify-center pointer-events-none pb-14">
+                  {/* Subtle, Non-Intrusive Floating Tap Indicator (Keeps Card Artwork & Names 100% Unobstructed) */}
+                  <div className="absolute bottom-28 inset-x-0 z-20 flex justify-center pointer-events-none">
                     <button
                       type="button"
                       onClick={handleOpen}
-                      className="pointer-events-auto w-14 h-14 rounded-full bg-gradient-to-br from-[#edd892] via-[#dfba73] to-[#9e7834] shadow-[0_10px_25px_rgba(0,0,0,0.6)] border-2 border-white/95 flex flex-col items-center justify-center text-[#422c07] transform hover:scale-110 active:scale-95 transition cursor-pointer group/seal"
-                      title="Tap to unseal invitation"
+                      className="pointer-events-auto px-3.5 py-1.5 rounded-full bg-black/65 hover:bg-black/85 backdrop-blur-md border border-white/30 text-white shadow-[0_6px_20px_rgba(0,0,0,0.5)] flex items-center gap-1.5 transform hover:scale-105 active:scale-95 transition cursor-pointer group/pill animate-pulse"
+                      title="Tap to unseal and view invitation"
                     >
-                      <Crown className="w-5 h-5 text-[#422c07] group-hover/seal:scale-110 transition drop-shadow-xs" />
-                      <span className="text-[7px] font-serif font-black tracking-widest mt-0.5">UNSEAL</span>
+                      <Sparkles className="w-3 h-3 text-[#f6d365]" />
+                      <span className="text-[9.5px] font-serif font-semibold tracking-wider text-amber-100 group-hover/pill:text-white">
+                        Tap card to unseal
+                      </span>
                     </button>
-                    <span
-                      onClick={handleOpen}
-                      className="mt-2 text-[8px] font-bold text-white tracking-widest font-serif drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] bg-black/55 backdrop-blur-xs px-2.5 py-0.5 rounded-full pointer-events-auto cursor-pointer hover:bg-black/75 transition"
-                    >
-                      TAP TO OPEN
-                    </span>
                   </div>
 
                   {/* ========================================================= */}

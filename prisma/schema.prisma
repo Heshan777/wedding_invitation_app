@@ -55,6 +55,7 @@ model WeddingEvent {
     dressCodeDescription String?         @default("Traditional Sri Lankan elegance or formal evening attire in warm tones of gold, burgundy, and ivory.")
     timelineJson         String?
     galleryJson          String?         // Retained for fallback compatibility
+    plan                 String?         @default("FREE")
 
     // Relational Tables
     photos               EventPhoto[]

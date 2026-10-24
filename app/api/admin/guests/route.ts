@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getAuthenticatedManager } from "@/lib/auth";
+import { checkGuestAdditionLimit } from "@/lib/plan";
 
 export const dynamic = "force-dynamic";
 
@@ -104,6 +105,19 @@ export async function POST(req: NextRequest) {
     targetEventId = ownEvent.id;
   }
 
+  // Fetch target event & check guest plan limits
+  const targetEvent = await prisma.weddingEvent.findUnique({
+    where: { id: targetEventId },
+  });
+
+  if (!targetEvent) {
+    return NextResponse.json({ error: "Wedding event not found" }, { status: 404 });
+  }
+
+  const currentCount = await prisma.guest.count({
+    where: { eventId: targetEventId },
+  });
+
   // Bulk Import support (Optimized batch insert)
   if (body.action === "bulk" && Array.isArray(body.guests)) {
     const validGuests = body.guests
@@ -126,6 +140,21 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "No valid guests provided" }, { status: 400 });
     }
 
+    // Verify SaaS plan limit for bulk import
+    const limitCheck = checkGuestAdditionLimit(targetEvent, currentCount, validGuests.length);
+    if (!limitCheck.allowed && !isSuperAdmin) {
+      return NextResponse.json(
+        {
+          error: limitCheck.error,
+          upgradeRequired: true,
+          plan: limitCheck.plan,
+          currentCount,
+          maxGuests: limitCheck.maxGuests,
+        },
+        { status: 403 }
+      );
+    }
+
     await prisma.guest.createMany({
       data: validGuests,
     });
@@ -136,6 +165,21 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json({ success: true, count: validGuests.length, guests: refreshedGuests });
+  }
+
+  // Single Guest Addition limit check
+  const singleLimitCheck = checkGuestAdditionLimit(targetEvent, currentCount, 1);
+  if (!singleLimitCheck.allowed && !isSuperAdmin) {
+    return NextResponse.json(
+      {
+        error: singleLimitCheck.error,
+        upgradeRequired: true,
+        plan: singleLimitCheck.plan,
+        currentCount,
+        maxGuests: singleLimitCheck.maxGuests,
+      },
+      { status: 403 }
+    );
   }
 
   const { displayName, salutation, inviteType, tableNumber, notes, phone, dietary, rsvpStatus, attendeeCount } = body;

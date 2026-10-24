@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthenticatedManager } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { checkPhotoUploadPermission } from "@/lib/plan";
 
 export const dynamic = "force-dynamic";
 
@@ -119,6 +120,20 @@ export async function POST(req: NextRequest) {
 
     if (!event) {
       return NextResponse.json({ error: "Event not found" }, { status: 404 });
+    }
+
+    // Verify SaaS plan allows photo uploads
+    const currentPhotoCount = await prisma.eventPhoto.count({ where: { eventId: targetEventId } });
+    const permission = checkPhotoUploadPermission(event, currentPhotoCount);
+    if (!permission.allowed && !isSuperAdmin) {
+      return NextResponse.json(
+        {
+          error: permission.error,
+          upgradeRequired: true,
+          plan: permission.plan,
+        },
+        { status: 403 }
+      );
     }
 
     // Determine order

@@ -36,6 +36,8 @@ import {
 import SriLankanPlanningTools from "@/components/SriLankanPlanningTools";
 import DashboardTemplatePhoneMockup from "@/components/DashboardTemplatePhoneMockup";
 import DashboardTemplatePreviewModal from "@/components/DashboardTemplatePreviewModal";
+import UpgradePlanModal from "@/components/UpgradePlanModal";
+import { getEventPlan, PLAN_CONFIGS, PlanTier } from "@/lib/plan";
 
 import {
   Users,
@@ -129,6 +131,7 @@ export type WeddingEventItem = {
   dressCodeDescription?: string | null;
   timelineJson?: string | null;
   templateId?: string | null;
+  plan?: string | null;
   _count?: {
     guests: number;
     photos: number;
@@ -235,6 +238,7 @@ type EventSettings = {
   timelineJson?: string | null;
   contactPhone?: string | null;
   templateId?: string | null;
+  plan?: string | null;
 };
 
 const DEFAULT_TIMELINE: TimelineEvent[] = [
@@ -441,6 +445,8 @@ export default function AdminDashboard() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>(emptyForm);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [upgradeTriggerReason, setUpgradeTriggerReason] = useState<"guest_limit" | "photo_upload" | "video_upload" | "general">("general");
 
   // Bulk Import Modal state
   const [showBulkModal, setShowBulkModal] = useState(false);
@@ -922,6 +928,12 @@ export default function AdminDashboard() {
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
+        if (err.upgradeRequired) {
+          setShowBulkModal(false);
+          setUpgradeTriggerReason("guest_limit");
+          setShowUpgradeModal(true);
+          return;
+        }
         throw new Error(err.error || "Bulk import failed");
       }
 
@@ -963,6 +975,13 @@ export default function AdminDashboard() {
 
     const isVid = file.type.startsWith("video/") || Boolean(file.name.match(/\.(mp4|mov|webm|m4v|mkv|avi)$/i));
     const isAudio = file.type.startsWith("audio/") || Boolean(file.name.match(/\.(mp3|wav|ogg|m4a)$/i));
+    // SaaS Free Tier restriction: custom photos & videos require a paid tier
+    if (activePlan === "FREE" && !isAudio) {
+      setUpgradeTriggerReason(isVid ? "video_upload" : "photo_upload");
+      setShowUpgradeModal(true);
+      return;
+    }
+
     const mediaLabel = isVid ? "Pre-shoot video" : isAudio ? "Audio track" : "Photo";
 
     setUploadingField(fieldKey);
@@ -1021,6 +1040,11 @@ export default function AdminDashboard() {
 
         const data = await res.json().catch(() => ({}));
         if (!res.ok) {
+          if (data.upgradeRequired) {
+            setUpgradeTriggerReason("photo_upload");
+            setShowUpgradeModal(true);
+            return;
+          }
           // If server filesystem is read-only and it's an image, read directly as Data URL on client!
           if (!isVid && !isAudio && fileToUpload.size <= 5 * 1024 * 1024) {
             try {
@@ -1397,6 +1421,12 @@ export default function AdminDashboard() {
           setEventPhotos((prev) => [...prev, data.photo]);
         }
       } else {
+        if (data.upgradeRequired) {
+          setShowAddPhotoModal(false);
+          setUpgradeTriggerReason("photo_upload");
+          setShowUpgradeModal(true);
+          return;
+        }
         showToast(data.error || "Failed to add photo", "error");
       }
     } catch {
@@ -1461,6 +1491,12 @@ export default function AdminDashboard() {
         });
         if (!res.ok) {
           const err = await res.json().catch(() => ({}));
+          if (err.upgradeRequired) {
+            setShowAddModal(false);
+            setUpgradeTriggerReason("guest_limit");
+            setShowUpgradeModal(true);
+            return;
+          }
           throw new Error(err.error || "Failed to add guest");
         }
         const createdGuest: Guest = await res.json();
@@ -1703,6 +1739,18 @@ export default function AdminDashboard() {
   }, [guests, searchQuery, filterType, filterSide, filterRsvp, filterViewed, sortBy]);
 
   const currentEvent = events.find((e) => e.id === activeEventId) || events[0];
+  const activePlan: PlanTier = currentEvent ? getEventPlan(currentEvent) : "FREE";
+  const planConfig = PLAN_CONFIGS[activePlan];
+
+  const handlePlanUpgraded = (newPlan: PlanTier) => {
+    if (currentEvent) {
+      currentEvent.plan = newPlan;
+      setEvents((prev) =>
+        prev.map((e) => (e.id === currentEvent.id ? { ...e, plan: newPlan } : e))
+      );
+    }
+    showToast(`Successfully upgraded to ${PLAN_CONFIGS[newPlan].name}! All limits unlocked.`);
+  };
 
   return (
     <div className="min-h-screen bg-[#121013] text-[#fdfbf7] selection:bg-[#c5a059]/30 selection:text-[#f7e4be] px-3 sm:px-6 lg:px-8 py-4 sm:py-8">
@@ -2092,6 +2140,34 @@ export default function AdminDashboard() {
                   <Copy className="w-3 h-3 text-[#dfba73]/60 group-hover:text-[#edd892] ml-1" />
                 </button>
 
+                {/* SaaS Plan Tier Badge with Upgrade Action */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setUpgradeTriggerReason("general");
+                    setShowUpgradeModal(true);
+                  }}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-[11px] font-sans shadow-sm transition cursor-pointer hover:scale-105 active:scale-95 ${
+                    activePlan === "FREE"
+                      ? "bg-[#d62851]/20 border-[#d62851]/60 text-pink-200 hover:bg-[#d62851]/30"
+                      : activePlan === "GOLD"
+                      ? "bg-[#ffd700]/20 border-[#ffd700]/60 text-[#ffd700] hover:bg-[#ffd700]/30"
+                      : activePlan === "PLATINUM"
+                      ? "bg-purple-900/40 border-purple-400/60 text-purple-200 hover:bg-purple-900/60"
+                      : "bg-[#c5a059]/20 border-[#c5a059]/50 text-[#edd892] hover:bg-[#c5a059]/30"
+                  }`}
+                  title="Click to view all packages & upgrade"
+                >
+                  <Crown className="w-3.5 h-3.5 text-[#ffd700]" />
+                  <span>
+                    Plan: <strong className="text-white">{planConfig.name}</strong>
+                    {activePlan === "FREE" && " (4 Links Limit)"}
+                  </span>
+                  <span className="ml-0.5 text-[9.5px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md bg-white/20 text-white">
+                    Upgrade
+                  </span>
+                </button>
+
                 {/* Planner Pill (Super Admin view) */}
                 {currentEvent?.manager && manager?.role === "SUPER_ADMIN" && (
                   <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#800020]/25 border border-[#dfba73]/35 text-[11px] text-[#dfba73] font-sans shadow-sm">
@@ -2411,6 +2487,46 @@ export default function AdminDashboard() {
         {/* TAB 1: GUEST DIRECTORY */}
         {activeTab === "guests" && (
           <div className="space-y-4">
+            {/* SaaS Free Tier Guest Limit Alert Banner */}
+            {activePlan === "FREE" && (
+              <div className="p-3.5 sm:p-4 rounded-2xl bg-gradient-to-r from-[#800020]/40 via-[#2a1721] to-[#1a1217] border border-[#d62851]/50 shadow-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3.5">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-[#d62851]/25 border border-[#d62851]/50 flex items-center justify-center text-[#ffd700] shrink-0">
+                    <Crown className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-cinzel font-bold text-sm text-[#ffd700]">Free Preview Plan</span>
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                        guests.length >= 4
+                          ? "bg-rose-500/20 text-rose-300 border-rose-500/40"
+                          : "bg-amber-500/20 text-amber-200 border-amber-500/40"
+                      }`}>
+                        {guests.length} / 4 Invitation Links Created
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-300 mt-0.5 leading-relaxed">
+                      {guests.length >= 4
+                        ? "You have reached the free tier limit of 4 invitation links. Upgrade to a paid plan to invite 100+ or unlimited guests!"
+                        : "You can create up to 4 personalized guest links on the free tier to test invitations with your family and wedding party."}
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setUpgradeTriggerReason("guest_limit");
+                    setShowUpgradeModal(true);
+                  }}
+                  className="px-4 py-2.5 rounded-xl bg-[#d62851] hover:bg-[#b81d42] text-white font-cinzel font-bold text-xs tracking-wider shadow-lg shadow-[#d62851]/30 transition shrink-0 cursor-pointer flex items-center gap-1.5 touch-manipulation hover:scale-105 active:scale-95"
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-amber-200" />
+                  <span>Upgrade to Paid Tier</span>
+                </button>
+              </div>
+            )}
+
             {/* Search & Filter Toolbar */}
             <div className="p-4 sm:p-5 rounded-2xl bg-[#1c1519] border border-[#c5a059]/30 shadow-lg space-y-3">
               {/* Row 1: Search Input & Action Buttons */}
@@ -2437,13 +2553,25 @@ export default function AdminDashboard() {
 
                 <div className="flex items-center gap-2">
                   <button
-                    onClick={() => setShowBulkModal(true)}
+                    onClick={() => {
+                      if (activePlan === "FREE" && guests.length >= 4) {
+                        setUpgradeTriggerReason("guest_limit");
+                        setShowUpgradeModal(true);
+                        return;
+                      }
+                      setShowBulkModal(true);
+                    }}
                     className="flex-1 sm:flex-initial px-3.5 py-2.5 rounded-xl bg-[#231a20] border border-[#c5a059]/50 text-[#dfba73] hover:bg-[#c5a059]/15 text-xs font-cinzel font-semibold flex items-center justify-center gap-1.5 shadow transition cursor-pointer min-h-[42px] touch-manipulation"
                   >
                     <Upload className="w-3.5 h-3.5" /> <span>Bulk CSV</span>
                   </button>
                   <button
                     onClick={() => {
+                      if (activePlan === "FREE" && guests.length >= 4) {
+                        setUpgradeTriggerReason("guest_limit");
+                        setShowUpgradeModal(true);
+                        return;
+                      }
                       setEditingId(null);
                       setForm(emptyForm);
                       setShowAddModal(true);
@@ -3017,6 +3145,30 @@ export default function AdminDashboard() {
                     )}
                   </div>
                 </div>
+
+                {/* SaaS Free Tier Media Notice */}
+                {activePlan === "FREE" && (
+                  <div className="p-3.5 sm:p-4 rounded-xl bg-gradient-to-r from-[#d62851]/15 via-[#800020]/20 to-transparent border border-[#d62851]/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-md">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-[#d62851]/25 border border-[#d62851]/50 flex items-center justify-center text-[#ffd700] shrink-0">
+                        <Crown className="w-4 h-4" />
+                      </div>
+                      <p className="text-xs text-gray-200 leading-relaxed">
+                        <strong className="text-white font-cinzel">Custom Photos &amp; Pre-shoot Video</strong> are available exclusively on Paid Tiers. Upgrade to upload your high-resolution wedding photos and 4K video.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setUpgradeTriggerReason("photo_upload");
+                        setShowUpgradeModal(true);
+                      }}
+                      className="px-3.5 py-1.5 rounded-lg bg-[#d62851] hover:bg-[#b81d42] text-white text-[11px] font-cinzel font-bold tracking-wider shrink-0 transition shadow-sm cursor-pointer hover:scale-105 active:scale-95"
+                    >
+                      Upgrade to Unlock
+                    </button>
+                  </div>
+                )}
 
                 {/* Storage Notification Banner if deployed on Vercel without Cloudinary */}
                 {storageStatus && storageStatus.isVercel && !storageStatus.hasCloudinary && !storageStatus.hasBlobToken && (
@@ -4571,6 +4723,38 @@ export default function AdminDashboard() {
         )}
 
         {/* TAB: PHOTOS TABLE (Dedicated EventPhoto Database Records) */}
+        {activeTab === "photos" && activePlan === "FREE" && (
+          <div className="p-4 rounded-2xl bg-gradient-to-r from-[#d62851]/20 via-[#800020]/25 to-[#1a1217] border border-[#d62851]/50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xl">
+            <div className="flex items-center gap-3.5">
+              <div className="w-11 h-11 rounded-2xl bg-[#d62851]/25 border border-[#d62851]/60 flex items-center justify-center text-[#ffd700] shrink-0">
+                <Camera className="w-6 h-6" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="font-cinzel font-bold text-sm text-[#ffd700]">Photo Gallery Locked (Free Plan)</span>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/40">
+                    Paid Tier Required
+                  </span>
+                </div>
+                <p className="text-xs text-gray-300 mt-1 leading-relaxed max-w-xl">
+                  Custom pre-shoot albums &amp; galleries are exclusively available on Paid Tiers (Silver Royal, Gold Prestige, or Platinum Heritage). Upgrade your package to upload and showcase your high-resolution wedding photos!
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                setUpgradeTriggerReason("photo_upload");
+                setShowUpgradeModal(true);
+              }}
+              className="px-5 py-2.5 rounded-xl bg-[#d62851] hover:bg-[#b81d42] text-white font-cinzel font-bold text-xs tracking-wider shadow-lg shadow-[#d62851]/30 transition shrink-0 cursor-pointer flex items-center gap-1.5 touch-manipulation hover:scale-105 active:scale-95"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-200" />
+              <span>Unlock Photo Gallery</span>
+            </button>
+          </div>
+        )}
         {activeTab === "photos" && (
           <div className="space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-[#1c161a] border border-[#c5a059]/40 shadow-xl">
@@ -4593,7 +4777,14 @@ export default function AdminDashboard() {
 
               <div className="flex items-center gap-2 w-full sm:w-auto">
                 <button
-                  onClick={() => setShowAddPhotoModal(true)}
+                  onClick={() => {
+                    if (activePlan === "FREE") {
+                      setUpgradeTriggerReason("photo_upload");
+                      setShowUpgradeModal(true);
+                      return;
+                    }
+                    setShowAddPhotoModal(true);
+                  }}
                   className="btn-gold-shimmer px-5 py-2.5 rounded-xl text-xs font-cinzel font-bold flex items-center justify-center gap-2 shadow-lg cursor-pointer w-full sm:w-auto min-h-[42px] touch-manipulation"
                 >
                   <Plus className="w-4 h-4" /> Add Photo to Table
@@ -4610,7 +4801,14 @@ export default function AdminDashboard() {
                   Add high-resolution pre-shoot portraits, couple moments, and wedding memories to populate the guest invitation gallery.
                 </p>
                 <button
-                  onClick={() => setShowAddPhotoModal(true)}
+                  onClick={() => {
+                    if (activePlan === "FREE") {
+                      setUpgradeTriggerReason("photo_upload");
+                      setShowUpgradeModal(true);
+                      return;
+                    }
+                    setShowAddPhotoModal(true);
+                  }}
                   className="btn-gold-shimmer px-6 py-2.5 rounded-xl text-xs font-cinzel font-bold inline-flex items-center gap-2 cursor-pointer min-h-[42px] touch-manipulation"
                 >
                   <Plus className="w-4 h-4" /> Add First Photo
@@ -6857,6 +7055,15 @@ export default function AdminDashboard() {
           </div>
         </div>
       )}
+      {/* SaaS Tier Upgrade Modal */}
+      <UpgradePlanModal
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        currentPlan={activePlan}
+        eventId={activeEventId || currentEvent?.id}
+        triggerReason={upgradeTriggerReason}
+        onPlanUpgraded={handlePlanUpgraded}
+      />
     </div>
   );
 }
