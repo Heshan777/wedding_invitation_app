@@ -1,5 +1,6 @@
 "use client";
 
+import { resolveWeddingGallery } from "@/lib/gallery-resolver";
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import Image from "next/image";
 import confetti from "canvas-confetti";
@@ -183,19 +184,13 @@ export default function EtherealBlushInvitationView({
 
   // Gallery items
   const galleryItems = useMemo(() => {
-    if (photos && photos.length >= 4) {
-      return photos.slice(0, 6).map((p, idx) => ({
-        src: p.imageUrl || p.url || `/images/templates/blush-floral/polaroid-${idx + 1}.jpg`,
-        caption: p.caption || "Sweet Rose Moment",
-      }));
-    }
-    return [
+    return resolveWeddingGallery(settings, photos, [
       { src: "/images/couple-kiss.jpg", caption: "Sweet Whispers" },
       { src: "/images/wedding-portrait.jpg", caption: "Blooming in Love" },
       { src: "/images/templates/blush-floral/polaroid-1.jpg", caption: "Floral Embrace" },
       { src: "/images/templates/blush-floral/polaroid-2.jpg", caption: "Forever Ours" },
-    ];
-  }, [photos]);
+    ]);
+  }, [settings?.galleryJson, settings?.heroImageUrl, photos]);
 
   const handleRsvpSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

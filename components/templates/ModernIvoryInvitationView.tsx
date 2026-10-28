@@ -1,5 +1,6 @@
 "use client";
 
+import { resolveWeddingGallery } from "@/lib/gallery-resolver";
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import Image from "next/image";
 import confetti from "canvas-confetti";

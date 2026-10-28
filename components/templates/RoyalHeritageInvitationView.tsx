@@ -1,5 +1,6 @@
 "use client";
 
+import { resolveWeddingGallery } from "@/lib/gallery-resolver";
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import Image from "next/image";
 import confetti from "canvas-confetti";
@@ -184,19 +185,13 @@ export default function RoyalHeritageInvitationView({
 
   // Gallery items
   const galleryItems = useMemo(() => {
-    if (photos && photos.length >= 4) {
-      return photos.slice(0, 6).map((p, idx) => ({
-        src: p.imageUrl || p.url || `/images/wedding-portrait.jpg`,
-        caption: p.caption || "Royal Memory",
-      }));
-    }
-    return [
+    return resolveWeddingGallery(settings, photos, [
       { src: "/images/wedding-portrait.jpg", caption: "Regal Elegance" },
       { src: "/images/couple-kiss.jpg", caption: "Eternal Devotion" },
       { src: "/images/groom-walk.jpg", caption: "A Majestic Path" },
       { src: "/images/templates/kandyan/couple-art.png", caption: "Sacred Splendor" },
-    ];
-  }, [photos]);
+    ]);
+  }, [settings?.galleryJson, settings?.heroImageUrl, photos]);
 
   const handleRsvpSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

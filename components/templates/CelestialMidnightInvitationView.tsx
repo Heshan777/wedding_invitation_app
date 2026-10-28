@@ -1,5 +1,6 @@
 "use client";
 
+import { resolveWeddingGallery } from "@/lib/gallery-resolver";
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import Image from "next/image";
 import confetti from "canvas-confetti";
@@ -184,19 +185,13 @@ export default function CelestialMidnightInvitationView({
 
   // Gallery items
   const galleryItems = useMemo(() => {
-    if (photos && photos.length >= 4) {
-      return photos.slice(0, 6).map((p, idx) => ({
-        src: p.imageUrl || p.url || `/images/templates/noir/noir-gallery-${idx + 1}.jpg`,
-        caption: p.caption || "Starlight Romance",
-      }));
-    }
-    return [
+    return resolveWeddingGallery(settings, photos, [
       { src: "/images/couple-kiss.jpg", caption: "Under the Midnight Sky" },
       { src: "/images/wedding-portrait.jpg", caption: "Eternal Constellation" },
       { src: "/images/groom-walk.jpg", caption: "Guided by the Stars" },
       { src: "/images/templates/noir/noir-hero.jpg", caption: "Celestial Serenade" },
-    ];
-  }, [photos]);
+    ]);
+  }, [settings?.galleryJson, settings?.heroImageUrl, photos]);
 
   const handleRsvpSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -1,5 +1,6 @@
 "use client";
 
+import { resolveWeddingGallery } from "@/lib/gallery-resolver";
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import Image from "next/image";
 import confetti from "canvas-confetti";
@@ -153,19 +154,13 @@ export default function NoirCathedralInvitationView({
 
   // Editorial photo gallery items
   const galleryItems = useMemo(() => {
-    if (photos && photos.length >= 4) {
-      return photos.slice(0, 4).map((p, idx) => ({
-        src: p.imageUrl || p.url || `/images/templates/noir/noir-gallery-${idx + 1}.jpg`,
-        caption: p.caption || "Special Moment",
-      }));
-    }
-    return [
+    return resolveWeddingGallery(settings, photos, [
       { src: "/images/templates/noir/noir-gallery-1.jpg", caption: "Eternal Embrace in the Woodlands" },
       { src: "/images/templates/noir/noir-gallery-2.jpg", caption: "A Whisper of Forever" },
       { src: "/images/templates/noir/noir-gallery-3.jpg", caption: "Under the Midnight Light" },
       { src: "/images/templates/noir/noir-gallery-4.jpg", caption: "Laughter and Golden Promises" },
-    ];
-  }, [photos]);
+    ]);
+  }, [settings?.galleryJson, settings?.heroImageUrl, photos]);
 
   // Dynamic Timeline Events
   const timelineEvents = useMemo(() => {

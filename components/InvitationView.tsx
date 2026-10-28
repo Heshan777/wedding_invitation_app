@@ -82,6 +82,7 @@ import {
   GildedCardBorder,
 } from "./RoyalDecorations";
 import { getTemplate } from "@/lib/templates";
+import { resolveWeddingGallery } from "@/lib/gallery-resolver";
 import GoldenMandalaInvitationView from "./templates/GoldenMandalaInvitationView";
 import BotanicalLaceInvitationView from "./templates/BotanicalLaceInvitationView";
 import NoirCathedralInvitationView from "./templates/NoirCathedralInvitationView";
@@ -636,33 +637,14 @@ export default function InvitationView({
 
   // Parse Gallery items from dedicated EventPhoto table, or fallback to settings.galleryJson / defaults
   const parsedGallery = useMemo(() => {
-    if (photos && Array.isArray(photos) && photos.length > 0) {
-      return photos.map((p) => ({
-        src: p.url,
-        title: p.title || "",
-        subtitle: p.subtitle || "",
-        tag: p.tag || "Pre-Wedding",
-      }));
-    }
-    if (settings.galleryJson) {
-      try {
-        const parsed = JSON.parse(settings.galleryJson);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed.map((item: any) => ({
-            ...item,
-            src: item.src?.includes("preshoot-photo-") ? "/images/coupleshare.png" : item.src,
-          }));
-        }
-      } catch {}
-    }
-    return [
+    return resolveWeddingGallery(settings, photos, [
       {
         src: "/images/coupleshare.png",
         title: "A Timeless Bond",
         subtitle: "Two souls, one sacred journey under the stars",
         tag: "Pre-Wedding Shoot",
       },
-    ];
+    ]);
   }, [photos, settings.galleryJson]);
 
   // Parse Timeline items if customized in settings

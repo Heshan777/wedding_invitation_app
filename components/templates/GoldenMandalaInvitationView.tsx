@@ -1,5 +1,6 @@
 "use client";
 
+import { resolveWeddingGallery } from "@/lib/gallery-resolver";
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import Image from "next/image";
 import confetti from "canvas-confetti";
@@ -194,19 +195,13 @@ export default function GoldenMandalaInvitationView({
 
   // Gallery items for Pre-Shoot
   const galleryItems = useMemo(() => {
-    if (photos && photos.length >= 4) {
-      return photos.slice(0, 6).map((p, idx) => ({
-        src: p.imageUrl || p.url || `/images/templates/kandyan/gallery-${idx + 1}.jpg`,
-        caption: p.caption || "Auspicious Moment",
-      }));
-    }
-    return [
+    return resolveWeddingGallery(settings, photos, [
       { src: "/images/couple-kiss.jpg", caption: "Eternal Devotion" },
       { src: "/images/groom-walk.jpg", caption: "Sacred Journey" },
       { src: "/images/templates/kandyan/couple-art.png", caption: "Traditional Splendor" },
       { src: "/images/wedding-portrait.jpg", caption: "Joyous Union" },
-    ];
-  }, [photos]);
+    ]);
+  }, [settings?.galleryJson, settings?.heroImageUrl, photos]);
 
   const handleRsvpSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

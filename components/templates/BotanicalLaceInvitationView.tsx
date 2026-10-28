@@ -1,5 +1,6 @@
 "use client";
 
+import { resolvePaddedGallery } from "@/lib/gallery-resolver";
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import Image from "next/image";
 import confetti from "canvas-confetti";
@@ -178,20 +179,14 @@ export default function BotanicalLaceInvitationView({
 
   // Black and white gallery items
   const galleryItems = useMemo(() => {
-    if (photos && photos.length >= 5) {
-      return photos.slice(0, 5).map((p, idx) => ({
-        src: p.imageUrl || p.url || `/images/templates/botanical/bw-${(idx % 3) + 1}.jpg`,
-        title: p.caption || "Special Memory",
-      }));
-    }
-    return [
+    return resolvePaddedGallery(settings, photos, 5, [
       { src: "/images/templates/botanical/bw-1.jpg", title: "A Sacred Promise" },
       { src: "/images/templates/botanical/bw-2.jpg", title: "Whispers of Forever" },
       { src: "/images/templates/botanical/bw-3.jpg", title: "Laughter in Bloom" },
       { src: "/images/templates/botanical/polaroid-1.jpg", title: "Where Love Began" },
       { src: "/images/templates/botanical/polaroid-2.jpg", title: "Two Hearts as One" },
-    ];
-  }, [photos]);
+    ]);
+  }, [settings?.galleryJson, settings?.heroImageUrl, photos]);
 
   const handleRsvpSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -397,7 +392,7 @@ export default function BotanicalLaceInvitationView({
             <div className="absolute top-0 left-2 w-[160px] sm:w-[180px] bg-white p-2.5 pb-8 rounded-sm shadow-xl border border-neutral-200/80 -rotate-6 transition-transform duration-500 hover:-rotate-2 hover:z-20 cursor-pointer">
               <div className="relative aspect-square w-full bg-neutral-100 overflow-hidden">
                 <Image
-                  src="/images/templates/botanical/polaroid-1.jpg"
+                  src={galleryItems[3]?.src || galleryItems[0]?.src || "/images/templates/botanical/polaroid-1.jpg"}
                   alt="Couple first adventure"
                   fill
                   sizes="180px"
@@ -410,7 +405,7 @@ export default function BotanicalLaceInvitationView({
             <div className="absolute top-2 right-2 w-[165px] sm:w-[185px] bg-white p-2.5 pb-8 rounded-sm shadow-2xl border border-neutral-200/80 rotate-4 transition-transform duration-500 hover:rotate-1 z-10 cursor-pointer">
               <div className="relative aspect-square w-full bg-neutral-100 overflow-hidden">
                 <Image
-                  src="/images/templates/botanical/polaroid-2.jpg"
+                  src={galleryItems[4]?.src || galleryItems[1]?.src || "/images/templates/botanical/polaroid-2.jpg"}
                   alt="Couple sweet moments"
                   fill
                   sizes="185px"

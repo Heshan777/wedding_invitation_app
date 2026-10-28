@@ -1,5 +1,6 @@
 "use client";
 
+import { resolvePaddedGallery } from "@/lib/gallery-resolver";
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import Image from "next/image";
 import confetti from "canvas-confetti";
@@ -156,35 +157,15 @@ export default function TuscanVillaInvitationView({
 
   // Gallery items for "CAPTURED MOMENTS" (2 rows x 3 columns)
   const galleryItems = useMemo(() => {
-    if (photos && photos.length >= 6) {
-      return photos.slice(0, 6).map((p, idx) => ({
-        src: p.imageUrl || p.url || `/images/templates/tuscan/moment-${idx + 1}.jpg`,
-        caption: p.caption || "Special moment",
-      }));
-    }
-    if (photos && photos.length > 0) {
-      const fallbackList = [
-        { src: "/images/templates/tuscan/moment-1.jpg", caption: "Sun-drenched romance" },
-        { src: "/images/templates/tuscan/moment-2.jpg", caption: "Villa gardens" },
-        { src: "/images/templates/tuscan/moment-3.jpg", caption: "Sweet laughter" },
-        { src: "/images/templates/tuscan/moment-4.jpg", caption: "Lakeside promenade" },
-        { src: "/images/templates/tuscan/moment-5.jpg", caption: "Golden hour vows" },
-        { src: "/images/templates/tuscan/moment-6.jpg", caption: "Together forever" },
-      ];
-      return fallbackList.map((item, idx) => ({
-        src: photos[idx]?.imageUrl || photos[idx]?.url || item.src,
-        caption: photos[idx]?.caption || item.caption,
-      }));
-    }
-    return [
-      { src: "/images/templates/tuscan/moment-1.jpg", caption: "Sun-drenched romance" },
-      { src: "/images/templates/tuscan/moment-2.jpg", caption: "Villa gardens" },
-      { src: "/images/templates/tuscan/moment-3.jpg", caption: "Sweet laughter" },
-      { src: "/images/templates/tuscan/moment-4.jpg", caption: "Lakeside promenade" },
-      { src: "/images/templates/tuscan/moment-5.jpg", caption: "Golden hour vows" },
-      { src: "/images/templates/tuscan/moment-6.jpg", caption: "Together forever" },
-    ];
-  }, [photos]);
+    return resolvePaddedGallery(settings, photos, 6, [
+      { url: "/images/templates/tuscan/moment-1.jpg", caption: "Sun-drenched romance" },
+      { url: "/images/templates/tuscan/moment-2.jpg", caption: "Villa gardens" },
+      { url: "/images/templates/tuscan/moment-3.jpg", caption: "Sweet laughter" },
+      { url: "/images/templates/tuscan/moment-4.jpg", caption: "Lakeside promenade" },
+      { url: "/images/templates/tuscan/moment-5.jpg", caption: "Golden hour vows" },
+      { url: "/images/templates/tuscan/moment-6.jpg", caption: "Together forever" },
+    ]);
+  }, [settings?.galleryJson, settings?.heroImageUrl, photos]);
 
   // Dynamic Timeline events parsed from settings or fallback
   const timelineEvents = useMemo(() => {

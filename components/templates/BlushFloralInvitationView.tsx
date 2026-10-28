@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import Image from "next/image";
 import confetti from "canvas-confetti";
+import { resolvePaddedGallery } from "@/lib/gallery-resolver";
 import {
   MapPin,
   Calendar,
@@ -18,6 +19,9 @@ import {
   Heart,
   Plus,
   Minus,
+  Phone,
+  MessageCircle,
+  Film,
 } from "lucide-react";
 import EnvelopeOpening from "@/components/EnvelopeOpening";
 
@@ -58,22 +62,16 @@ export default function BlushFloralInvitationView({
     };
   }, [settings?.coupleNames]);
 
-  // Gallery photos
+  // Gallery photos (resolves from settings.galleryJson, photos table, or aesthetic fallback)
   const galleryPhotos = useMemo(() => {
-    if (photos && photos.length >= 5) {
-      return photos.slice(0, 5).map((p, idx) => ({
-        url: p.imageUrl || p.url || `/images/templates/blush-floral/polaroid-${idx + 1}.jpg`,
-        caption: p.caption || "Special Moment",
-      }));
-    }
-    return [
+    return resolvePaddedGallery(settings, photos, 5, [
       { url: "/images/templates/blush-floral/polaroid-1.jpg", caption: "Sweet Moments" },
       { url: "/images/templates/blush-floral/polaroid-2.jpg", caption: "Endless Laughter" },
       { url: "/images/templates/blush-floral/polaroid-3.jpg", caption: "Beachside Bliss" },
       { url: "/images/templates/blush-floral/polaroid-4.jpg", caption: "Under the Sun" },
       { url: "/images/templates/blush-floral/polaroid-5.jpg", caption: "Forever in Love" },
-    ];
-  }, [photos]);
+    ]);
+  }, [settings?.galleryJson, settings?.heroImageUrl, photos]);
 
   // Countdown timer calculation
   const targetDate = useMemo(() => {
@@ -193,12 +191,15 @@ export default function BlushFloralInvitationView({
   const itinerary = useMemo(() => {
     if (settings?.timelineJson) {
       try {
-        const parsed = JSON.parse(settings.timelineJson);
+        const parsed = typeof settings.timelineJson === "string" 
+          ? JSON.parse(settings.timelineJson) 
+          : settings.timelineJson;
         if (Array.isArray(parsed) && parsed.length > 0) {
           return parsed.map((item: any) => ({
             time: item.time || "12:00 PM",
             title: item.title || "Wedding Milestone",
             desc: item.desc || item.description || "",
+            location: item.location || "",
           }));
         }
       } catch (err) {
@@ -210,24 +211,28 @@ export default function BlushFloralInvitationView({
         time: "02:00 PM",
         title: "Poruwa Ceremony",
         desc: "Traditional Sri Lankan blessings, exchange of rings & family unity",
+        location: settings?.venueName || "Hikkaduwa Beach Resort",
       },
       {
         time: "03:30 PM",
         title: "Cocktail Hour",
         desc: "Tropical refreshments, coconut canapés & beachside acoustic music",
+        location: "Beach Lawn",
       },
       {
         time: "05:00 PM",
         title: "Grand Reception",
         desc: "Exquisite dinner buffet, heartfelt speeches & champagne celebration",
+        location: "Grand Ballroom",
       },
       {
         time: "07:30 PM",
         title: "Dance & Celebration",
         desc: "First dance, live music, beachside dancing & midnight fireworks",
+        location: "Beachfront Terrace",
       },
     ];
-  }, [settings?.timelineJson]);
+  }, [settings?.timelineJson, settings?.venueName]);
 
   // Formatted Wedding Date
   const formattedWeddingDate = useMemo(() => {
@@ -309,8 +314,8 @@ export default function BlushFloralInvitationView({
           </div>
 
           {/* Together with their families */}
-          <p className="text-[10px] sm:text-[11px] font-sans font-medium tracking-[0.25em] text-[#8a3b53] uppercase mb-4">
-            Together with their families
+          <p className="text-[10px] sm:text-[11px] font-sans font-medium tracking-[0.25em] text-[#8a3b53] uppercase mb-4 text-center px-4">
+            {settings?.hostIntro || "Together with their families"}
           </p>
 
           {/* Couple Names */}
@@ -327,10 +332,8 @@ export default function BlushFloralInvitationView({
           </div>
 
           {/* Pleasure of company */}
-          <p className="text-[10px] sm:text-[11px] tracking-[0.2em] text-[#7a4855] uppercase max-w-[320px] leading-relaxed mb-3">
-            Request the pleasure of your company
-            <br />
-            at their wedding celebration
+          <p className="text-[10px] sm:text-[11px] tracking-[0.18em] text-[#7a4855] uppercase max-w-[340px] leading-relaxed mb-3 text-center px-4 font-serif">
+            {settings?.invitationBody || "Request the pleasure of your company at their wedding celebration"}
           </p>
 
           {/* Wedding Date */}
@@ -564,9 +567,14 @@ export default function BlushFloralInvitationView({
                     className="object-cover"
                   />
                 </div>
-                <p className="text-[10px] font-serif text-[#8a5763] text-center mt-2 italic">
+                <p className="text-[11px] font-serif text-[#8a5763] text-center mt-2 italic font-semibold line-clamp-1 px-1">
                   {galleryPhotos[0].caption}
                 </p>
+                {galleryPhotos[0].subtitle && (
+                  <p className="text-[9px] font-sans text-[#a0747e] text-center mt-0.5 line-clamp-1 px-1">
+                    {galleryPhotos[0].subtitle}
+                  </p>
+                )}
               </div>
 
               {/* Photo 2 (Tilted Right) */}
@@ -582,9 +590,14 @@ export default function BlushFloralInvitationView({
                     className="object-cover"
                   />
                 </div>
-                <p className="text-[10px] font-serif text-[#8a5763] text-center mt-2 italic">
+                <p className="text-[11px] font-serif text-[#8a5763] text-center mt-2 italic font-semibold line-clamp-1 px-1">
                   {galleryPhotos[1].caption}
                 </p>
+                {galleryPhotos[1].subtitle && (
+                  <p className="text-[9px] font-sans text-[#a0747e] text-center mt-0.5 line-clamp-1 px-1">
+                    {galleryPhotos[1].subtitle}
+                  </p>
+                )}
               </div>
             </div>
 
@@ -603,9 +616,14 @@ export default function BlushFloralInvitationView({
                     className="object-cover"
                   />
                 </div>
-                <p className="text-[10px] font-serif text-[#8a5763] text-center mt-2 italic">
+                <p className="text-[11px] font-serif text-[#8a5763] text-center mt-2 italic font-semibold line-clamp-1 px-1">
                   {galleryPhotos[2].caption}
                 </p>
+                {galleryPhotos[2].subtitle && (
+                  <p className="text-[9px] font-sans text-[#a0747e] text-center mt-0.5 line-clamp-1 px-1">
+                    {galleryPhotos[2].subtitle}
+                  </p>
+                )}
               </div>
 
               {/* Photo 4 (Tilted Left) */}
@@ -621,9 +639,14 @@ export default function BlushFloralInvitationView({
                     className="object-cover"
                   />
                 </div>
-                <p className="text-[10px] font-serif text-[#8a5763] text-center mt-2 italic">
+                <p className="text-[11px] font-serif text-[#8a5763] text-center mt-2 italic font-semibold line-clamp-1 px-1">
                   {galleryPhotos[3].caption}
                 </p>
+                {galleryPhotos[3].subtitle && (
+                  <p className="text-[9px] font-sans text-[#a0747e] text-center mt-0.5 line-clamp-1 px-1">
+                    {galleryPhotos[3].subtitle}
+                  </p>
+                )}
               </div>
             </div>
 
@@ -641,13 +664,110 @@ export default function BlushFloralInvitationView({
                     className="object-cover"
                   />
                 </div>
-                <p className="text-[10px] font-serif text-[#8a5763] text-center mt-2 italic">
+                <p className="text-[11px] font-serif text-[#8a5763] text-center mt-2 italic font-semibold line-clamp-1 px-1">
                   {galleryPhotos[4].caption}
                 </p>
+                {galleryPhotos[4].subtitle && (
+                  <p className="text-[9px] font-sans text-[#a0747e] text-center mt-0.5 line-clamp-1 px-1">
+                    {galleryPhotos[4].subtitle}
+                  </p>
+                )}
               </div>
             </div>
           </div>
         </section>
+
+        {/* ========================================================================= */}
+        {/* PRE-SHOOT CINEMA VIDEO */}
+        {/* ========================================================================= */}
+        {settings?.heroVideoUrl && (
+          <section className="relative px-6 py-12 bg-[#faf6f0] text-center border-t border-[#f0e6da]">
+            <p className="text-[10px] font-sans font-medium tracking-[0.25em] text-[#8a3b53] uppercase mb-2">
+              Cinema Film
+            </p>
+
+            <h2 className="text-2xl sm:text-3xl font-serif text-[#421424] mb-3 font-normal">
+              Pre-Shoot Moments
+            </h2>
+
+            <div className="flex justify-center mb-6">
+              <Image
+                src="/images/templates/blush-floral/floral-divider.svg"
+                alt="Floral Divider"
+                width={160}
+                height={24}
+                className="opacity-90"
+              />
+            </div>
+
+            <div className="max-w-[380px] mx-auto rounded-2xl overflow-hidden border border-[#eddcd2] shadow-lg bg-black aspect-video relative">
+              {settings.heroVideoUrl.includes("youtube.com") || settings.heroVideoUrl.includes("youtu.be") ? (
+                <iframe
+                  src={
+                    settings.heroVideoUrl.includes("watch?v=")
+                      ? `https://www.youtube.com/embed/${settings.heroVideoUrl.split("watch?v=")[1].split("&")[0]}?rel=0&modestbranding=1`
+                      : settings.heroVideoUrl.includes("youtu.be/")
+                      ? `https://www.youtube.com/embed/${settings.heroVideoUrl.split("youtu.be/")[1].split("?")[0]}?rel=0&modestbranding=1`
+                      : settings.heroVideoUrl
+                  }
+                  title="Pre-shoot Video"
+                  className="w-full h-full border-0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+              ) : settings.heroVideoUrl.includes("vimeo.com") ? (
+                <iframe
+                  src={`https://player.vimeo.com/video/${settings.heroVideoUrl.replace(/[^0-9]/g, "")}?title=0&byline=0`}
+                  title="Pre-shoot Video"
+                  className="w-full h-full border-0"
+                  allow="autoplay; fullscreen; picture-in-picture"
+                  allowFullScreen
+                />
+              ) : (
+                <video
+                  controls
+                  playsInline
+                  poster={settings?.videoThumbnailUrl || galleryPhotos[0]?.url}
+                  className="w-full h-full object-cover"
+                >
+                  <source src={settings.heroVideoUrl} type="video/mp4" />
+                  Your browser does not support HTML5 video.
+                </video>
+              )}
+            </div>
+          </section>
+        )}
+
+        {/* ========================================================================= */}
+        {/* DRESS CODE: Wedding Attire */}
+        {/* ========================================================================= */}
+        {(settings?.dressCodeTitle || settings?.dressCodeDescription) && (
+          <section className="relative px-6 py-10 bg-[#faf6f0] text-center border-t border-[#f0e6da]">
+            <p className="text-[10px] font-sans font-medium tracking-[0.25em] text-[#8a3b53] uppercase mb-2">
+              Wedding Attire
+            </p>
+
+            <h2 className="text-2xl sm:text-3xl font-serif text-[#421424] mb-2 font-normal">
+              {settings?.dressCodeTitle || "Traditional Sri Lankan Elegance"}
+            </h2>
+
+            <div className="flex justify-center mb-5">
+              <Image
+                src="/images/templates/blush-floral/floral-divider.svg"
+                alt="Floral Divider"
+                width={140}
+                height={20}
+                className="opacity-90"
+              />
+            </div>
+
+            <div className="max-w-[380px] mx-auto bg-gradient-to-r from-[#fff9f6] to-[#fffdfa] rounded-2xl p-5 border border-[#eddcd2] shadow-xs">
+              <p className="text-xs sm:text-sm text-[#73434e] leading-relaxed italic">
+                {settings?.dressCodeDescription || "Formal evening attire in warm tones of gold, burgundy, and ivory."}
+              </p>
+            </div>
+          </section>
+        )}
 
         {/* ========================================================================= */}
         {/* 6. CELEBRATION VENUE: Hikkaduwa Beach Resort & Map */}
@@ -854,6 +974,40 @@ export default function BlushFloralInvitationView({
         </section>
 
         {/* ========================================================================= */}
+        {/* CONTACT / INQUIRIES */}
+        {/* ========================================================================= */}
+        {settings?.contactPhone && (
+          <section className="relative px-6 py-10 bg-[#faf6f0] text-center border-t border-[#f0e6da]">
+            <p className="text-[10px] font-sans font-medium tracking-[0.25em] text-[#8a3b53] uppercase mb-1">
+              Have Questions?
+            </p>
+            <h2 className="text-xl sm:text-2xl font-serif text-[#421424] mb-3 font-normal">
+              Contact the Couple
+            </h2>
+            <div className="flex flex-wrap items-center justify-center gap-3 max-w-[380px] mx-auto">
+              <a
+                href={`tel:${settings.contactPhone.replace(/[^0-9+]/g, "")}`}
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white border border-[#eddcd2] shadow-xs hover:shadow-md text-[#541221] text-xs font-serif font-semibold transition hover:bg-[#fff9f6]"
+              >
+                <Phone className="w-3.5 h-3.5 text-[#8a3b53]" />
+                <span>Call {settings.contactPhone}</span>
+              </a>
+              <a
+                href={`https://wa.me/${settings.contactPhone.replace(/[^0-9]/g, "").replace(/^0/, "94")}?text=${encodeURIComponent(
+                  `Hello ${groomName} & ${brideName}! Regarding your wedding invitation celebration:`
+                )}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-emerald-900/10 border border-emerald-600/40 text-emerald-800 text-xs font-serif font-semibold hover:bg-emerald-900/20 transition"
+              >
+                <MessageCircle className="w-3.5 h-3.5 text-emerald-700" />
+                <span>WhatsApp</span>
+              </a>
+            </div>
+          </section>
+        )}
+
+                {/* ========================================================================= */}
         {/* 8. FOOTER: Deep Rich Burgundy Footer */}
         {/* ========================================================================= */}
         <footer className="relative px-6 py-12 bg-[#421424] text-center text-white">
@@ -861,7 +1015,7 @@ export default function BlushFloralInvitationView({
             {/* Monogram */}
             <div className="w-10 h-10 rounded-full border border-[#d6a57c]/60 flex items-center justify-center mb-3">
               <span className="font-serif text-sm text-[#e8cfc4] tracking-widest">
-                S &amp; K
+                {groomName[0] || "S"} &amp; {brideName[0] || "K"}
               </span>
             </div>
 
@@ -914,9 +1068,14 @@ export default function BlushFloralInvitationView({
                 className="object-contain"
               />
             </div>
-            <p className="text-white text-xs font-serif mt-3 tracking-wider italic">
+            <p className="text-white text-sm font-serif mt-3 tracking-wider italic font-semibold">
               {galleryPhotos[lightboxIndex].caption}
             </p>
+            {galleryPhotos[lightboxIndex].subtitle && (
+              <p className="text-white/80 text-xs font-sans mt-1">
+                {galleryPhotos[lightboxIndex].subtitle}
+              </p>
+            )}
           </div>
 
           <button
