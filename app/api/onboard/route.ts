@@ -169,7 +169,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Create WeddingEvent
-    const weddingEvent = await prisma.weddingEvent.create({
+    const weddingEvent = await (prisma.weddingEvent as any).create({
       data: {
         slug: finalSlug,
         managerId: newManager.id,

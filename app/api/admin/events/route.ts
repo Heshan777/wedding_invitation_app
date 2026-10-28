@@ -43,6 +43,8 @@ export async function GET(req: NextRequest) {
             username: true,
             name: true,
             company: true,
+            phone: true,
+            email: true,
           },
         },
         _count: {

@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Update plan in DB
-    const updated = await prisma.weddingEvent.update({
+    const updated: any = await (prisma.weddingEvent as any).update({
       where: { id: targetEvent.id },
       data: {
         plan: plan,

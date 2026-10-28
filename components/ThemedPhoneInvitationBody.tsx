@@ -115,8 +115,8 @@ export default function ThemedPhoneInvitationBody({
 
   const isModern =
     theme.id === "modern-ivory" ||
-    theme.category === "modern" ||
-    theme.category === "minimalist";
+    (theme.category as string) === "modern" ||
+    (theme.category as string) === "minimalist";
 
   // Additional template-specific interactive states
   const [songRequest, setSongRequest] = useState("");

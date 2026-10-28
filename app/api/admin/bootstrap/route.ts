@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
     const isSuperAdmin = manager.role === "SUPER_ADMIN";
 
     // 1. Fetch Events List with relational counts in parallel with Managers list
-    const eventsQuery = prisma.weddingEvent.findMany({
+    const eventsQuery = (prisma.weddingEvent as any).findMany({
       where: isSuperAdmin ? {} : { managerId: manager.id },
       orderBy: { createdAt: "desc" },
       select: {
@@ -40,12 +40,15 @@ export async function GET(req: NextRequest) {
         dressCodeTitle: true,
         dressCodeDescription: true,
         templateId: true,
+        plan: true,
         manager: {
           select: {
             id: true,
             username: true,
             name: true,
             company: true,
+            phone: true,
+            email: true,
           },
         },
         _count: {
@@ -60,7 +63,7 @@ export async function GET(req: NextRequest) {
     });
 
     const managersQuery = isSuperAdmin
-      ? prisma.eventManager.findMany({
+      ? (prisma.eventManager as any).findMany({
           orderBy: { createdAt: "desc" },
           select: {
             id: true,
@@ -81,6 +84,7 @@ export async function GET(req: NextRequest) {
                 coupleNames: true,
                 eventDate: true,
                 venueName: true,
+                plan: true,
               },
             },
           },
@@ -92,7 +96,7 @@ export async function GET(req: NextRequest) {
     // 2. Resolve target active event
     let targetEvent = null;
     if (requestedEventId) {
-      targetEvent = events.find((e) => e.id === requestedEventId) || null;
+      targetEvent = events.find((e: any) => e.id === requestedEventId) || null;
     }
     if (!targetEvent && events.length > 0) {
       targetEvent = events[0];
@@ -100,7 +104,7 @@ export async function GET(req: NextRequest) {
 
     // Security check: Regular managers cannot access another manager's event
     if (!isSuperAdmin && targetEvent && targetEvent.managerId !== manager.id) {
-      targetEvent = events.find((e) => e.managerId === manager.id) || events[0] || null;
+      targetEvent = events.find((e: any) => e.managerId === manager.id) || events[0] || null;
     }
 
     // 3. For target event, fetch guests, full settings, and photos in parallel

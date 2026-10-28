@@ -69,6 +69,7 @@ import {
   Download,
   Send,
   MessageSquare,
+  MessageCircle,
   Clock,
   Utensils,
   CheckCircle2,
@@ -112,6 +113,8 @@ export type WeddingEventItem = {
     username: string;
     name: string;
     company?: string | null;
+    phone?: string | null;
+    email?: string | null;
   };
   coupleNames: string;
   eventDate: string;
@@ -377,6 +380,9 @@ export default function AdminDashboard() {
     starterVenueName: "",
   });
   const [creatingManager, setCreatingManager] = useState(false);
+  const [eventSearchQuery, setEventSearchQuery] = useState("");
+  const [eventPlanFilter, setEventPlanFilter] = useState<string>("ALL");
+  const [quickUpgradingEventId, setQuickUpgradingEventId] = useState<string | null>(null);
   const [managerSearchQuery, setManagerSearchQuery] = useState("");
   const [selectedManagerFilter, setSelectedManagerFilter] = useState<"ALL" | "SUPER_ADMIN" | "MANAGER">("ALL");
   const [managerSortBy, setManagerSortBy] = useState<"newest" | "name" | "weddings">("newest");
@@ -1741,6 +1747,110 @@ export default function AdminDashboard() {
   const currentEvent = events.find((e) => e.id === activeEventId) || events[0];
   const activePlan: PlanTier = currentEvent ? getEventPlan(currentEvent) : "FREE";
   const planConfig = PLAN_CONFIGS[activePlan];
+
+  const handleQuickPlanChange = async (eventId: string, newPlan: PlanTier) => {
+    try {
+      setQuickUpgradingEventId(eventId);
+      const res = await fetch("/api/admin/upgrade", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ eventId, plan: newPlan }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        showToast(data.error || "Failed to update package plan", "error");
+        return;
+      }
+      setEvents((prev) =>
+        prev.map((e) => (e.id === eventId ? { ...e, plan: newPlan } : e))
+      );
+      if (currentEvent && currentEvent.id === eventId) {
+        currentEvent.plan = newPlan;
+      }
+      showToast(data.message || `Wedding updated to ${PLAN_CONFIGS[newPlan].name}!`);
+    } catch (err: any) {
+      console.error("Plan update error:", err);
+      showToast(err.message || "Failed to update package plan", "error");
+    } finally {
+      setQuickUpgradingEventId(null);
+    }
+  };
+
+  const copyWeddingLink = (slug: string) => {
+    const origin = typeof window !== "undefined" ? window.location.origin : (appBaseUrl || "");
+    const fullUrl = `${origin}/e/${slug}`;
+    if (navigator?.clipboard?.writeText) {
+      navigator.clipboard.writeText(fullUrl);
+      showToast("Invitation URL copied to clipboard!");
+    } else {
+      showToast(fullUrl, "info");
+    }
+  };
+
+  const openWhatsAppCouple = (phone: string | null | undefined, coupleNames: string, slug?: string) => {
+    if (!phone) {
+      showToast("No contact phone number set for this couple/event.", "error");
+      return;
+    }
+    const cleanPhone = phone.replace(/[^0-9]/g, "");
+    const finalPhone = cleanPhone.startsWith("0") ? "94" + cleanPhone.slice(1) : cleanPhone;
+    const origin = typeof window !== "undefined" ? window.location.origin : (appBaseUrl || "");
+    const fullUrl = slug ? `${origin}/e/${slug}` : origin;
+    const text = encodeURIComponent(
+      `Hello ${coupleNames}! Warmest congratulations on your upcoming wedding celebration from WedLink.lk! 🌸✨\n\nYour digital wedding invitation suite is live at:\n${fullUrl}\n\nPlease review your invitation portal and let us know if you need any adjustments or package upgrades. We are excited to be part of your special day!`
+    );
+    window.open(`https://wa.me/${finalPhone}?text=${text}`, "_blank");
+  };
+
+  const totalRevenueLKR = useMemo(() => {
+    return events.reduce((sum, ev) => {
+      const p = (ev.plan || "FREE").toUpperCase();
+      if (p === "SILVER") return sum + 5000;
+      if (p === "GOLD") return sum + 8500;
+      if (p === "PLATINUM") return sum + 14500;
+      return sum;
+    }, 0);
+  }, [events]);
+
+  const paidEventsCount = useMemo(() => {
+    return events.filter((e) => (e.plan || "FREE").toUpperCase() !== "FREE").length;
+  }, [events]);
+
+  const freeEventsCount = events.length - paidEventsCount;
+
+  const totalPlatformGuests = useMemo(() => {
+    return events.reduce((sum, ev) => sum + (ev._count?.guests || 0), 0);
+  }, [events]);
+
+  const filteredEvents = useMemo(() => {
+    return events.filter((ev) => {
+      const p = (ev.plan || "FREE").toUpperCase();
+      if (eventPlanFilter === "FREE" && p !== "FREE") return false;
+      if (eventPlanFilter === "SILVER" && p !== "SILVER") return false;
+      if (eventPlanFilter === "GOLD" && p !== "GOLD") return false;
+      if (eventPlanFilter === "PLATINUM" && p !== "PLATINUM") return false;
+      if (eventPlanFilter === "PAID" && p === "FREE") return false;
+
+      if (eventSearchQuery.trim()) {
+        const q = eventSearchQuery.toLowerCase().trim();
+        const couple = (ev.coupleNames || "").toLowerCase();
+        const venue = (ev.venueName || "").toLowerCase();
+        const slug = (ev.slug || "").toLowerCase();
+        const managerUsername = (ev.manager?.username || "").toLowerCase();
+        const managerName = (ev.manager?.name || "").toLowerCase();
+        const phone = (ev.contactPhone || ev.manager?.phone || "").toLowerCase();
+        return (
+          couple.includes(q) ||
+          venue.includes(q) ||
+          slug.includes(q) ||
+          managerUsername.includes(q) ||
+          managerName.includes(q) ||
+          phone.includes(q)
+        );
+      }
+      return true;
+    });
+  }, [events, eventSearchQuery, eventPlanFilter]);
 
   const handlePlanUpgraded = (newPlan: PlanTier) => {
     if (currentEvent) {
@@ -4990,35 +5100,199 @@ export default function AdminDashboard() {
         {/* TAB: ALL WEDDINGS PORTFOLIO (Super Admin Exclusive) */}
         {activeTab === "events" && manager?.role === "SUPER_ADMIN" && (
           <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-[#1c161a] border border-[#c5a059]/40 shadow-xl">
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="px-2.5 py-0.5 rounded-full bg-[#800020]/40 text-[#dfba73] text-[10px] font-cinzel font-semibold border border-[#dfba73]/40">
-                    SaaS Client Portfolio
-                  </span>
-                  <span className="text-xs text-[#edd892] font-mono">
-                    {events.length} Active Weddings
-                  </span>
+            {/* Founder SaaS Hub Header */}
+            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#1e151b] via-[#241a22] to-[#171115] border border-[#c5a059]/40 p-5 sm:p-7 shadow-2xl">
+              <div className="absolute top-0 right-0 -mr-16 -mt-16 w-72 h-72 rounded-full bg-[#dfba73]/10 blur-3xl pointer-events-none" />
+              <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-5">
+                <div>
+                  <div className="flex flex-wrap items-center gap-2 mb-2">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#800020]/40 text-[#dfba73] text-[11px] font-cinzel font-bold border border-[#dfba73]/40 shadow-sm">
+                      <Crown className="w-3.5 h-3.5 text-[#edd892]" /> Solo-Founder SaaS Hub
+                    </span>
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-[#251820] text-[#edd892] font-mono text-[11px] border border-[#c5a059]/25">
+                      {events.length} Client Portals
+                    </span>
+                  </div>
+                  <h2 className="font-cinzel text-xl sm:text-2xl lg:text-3xl font-bold text-[#dfba73]">
+                    Weddings & Revenue Command Center
+                  </h2>
+                  <p className="text-xs sm:text-sm text-[#fdfbf7]/70 mt-1.5 max-w-2xl leading-relaxed">
+                    Designed for a single operator. Upgrade plans with 1-click upgrades when couples pay via bank transfer, enter any wedding suite to assist couples directly, and send WhatsApp invitation links in seconds.
+                  </p>
                 </div>
-                <h2 className="font-cinzel text-xl sm:text-2xl font-bold text-[#dfba73] mt-1">
-                  All Client Wedding Events
-                </h2>
-                <p className="text-xs text-[#fdfbf7]/60 mt-1 max-w-2xl">
-                  Manage multiple independent client wedding portals. Each event has isolated guests, place cards, settings, photos, and custom vanity URL slug.
-                </p>
-              </div>
 
-              <button
-                onClick={() => setShowCreateEventModal(true)}
-                className="btn-gold-shimmer px-5 py-2.5 rounded-xl text-xs font-cinzel font-bold flex items-center justify-center gap-2 shadow-lg cursor-pointer w-full sm:w-auto min-h-[42px] touch-manipulation"
-              >
-                <Plus className="w-4 h-4" /> Create New Wedding
-              </button>
+                <div className="flex flex-col sm:flex-row items-center gap-3 shrink-0">
+                  <button
+                    onClick={() => setShowCreateEventModal(true)}
+                    className="btn-gold-shimmer px-5 py-3 rounded-xl text-xs font-cinzel font-bold flex items-center justify-center gap-2 shadow-lg cursor-pointer w-full sm:w-auto min-h-[44px] touch-manipulation"
+                  >
+                    <Plus className="w-4 h-4" /> Create New Wedding
+                  </button>
+                </div>
+              </div>
             </div>
 
+            {/* SaaS Executive Financial & Operational KPIs */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+              {/* Estimated Revenue */}
+              <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-b from-[#22161f] to-[#171115] border border-[#dfba73]/40 shadow-xl relative overflow-hidden">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold">
+                    Estimated Revenue
+                  </span>
+                  <div className="w-8 h-8 rounded-lg bg-[#dfba73]/15 border border-[#dfba73]/30 flex items-center justify-center text-[#dfba73]">
+                    <Crown className="w-4 h-4" />
+                  </div>
+                </div>
+                <div className="font-cinzel text-2xl sm:text-3xl font-bold text-[#fdfbf7] mt-2">
+                  රු. {totalRevenueLKR.toLocaleString()}
+                </div>
+                <div className="flex items-center gap-1.5 mt-1.5 text-[11px] text-[#edd892]/80 font-sans">
+                  <Sparkles className="w-3 h-3 text-[#dfba73]" />
+                  <span>{paidEventsCount} Paid Packages Active</span>
+                </div>
+              </div>
+
+              {/* Package Breakdown */}
+              <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-b from-[#1e151b] to-[#171115] border border-[#c5a059]/30 shadow-lg">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold">
+                    Package Breakdown
+                  </span>
+                  <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center text-emerald-400">
+                    <Layers className="w-4 h-4" />
+                  </div>
+                </div>
+                <div className="font-cinzel text-2xl sm:text-3xl font-bold text-emerald-400 mt-2">
+                  {paidEventsCount} <span className="text-sm font-sans text-white/50">paid / {freeEventsCount} free</span>
+                </div>
+                <span className="text-[11px] text-[#fdfbf7]/50 mt-1.5 block font-sans">
+                  {events.length > 0 ? ((paidEventsCount / events.length) * 100).toFixed(0) : 0}% Paid Tier Conversion
+                </span>
+              </div>
+
+              {/* Platform Total Guests */}
+              <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-b from-[#1e151b] to-[#171115] border border-[#c5a059]/30 shadow-lg">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold">
+                    Total Platform Guests
+                  </span>
+                  <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/25 flex items-center justify-center text-amber-400">
+                    <Users className="w-4 h-4" />
+                  </div>
+                </div>
+                <div className="font-cinzel text-2xl sm:text-3xl font-bold text-[#edd892] mt-2">
+                  {totalPlatformGuests.toLocaleString()}
+                </div>
+                <span className="text-[11px] text-[#fdfbf7]/50 mt-1.5 block font-sans">
+                  Personalized invitation links created
+                </span>
+              </div>
+
+              {/* Solo-Founder 1-Click Operations Guide */}
+              <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-b from-[#241720] to-[#171115] border border-[#c5a059]/30 shadow-lg flex flex-col justify-between">
+                <div>
+                  <div className="text-[11px] font-cinzel font-bold text-[#dfba73] flex items-center gap-1.5">
+                    <ShieldCheck className="w-3.5 h-3.5 text-[#edd892]" /> Founder 1-Click Flow
+                  </div>
+                  <div className="text-[11px] text-[#fdfbf7]/75 font-sans mt-1.5 space-y-1">
+                    <p className="flex items-center gap-1.5">
+                      <span className="w-4 h-4 rounded-full bg-[#800020] text-[#edd892] text-[10px] font-bold flex items-center justify-center shrink-0">1</span>
+                      Couple bank transfers fee
+                    </p>
+                    <p className="flex items-center gap-1.5">
+                      <span className="w-4 h-4 rounded-full bg-[#800020] text-[#edd892] text-[10px] font-bold flex items-center justify-center shrink-0">2</span>
+                      Change plan dropdown on card
+                    </p>
+                    <p className="flex items-center gap-1.5">
+                      <span className="w-4 h-4 rounded-full bg-[#800020] text-[#edd892] text-[10px] font-bold flex items-center justify-center shrink-0">3</span>
+                      Click WhatsApp to send link!
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Smart Search, Filter & Plan Switcher Toolbar */}
+            <div className="p-3 sm:p-4 rounded-2xl bg-[#1b1419] border border-[#c5a059]/30 shadow-xl space-y-3">
+              <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
+                {/* Search Box */}
+                <div className="relative flex-1">
+                  <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#c5a059]/70" />
+                  <input
+                    type="text"
+                    placeholder="Search by couple names, venue, URL slug, phone, or manager..."
+                    value={eventSearchQuery}
+                    onChange={(e) => setEventSearchQuery(e.target.value)}
+                    className="w-full pl-10 pr-9 py-2.5 rounded-xl bg-[#22171f] border border-[#c5a059]/30 text-xs text-[#fdfbf7] placeholder-[#fdfbf7]/40 focus:outline-none focus:border-[#dfba73] focus:ring-1 focus:ring-[#dfba73]/30 min-h-[40px] transition"
+                  />
+                  {eventSearchQuery && (
+                    <button
+                      onClick={() => setEventSearchQuery("")}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white cursor-pointer"
+                      title="Clear search"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+
+                {/* Plan Tier Filter Pills */}
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <div className="inline-flex rounded-xl bg-[#22171f] p-1 border border-[#c5a059]/25">
+                    <button
+                      onClick={() => setEventPlanFilter("ALL")}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-cinzel transition cursor-pointer ${
+                        eventPlanFilter === "ALL"
+                          ? "bg-[#800020] text-[#fdfbf7] font-bold shadow-md"
+                          : "text-[#fdfbf7]/60 hover:text-[#fdfbf7]"
+                      }`}
+                    >
+                      All ({events.length})
+                    </button>
+                    <button
+                      onClick={() => setEventPlanFilter("FREE")}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-cinzel transition cursor-pointer ${
+                        eventPlanFilter === "FREE"
+                          ? "bg-slate-700 text-white font-bold shadow-md"
+                          : "text-[#fdfbf7]/60 hover:text-[#fdfbf7]"
+                      }`}
+                    >
+                      Free ({freeEventsCount})
+                    </button>
+                    <button
+                      onClick={() => setEventPlanFilter("PAID")}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-cinzel transition cursor-pointer ${
+                        eventPlanFilter === "PAID"
+                          ? "bg-amber-600/80 text-white font-bold shadow-md"
+                          : "text-[#fdfbf7]/60 hover:text-[#fdfbf7]"
+                      }`}
+                    >
+                      Paid ({paidEventsCount})
+                    </button>
+                    <button
+                      onClick={() => setEventPlanFilter("GOLD")}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-cinzel transition cursor-pointer ${
+                        eventPlanFilter === "GOLD"
+                          ? "bg-[#dfba73] text-[#120e11] font-bold shadow-md"
+                          : "text-[#fdfbf7]/60 hover:text-[#fdfbf7]"
+                      }`}
+                    >
+                      Gold ({events.filter((e) => (e.plan || "").toUpperCase() === "GOLD").length})
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Weddings Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
-              {events.map((ev) => {
+              {filteredEvents.map((ev) => {
                 const isCurrent = ev.id === activeEventId;
+                const evPlan: PlanTier = (ev.plan || "FREE").toUpperCase() as PlanTier;
+                const isUpgradingThis = quickUpgradingEventId === ev.id;
+                const coupleContact = ev.contactPhone || ev.manager?.phone || null;
+
                 return (
                   <div
                     key={ev.id}
@@ -5029,72 +5303,181 @@ export default function AdminDashboard() {
                     }`}
                   >
                     <div>
+                      {/* Top Badges: Vanity Slug & Active Plan */}
                       <div className="flex items-center justify-between gap-2 mb-3">
-                        <span className="font-mono text-[10px] text-[#dfba73] px-2 py-0.5 rounded bg-[#120e11] border border-[#c5a059]/30 truncate">
-                          /e/{ev.slug}
-                        </span>
-                        {isCurrent && (
-                          <span className="px-2.5 py-0.5 rounded-full bg-emerald-950/60 border border-emerald-500/50 text-emerald-300 text-[10px] font-cinzel font-bold shrink-0">
-                            Active
-                          </span>
-                        )}
+                        <button
+                          onClick={() => copyWeddingLink(ev.slug)}
+                          className="font-mono text-[10px] text-[#dfba73] px-2 py-0.5 rounded bg-[#120e11] border border-[#c5a059]/30 hover:border-[#dfba73] transition truncate flex items-center gap-1 cursor-pointer"
+                          title="Click to copy public link"
+                        >
+                          <Link2 className="w-3 h-3 shrink-0" />
+                          <span className="truncate">/e/{ev.slug}</span>
+                        </button>
+
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          {isCurrent && (
+                            <span className="px-2 py-0.5 rounded-full bg-emerald-950/70 border border-emerald-500/50 text-emerald-300 text-[9px] font-cinzel font-bold">
+                              Editing
+                            </span>
+                          )}
+
+                          {evPlan === "FREE" && (
+                            <span className="px-2 py-0.5 rounded-full bg-slate-900 border border-slate-700 text-slate-300 text-[10px] font-cinzel font-semibold">
+                              Free (4 max)
+                            </span>
+                          )}
+                          {evPlan === "SILVER" && (
+                            <span className="px-2 py-0.5 rounded-full bg-slate-800/80 border border-slate-400/60 text-slate-200 text-[10px] font-cinzel font-bold">
+                              Silver Royal
+                            </span>
+                          )}
+                          {evPlan === "GOLD" && (
+                            <span className="px-2 py-0.5 rounded-full bg-amber-950/70 border border-amber-400 text-amber-300 text-[10px] font-cinzel font-bold shadow-sm shadow-amber-900/30">
+                              👑 Gold Prestige
+                            </span>
+                          )}
+                          {evPlan === "PLATINUM" && (
+                            <span className="px-2 py-0.5 rounded-full bg-purple-950/70 border border-purple-400 text-purple-300 text-[10px] font-cinzel font-bold">
+                              💎 Platinum
+                            </span>
+                          )}
+                        </div>
                       </div>
 
+                      {/* Hero Image */}
                       {ev.heroImageUrl && (
-                        <div className="relative w-full h-36 rounded-2xl overflow-hidden mb-3 border border-[#c5a059]/20">
+                        <div className="relative w-full h-36 rounded-2xl overflow-hidden mb-3 border border-[#c5a059]/20 group">
                           <img
                             src={getThumbnailUrl(ev.heroImageUrl, 400)}
                             alt={ev.coupleNames}
-                            className="w-full h-full object-cover"
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                           />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+                          <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between text-[11px] text-white/90">
+                            <span className="px-2 py-0.5 rounded bg-black/60 backdrop-blur-sm border border-white/20 font-mono text-[10px]">
+                              {ev.templateId || "royal-heritage"}
+                            </span>
+                            <span className="text-[10px] text-[#edd892]">
+                              {new Date(ev.eventDate).toLocaleDateString(undefined, { dateStyle: "medium" })}
+                            </span>
+                          </div>
                         </div>
                       )}
 
-                      <h3 className="font-cinzel text-lg font-bold text-[#fdfbf7]">
-                        {ev.coupleNames}
+                      {/* Couple Names */}
+                      <h3 className="font-cinzel text-lg font-bold text-[#fdfbf7] flex items-center justify-between gap-2">
+                        <span className="truncate">{ev.coupleNames}</span>
                       </h3>
 
-                      <div className="mt-2 space-y-1.5 text-xs text-[#fdfbf7]/70 font-sans">
-                        <div className="flex items-center gap-1.5 text-[#edd892]">
-                          <Calendar className="w-3.5 h-3.5 text-[#dfba73]" />
-                          <span>{new Date(ev.eventDate).toLocaleDateString(undefined, { dateStyle: "medium" })}</span>
+                      {/* Venue & Account details */}
+                      <div className="mt-2 space-y-1 text-xs text-[#fdfbf7]/70 font-sans">
+                        <div className="flex items-center gap-1.5 text-[#fdfbf7]/60 truncate">
+                          <MapPin className="w-3.5 h-3.5 text-[#dfba73] shrink-0" />
+                          <span className="truncate">{ev.venueName}</span>
                         </div>
-                        <div className="flex items-center gap-1.5 text-[#fdfbf7]/60">
-                          <Users className="w-3.5 h-3.5 text-[#dfba73]" />
-                          <span className="truncate">Venue: {ev.venueName}</span>
+                        {ev.manager && (
+                          <div className="flex items-center gap-1.5 text-[#edd892]/70 text-[11px]">
+                            <User className="w-3 h-3 text-[#dfba73]/70 shrink-0" />
+                            <span>Planner: @{ev.manager.username} {ev.manager.name ? `(${ev.manager.name})` : ""}</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Stats Strip: Guests, Photos, Tables */}
+                      <div className="mt-3 grid grid-cols-3 gap-1.5 p-2 rounded-xl bg-[#140e12] border border-[#c5a059]/20 text-center text-xs">
+                        <div>
+                          <div className="text-[10px] text-[#fdfbf7]/50 uppercase">Guests</div>
+                          <div className="font-bold text-[#dfba73]">{ev._count?.guests || 0}</div>
                         </div>
+                        <div>
+                          <div className="text-[10px] text-[#fdfbf7]/50 uppercase">Photos</div>
+                          <div className="font-bold text-emerald-400">{ev._count?.photos || 0}</div>
+                        </div>
+                        <div>
+                          <div className="text-[10px] text-[#fdfbf7]/50 uppercase">Tables</div>
+                          <div className="font-bold text-[#edd892]">{ev._count?.tables || 0}</div>
+                        </div>
+                      </div>
+
+                      {/* 1-Click Plan Switcher Box for Solo-Founder */}
+                      <div className="mt-3 p-2.5 rounded-xl bg-[#1f151c] border border-[#dfba73]/30">
+                        <div className="flex items-center justify-between text-[11px] mb-1.5">
+                          <span className="text-[#dfba73] font-cinzel font-semibold flex items-center gap-1">
+                            <Crown className="w-3 h-3 text-[#edd892]" /> 1-Click Package Tier:
+                          </span>
+                          {isUpgradingThis && (
+                            <span className="text-amber-400 text-[10px] flex items-center gap-1">
+                              <Loader2 className="w-3 h-3 animate-spin" /> Saving...
+                            </span>
+                          )}
+                        </div>
+                        <select
+                          value={evPlan}
+                          disabled={isUpgradingThis}
+                          onChange={(e) => handleQuickPlanChange(ev.id, e.target.value as PlanTier)}
+                          className="w-full px-2.5 py-1.5 rounded-lg bg-[#140e12] border border-[#c5a059]/40 text-xs text-[#edd892] font-semibold focus:outline-none focus:border-[#dfba73] cursor-pointer"
+                        >
+                          <option value="FREE">FREE TIER (4 Guests limit, No Photos)</option>
+                          <option value="SILVER">SILVER ROYAL (රු. 5,000 • 150 Guests)</option>
+                          <option value="GOLD">👑 GOLD PRESTIGE (රු. 8,500 • Unlimited • Popular)</option>
+                          <option value="PLATINUM">💎 PLATINUM HERITAGE (රු. 14,500 • VIP Suite)</option>
+                        </select>
                       </div>
                     </div>
 
-                    <div className="pt-4 mt-4 border-t border-[#c5a059]/20 flex items-center justify-between gap-2">
-                      {isCurrent ? (
-                        <button
-                          onClick={() => setActiveTab("guests")}
-                          className="btn-gold-shimmer flex-1 py-2.5 rounded-xl text-xs font-cinzel font-bold text-center cursor-pointer min-h-[40px] touch-manipulation"
-                        >
-                          Manage Guests & Portal
-                        </button>
-                      ) : (
-                        <button
-                          onClick={() => {
-                            handleSelectEvent(ev.id);
-                            setActiveTab("guests");
-                          }}
-                          className="flex-1 py-2.5 rounded-xl bg-[#2a1c24] border border-[#c5a059]/40 text-[#dfba73] hover:bg-[#800020] hover:text-white text-xs font-cinzel font-bold transition cursor-pointer min-h-[40px] touch-manipulation"
-                        >
-                          Switch & Manage
-                        </button>
-                      )}
+                    {/* Bottom Actions Row */}
+                    <div className="pt-3.5 mt-3.5 border-t border-[#c5a059]/20 space-y-2">
+                      <div className="flex items-center gap-2">
+                        {/* Enter Suite / Impersonate */}
+                        {isCurrent ? (
+                          <button
+                            onClick={() => setActiveTab("guests")}
+                            className="btn-gold-shimmer flex-1 py-2 rounded-xl text-xs font-cinzel font-bold text-center cursor-pointer min-h-[38px] touch-manipulation flex items-center justify-center gap-1.5 shadow-md"
+                          >
+                            <Sparkles className="w-3.5 h-3.5" /> Manage This Suite
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => {
+                              handleSelectEvent(ev.id);
+                              setActiveTab("guests");
+                            }}
+                            className="flex-1 py-2 rounded-xl bg-[#2a1c24] border border-[#c5a059]/40 text-[#dfba73] hover:bg-[#800020] hover:text-white text-xs font-cinzel font-bold transition cursor-pointer min-h-[38px] touch-manipulation flex items-center justify-center gap-1.5"
+                          >
+                            <Sparkles className="w-3.5 h-3.5" /> Enter Suite as Admin
+                          </button>
+                        )}
 
-                      <a
-                        href={`/e/${ev.slug}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="w-10 h-10 rounded-xl bg-[#1c1519] border border-[#c5a059]/30 text-[#dfba73] hover:text-white flex items-center justify-center transition shrink-0"
-                        title="Preview Public Wedding"
-                      >
-                        <ExternalLink className="w-4 h-4" />
-                      </a>
+                        {/* WhatsApp Couple */}
+                        {coupleContact && (
+                          <button
+                            onClick={() => openWhatsAppCouple(coupleContact, ev.coupleNames, ev.slug)}
+                            className="px-3 py-2 rounded-xl bg-emerald-950/70 border border-emerald-600/50 text-emerald-300 hover:bg-emerald-900 text-xs font-cinzel font-bold flex items-center justify-center gap-1 transition cursor-pointer min-h-[38px] touch-manipulation shrink-0"
+                            title="WhatsApp Couple directly"
+                          >
+                            <Phone className="w-3.5 h-3.5" /> WhatsApp
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="flex items-center justify-between gap-2">
+                        <button
+                          onClick={() => copyWeddingLink(ev.slug)}
+                          className="flex-1 py-1.5 rounded-lg bg-[#140e12] border border-[#c5a059]/25 text-[#edd892] hover:border-[#dfba73] text-[11px] font-sans flex items-center justify-center gap-1.5 transition cursor-pointer"
+                        >
+                          <Copy className="w-3 h-3" /> Copy Live Link
+                        </button>
+
+                        <a
+                          href={`/e/${ev.slug}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="px-3 py-1.5 rounded-lg bg-[#140e12] border border-[#c5a059]/25 text-[#dfba73] hover:text-white hover:border-[#dfba73] text-[11px] font-sans flex items-center justify-center gap-1 transition shrink-0"
+                          title="Preview Public Wedding"
+                        >
+                          <ExternalLink className="w-3 h-3" /> Preview
+                        </a>
+                      </div>
                     </div>
                   </div>
                 );
@@ -5402,13 +5785,21 @@ export default function AdminDashboard() {
                               </a>
                             )}
                             {mgr.phone && (
-                              <a
-                                href={`tel:${mgr.phone}`}
-                                className="flex items-center gap-1.5 text-[#fdfbf7]/70 font-mono hover:text-[#dfba73]"
-                              >
-                                <Phone className="w-3 h-3 text-[#dfba73]/70 shrink-0" />
-                                <span>{mgr.phone}</span>
-                              </a>
+                              <div className="flex items-center justify-between gap-2">
+                                <a
+                                  href={`tel:${mgr.phone}`}
+                                  className="flex items-center gap-1.5 text-[#fdfbf7]/70 font-mono hover:text-[#dfba73]"
+                                >
+                                  <Phone className="w-3 h-3 text-[#dfba73]/70 shrink-0" />
+                                  <span>{mgr.phone}</span>
+                                </a>
+                                <button
+                                  onClick={() => openWhatsAppCouple(mgr.phone, mgr.name, mgr.events?.[0]?.slug || "")}
+                                  className="px-2 py-0.5 rounded bg-emerald-950/70 border border-emerald-600/40 text-emerald-300 text-[10px] font-sans flex items-center gap-1 cursor-pointer"
+                                >
+                                  <MessageCircle className="w-3 h-3" /> WhatsApp
+                                </button>
+                              </div>
                             )}
                           </div>
                         ) : (
@@ -5615,6 +6006,15 @@ export default function AdminDashboard() {
                             {/* Actions */}
                             <td className="py-4 px-5 text-right">
                               <div className="flex items-center justify-end gap-2">
+                                {mgr.phone && (
+                                  <button
+                                    onClick={() => openWhatsAppCouple(mgr.phone, mgr.name, mgr.events?.[0]?.slug || "")}
+                                    className="p-1.5 rounded-lg bg-emerald-950/50 hover:bg-emerald-900 border border-emerald-600/40 text-emerald-300 text-xs transition cursor-pointer flex items-center justify-center"
+                                    title={`WhatsApp ${mgr.name}`}
+                                  >
+                                    <Phone className="w-3.5 h-3.5" />
+                                  </button>
+                                )}
                                 {mgr.events && mgr.events.length > 0 && (
                                   <button
                                     onClick={() => {
