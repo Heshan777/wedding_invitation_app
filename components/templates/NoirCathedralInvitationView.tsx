@@ -26,14 +26,25 @@ interface NoirCathedralInvitationViewProps {
   guest: any;
   settings: any;
   photos?: any[];
+  initialOpened?: boolean;
 }
 
 export default function NoirCathedralInvitationView({
   guest,
   settings,
   photos = [],
+  initialOpened = false,
 }: NoirCathedralInvitationViewProps) {
-  const [envelopeOpened, setEnvelopeOpened] = useState(false);
+  const [envelopeOpened, setEnvelopeOpened] = useState(initialOpened);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const sp = new URLSearchParams(window.location.search);
+      if (sp.get("opened") === "true") {
+        setEnvelopeOpened(true);
+      }
+    }
+  }, []);
   const [isPlayingMusic, setIsPlayingMusic] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -229,15 +240,18 @@ export default function NoirCathedralInvitationView({
   return (
     <div className="min-h-screen bg-[#09080b] text-[#f4eee6] font-sans selection:bg-[#c5a059]/30 selection:text-[#ffd700] overflow-x-hidden">
       {/* 3D Wax Seal Envelope Entrance Overlay */}
-      <EnvelopeOpening
-        guestName={guest?.displayName || "Honored Guest"}
-        salutation={guest?.salutation || "Mr. & Mrs."}
-        coupleNames={settings?.coupleNames || "Kavindi & Shenal"}
-        initialLocale="en"
-        templateId="cathedral-palace-doors"
-        onStartOpen={handleStartOpenEnvelope}
-        onOpen={handleOpenEnvelope}
-      />
+      {!envelopeOpened && (
+        <EnvelopeOpening
+          guestName={guest?.displayName || "Honored Guest"}
+          salutation={guest?.salutation || "Mr. & Mrs."}
+          coupleNames={settings?.coupleNames || "Kavindi & Shenal"}
+          initialLocale="en"
+          templateId="cathedral-palace-doors"
+          initialOpened={envelopeOpened || initialOpened}
+          onStartOpen={handleStartOpenEnvelope}
+          onOpen={handleOpenEnvelope}
+        />
+      )}
 
       {/* Floating Action Controls */}
       <div className="fixed top-4 right-4 z-40 flex items-center gap-2">

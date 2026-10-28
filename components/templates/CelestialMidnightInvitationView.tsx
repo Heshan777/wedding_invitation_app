@@ -24,14 +24,25 @@ interface CelestialMidnightInvitationViewProps {
   guest: any;
   settings: any;
   photos?: any[];
+  initialOpened?: boolean;
 }
 
 export default function CelestialMidnightInvitationView({
   guest,
   settings,
   photos = [],
+  initialOpened = false,
 }: CelestialMidnightInvitationViewProps) {
-  const [envelopeOpened, setEnvelopeOpened] = useState(false);
+  const [envelopeOpened, setEnvelopeOpened] = useState(initialOpened);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const sp = new URLSearchParams(window.location.search);
+      if (sp.get("opened") === "true") {
+        setEnvelopeOpened(true);
+      }
+    }
+  }, []);
   const [isPlayingMusic, setIsPlayingMusic] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -261,6 +272,7 @@ export default function CelestialMidnightInvitationView({
           coupleNames={coupleHeadline}
           initialLocale="en"
           templateId="celestial-midnight"
+          initialOpened={envelopeOpened || initialOpened}
           onOpen={handleOpenEnvelope}
         />
       )}

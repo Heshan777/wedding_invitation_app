@@ -37,12 +37,20 @@ export default function TemplateSlugPreviewPage({
 
   const handlePrev = () => {
     const prevIdx = (currentIndex - 1 + totalCount) % totalCount;
-    setActiveSlug(WEDLINK_TEMPLATE_LIST[prevIdx].id);
+    const newSlug = WEDLINK_TEMPLATE_LIST[prevIdx].id;
+    setActiveSlug(newSlug);
+    if (typeof window !== "undefined") {
+      window.history.replaceState({}, "", `/templates/${newSlug}`);
+    }
   };
 
   const handleNext = () => {
     const nextIdx = (currentIndex + 1) % totalCount;
-    setActiveSlug(WEDLINK_TEMPLATE_LIST[nextIdx].id);
+    const newSlug = WEDLINK_TEMPLATE_LIST[nextIdx].id;
+    setActiveSlug(newSlug);
+    if (typeof window !== "undefined") {
+      window.history.replaceState({}, "", `/templates/${newSlug}`);
+    }
   };
 
   return (

@@ -185,6 +185,7 @@ export default function InvitationView({
   guest,
   settings,
   photos,
+  initialOpened = false,
 }: {
   guest: Guest;
   settings: Settings;
@@ -196,12 +197,13 @@ export default function InvitationView({
     tag?: string | null;
     order?: number;
   }>;
+  initialOpened?: boolean;
 }) {
   const [locale, setLocale] = useState<Locale>("en");
   const [copiedAddress, setCopiedAddress] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [qrDataUrl, setQrDataUrl] = useState<string>("");
-  const [envelopeOpened, setEnvelopeOpened] = useState(false);
+  const [envelopeOpened, setEnvelopeOpened] = useState(initialOpened);
   const [showFloatingNav, setShowFloatingNav] = useState(false);
   const [isQrPassModalOpen, setIsQrPassModalOpen] = useState(false);
 
@@ -215,6 +217,9 @@ export default function InvitationView({
       const params = new URLSearchParams(window.location.search);
       const t = params.get("template");
       if (t) setUrlTemplateId(t);
+      if (params.get("opened") === "true") {
+        setEnvelopeOpened(true);
+      }
     }
   }, []);
 
@@ -1002,39 +1007,39 @@ export default function InvitationView({
   };
 
   if (isTraditional || activeTemplate.id === "golden-mandala-heritage" || activeTemplate.id === "nilame-traditional") {
-    return <GoldenMandalaInvitationView guest={guest} settings={settings} photos={photos} />;
+    return <GoldenMandalaInvitationView guest={guest} settings={settings} photos={photos} initialOpened={envelopeOpened || initialOpened} />;
   }
 
   if (isBotanical) {
-    return <BotanicalLaceInvitationView guest={guest} settings={settings} photos={photos} />;
+    return <BotanicalLaceInvitationView guest={guest} settings={settings} photos={photos} initialOpened={envelopeOpened || initialOpened} />;
   }
 
   if (isCathedral) {
-    return <NoirCathedralInvitationView guest={guest} settings={settings} photos={photos} />;
+    return <NoirCathedralInvitationView guest={guest} settings={settings} photos={photos} initialOpened={envelopeOpened || initialOpened} />;
   }
 
   if (activeTemplate.id === "embossed-ivory-envelope") {
-    return <TuscanVillaInvitationView guest={guest} settings={settings} photos={photos} />;
+    return <TuscanVillaInvitationView guest={guest} settings={settings} photos={photos} initialOpened={envelopeOpened || initialOpened} />;
   }
 
   if (activeTemplate.id === "velvet-homecoming") {
-    return <BlushFloralInvitationView guest={guest} settings={settings} photos={photos} />;
+    return <BlushFloralInvitationView guest={guest} settings={settings} photos={photos} initialOpened={envelopeOpened || initialOpened} />;
   }
 
   if (isModern || activeTemplate.id === "modern-ivory") {
-    return <ModernIvoryInvitationView guest={guest} settings={settings} photos={photos} />;
+    return <ModernIvoryInvitationView guest={guest} settings={settings} photos={photos} initialOpened={envelopeOpened || initialOpened} />;
   }
 
   if (isCelestial || activeTemplate.id === "celestial-midnight") {
-    return <CelestialMidnightInvitationView guest={guest} settings={settings} photos={photos} />;
+    return <CelestialMidnightInvitationView guest={guest} settings={settings} photos={photos} initialOpened={envelopeOpened || initialOpened} />;
   }
 
   if (isEthereal || activeTemplate.id === "ethereal-blush") {
-    return <EtherealBlushInvitationView guest={guest} settings={settings} photos={photos} />;
+    return <EtherealBlushInvitationView guest={guest} settings={settings} photos={photos} initialOpened={envelopeOpened || initialOpened} />;
   }
 
   if (activeTemplate.id === "royal-heritage") {
-    return <RoyalHeritageInvitationView guest={guest} settings={settings} photos={photos} />;
+    return <RoyalHeritageInvitationView guest={guest} settings={settings} photos={photos} initialOpened={envelopeOpened || initialOpened} />;
   }
 
   return (
@@ -1046,6 +1051,7 @@ export default function InvitationView({
         coupleNames={settings.coupleNames}
         initialLocale={locale}
         templateId={activeTemplate.id}
+        initialOpened={envelopeOpened || initialOpened}
         onStartOpen={handleStartOpenEnvelope}
         onOpen={handleOpenEnvelope}
       />

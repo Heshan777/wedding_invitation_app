@@ -23,14 +23,25 @@ interface EtherealBlushInvitationViewProps {
   guest: any;
   settings: any;
   photos?: any[];
+  initialOpened?: boolean;
 }
 
 export default function EtherealBlushInvitationView({
   guest,
   settings,
   photos = [],
+  initialOpened = false,
 }: EtherealBlushInvitationViewProps) {
-  const [envelopeOpened, setEnvelopeOpened] = useState(false);
+  const [envelopeOpened, setEnvelopeOpened] = useState(initialOpened);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const sp = new URLSearchParams(window.location.search);
+      if (sp.get("opened") === "true") {
+        setEnvelopeOpened(true);
+      }
+    }
+  }, []);
   const [isPlayingMusic, setIsPlayingMusic] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -260,6 +271,7 @@ export default function EtherealBlushInvitationView({
           coupleNames={coupleHeadline}
           initialLocale="en"
           templateId="ethereal-blush"
+          initialOpened={envelopeOpened || initialOpened}
           onOpen={handleOpenEnvelope}
         />
       )}

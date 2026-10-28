@@ -30,14 +30,25 @@ interface BlushFloralInvitationViewProps {
   guest: any;
   settings: any;
   photos?: any[];
+  initialOpened?: boolean;
 }
 
 export default function BlushFloralInvitationView({
   guest,
   settings,
   photos = [],
+  initialOpened = false,
 }: BlushFloralInvitationViewProps) {
-  const [envelopeOpened, setEnvelopeOpened] = useState(false);
+  const [envelopeOpened, setEnvelopeOpened] = useState(initialOpened);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const sp = new URLSearchParams(window.location.search);
+      if (sp.get("opened") === "true") {
+        setEnvelopeOpened(true);
+      }
+    }
+  }, []);
   const [isPlayingMusic, setIsPlayingMusic] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -276,6 +287,7 @@ export default function BlushFloralInvitationView({
           coupleNames={`${groomName} & ${brideName}`}
           initialLocale="en"
           templateId="velvet-homecoming"
+          initialOpened={envelopeOpened || initialOpened}
           onOpen={handleEnvelopeOpen}
         />
       )}

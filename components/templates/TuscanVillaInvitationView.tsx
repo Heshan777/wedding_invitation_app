@@ -25,14 +25,25 @@ interface TuscanVillaInvitationViewProps {
   guest: any;
   settings: any;
   photos?: any[];
+  initialOpened?: boolean;
 }
 
 export default function TuscanVillaInvitationView({
   guest,
   settings,
   photos = [],
+  initialOpened = false,
 }: TuscanVillaInvitationViewProps) {
-  const [envelopeOpened, setEnvelopeOpened] = useState(false);
+  const [envelopeOpened, setEnvelopeOpened] = useState(initialOpened);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const sp = new URLSearchParams(window.location.search);
+      if (sp.get("opened") === "true") {
+        setEnvelopeOpened(true);
+      }
+    }
+  }, []);
   const [isPlayingMusic, setIsPlayingMusic] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -235,15 +246,18 @@ export default function TuscanVillaInvitationView({
   return (
     <div className="min-h-screen bg-[#fbf8f2] text-[#3d2b24] font-sans selection:bg-[#9b4356]/20 selection:text-[#3d2b24] overflow-x-hidden">
       {/* 3D Wax Seal Envelope Entrance Overlay */}
-      <EnvelopeOpening
-        guestName={guest?.displayName || "Honored Guest"}
-        salutation={guest?.salutation || "Mr. & Mrs."}
-        coupleNames={`${brideName} & ${groomName}`}
-        initialLocale="en"
-        templateId="embossed-ivory-envelope"
-        onStartOpen={handleStartOpenEnvelope}
-        onOpen={handleOpenEnvelope}
-      />
+      {!envelopeOpened && (
+        <EnvelopeOpening
+          guestName={guest?.displayName || "Honored Guest"}
+          salutation={guest?.salutation || "Mr. & Mrs."}
+          coupleNames={`${brideName} & ${groomName}`}
+          initialLocale="en"
+          templateId="embossed-ivory-envelope"
+          initialOpened={envelopeOpened || initialOpened}
+          onStartOpen={handleStartOpenEnvelope}
+          onOpen={handleOpenEnvelope}
+        />
+      )}
 
       {/* Floating Action Controls */}
       <div className="fixed top-4 right-4 z-40 flex items-center gap-2">

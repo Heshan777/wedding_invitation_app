@@ -26,14 +26,25 @@ interface GoldenMandalaInvitationViewProps {
   guest: any;
   settings: any;
   photos?: any[];
+  initialOpened?: boolean;
 }
 
 export default function GoldenMandalaInvitationView({
   guest,
   settings,
   photos = [],
+  initialOpened = false,
 }: GoldenMandalaInvitationViewProps) {
-  const [envelopeOpened, setEnvelopeOpened] = useState(false);
+  const [envelopeOpened, setEnvelopeOpened] = useState(initialOpened);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const sp = new URLSearchParams(window.location.search);
+      if (sp.get("opened") === "true") {
+        setEnvelopeOpened(true);
+      }
+    }
+  }, []);
   const [isPlayingMusic, setIsPlayingMusic] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -271,6 +282,7 @@ export default function GoldenMandalaInvitationView({
           coupleNames={coupleHeadline}
           initialLocale="en"
           templateId="golden-mandala-heritage"
+          initialOpened={envelopeOpened || initialOpened}
           onOpen={handleOpenEnvelope}
         />
       )}

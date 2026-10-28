@@ -13,6 +13,7 @@ interface EnvelopeOpeningProps {
   coupleNames: string;
   initialLocale?: Locale;
   templateId?: string | null;
+  initialOpened?: boolean;
   onStartOpen?: () => void;
   onOpen: (locale: Locale) => void;
 }
@@ -57,6 +58,7 @@ export default function EnvelopeOpening({
   coupleNames,
   initialLocale = "en",
   templateId,
+  initialOpened = false,
   onStartOpen,
   onOpen,
 }: EnvelopeOpeningProps) {
@@ -64,7 +66,7 @@ export default function EnvelopeOpening({
   const [stage, setStage] = useState<"couple" | "envelope">("couple");
   const [isOpen, setIsOpen] = useState(false);
   const [isOpening, setIsOpening] = useState(false);
-  const [hasDismissed, setHasDismissed] = useState(false);
+  const [hasDismissed, setHasDismissed] = useState(initialOpened);
   const containerRef = useRef<HTMLDivElement>(null);
   const envelopeRef = useRef<HTMLDivElement>(null);
   const autoTransitionTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -155,6 +157,14 @@ export default function EnvelopeOpening({
 
   // Check if previously opened in this session to allow direct view on refresh if preferred
   useEffect(() => {
+    if (typeof window !== "undefined") {
+      const sp = new URLSearchParams(window.location.search);
+      if (sp.get("opened") === "true" || initialOpened) {
+        setHasDismissed(true);
+        onOpen(selectedLocale);
+        return;
+      }
+    }
     const wasOpened = sessionStorage.getItem("invite_envelope_opened");
     const savedLocale = sessionStorage.getItem("invite_locale") as Locale | null;
     if (savedLocale && ["en", "si", "ta"].includes(savedLocale)) {
@@ -163,7 +173,7 @@ export default function EnvelopeOpening({
     if (wasOpened === "true") {
       setHasDismissed(true);
     }
-  }, []);
+  }, [initialOpened, onOpen, selectedLocale]);
 
   // 3D Parallax tilt on mouse/touch movement directly on DOM - 0 React re-renders on mousemove
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {

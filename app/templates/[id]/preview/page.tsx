@@ -29,11 +29,13 @@ export default function TemplatePreviewPage({
   const router = useRouter();
   const [activeId, setActiveId] = useState<string>(resolvedParams.id);
   const [isEmbedded, setIsEmbedded] = useState(false);
+  const [isOpened, setIsOpened] = useState(false);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
       const sp = new URLSearchParams(window.location.search);
       setIsEmbedded(sp.get("embed") === "true");
+      setIsOpened(sp.get("opened") === "true");
     }
   }, []);
 
@@ -209,6 +211,7 @@ export default function TemplatePreviewPage({
         guest={sampleGuest}
         settings={sampleSettings}
         photos={samplePhotos}
+        initialOpened={isOpened}
       />
     </div>
   );

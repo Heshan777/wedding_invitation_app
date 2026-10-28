@@ -24,14 +24,25 @@ interface RoyalHeritageInvitationViewProps {
   guest: any;
   settings: any;
   photos?: any[];
+  initialOpened?: boolean;
 }
 
 export default function RoyalHeritageInvitationView({
   guest,
   settings,
   photos = [],
+  initialOpened = false,
 }: RoyalHeritageInvitationViewProps) {
-  const [envelopeOpened, setEnvelopeOpened] = useState(false);
+  const [envelopeOpened, setEnvelopeOpened] = useState(initialOpened);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const sp = new URLSearchParams(window.location.search);
+      if (sp.get("opened") === "true") {
+        setEnvelopeOpened(true);
+      }
+    }
+  }, []);
   const [isPlayingMusic, setIsPlayingMusic] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -261,6 +272,7 @@ export default function RoyalHeritageInvitationView({
           coupleNames={coupleHeadline}
           initialLocale="en"
           templateId="royal-heritage"
+          initialOpened={envelopeOpened || initialOpened}
           onOpen={handleOpenEnvelope}
         />
       )}

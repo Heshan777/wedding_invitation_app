@@ -26,14 +26,25 @@ interface BotanicalLaceInvitationViewProps {
   guest: any;
   settings: any;
   photos?: any[];
+  initialOpened?: boolean;
 }
 
 export default function BotanicalLaceInvitationView({
   guest,
   settings,
   photos = [],
+  initialOpened = false,
 }: BotanicalLaceInvitationViewProps) {
-  const [envelopeOpened, setEnvelopeOpened] = useState(false);
+  const [envelopeOpened, setEnvelopeOpened] = useState(initialOpened);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const sp = new URLSearchParams(window.location.search);
+      if (sp.get("opened") === "true") {
+        setEnvelopeOpened(true);
+      }
+    }
+  }, []);
   const [isPlayingMusic, setIsPlayingMusic] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -232,15 +243,18 @@ export default function BotanicalLaceInvitationView({
   return (
     <div className="min-h-screen bg-[#f7f4ed] text-[#2c3e50] font-sans selection:bg-[#5b7891]/20 selection:text-[#1e293b] overflow-x-hidden">
       {/* Envelope Opening Experience */}
-      <EnvelopeOpening
-        guestName={guest?.displayName || "Honored Guest"}
-        salutation={guest?.salutation || "Mr. & Mrs."}
-        coupleNames={combinedNames}
-        initialLocale="en"
-        templateId="botanical-silk-sanduni"
-        onStartOpen={handleStartOpenEnvelope}
-        onOpen={handleOpenEnvelope}
-      />
+      {!envelopeOpened && (
+        <EnvelopeOpening
+          guestName={guest?.displayName || "Honored Guest"}
+          salutation={guest?.salutation || "Mr. & Mrs."}
+          coupleNames={combinedNames}
+          initialLocale="en"
+          templateId="botanical-silk-sanduni"
+          initialOpened={envelopeOpened || initialOpened}
+          onStartOpen={handleStartOpenEnvelope}
+          onOpen={handleOpenEnvelope}
+        />
+      )}
 
       {/* Floating Audio & Share Actions */}
       <div className="fixed top-4 right-4 z-40 flex items-center gap-2">
