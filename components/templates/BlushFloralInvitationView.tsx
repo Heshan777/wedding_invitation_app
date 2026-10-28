@@ -4,6 +4,7 @@ import React, { useState, useEffect, useMemo, useRef } from "react";
 import Image from "next/image";
 import confetti from "canvas-confetti";
 import { resolvePaddedGallery } from "@/lib/gallery-resolver";
+import { parseContactPhones, cleanPhoneForUrl, cleanPhoneForWhatsApp } from "@/lib/contact-side";
 import {
   MapPin,
   Calendar,
@@ -233,6 +234,9 @@ export default function BlushFloralInvitationView({
       },
     ];
   }, [settings?.timelineJson, settings?.venueName]);
+
+  // Host contact numbers parsed cleanly
+  const contactInfo = useMemo(() => parseContactPhones(settings?.contactPhone), [settings?.contactPhone]);
 
   // Formatted Wedding Date
   const formattedWeddingDate = useMemo(() => {
@@ -976,33 +980,98 @@ export default function BlushFloralInvitationView({
         {/* ========================================================================= */}
         {/* CONTACT / INQUIRIES */}
         {/* ========================================================================= */}
-        {settings?.contactPhone && (
-          <section className="relative px-6 py-10 bg-[#faf6f0] text-center border-t border-[#f0e6da]">
+        {(contactInfo.groomPhone || contactInfo.bridePhone || contactInfo.generalPhone) && (
+          <section className="relative px-6 py-12 bg-[#faf6f0] text-center border-t border-[#f0e6da]">
             <p className="text-[10px] font-sans font-medium tracking-[0.25em] text-[#8a3b53] uppercase mb-1">
-              Have Questions?
+              Questions &amp; Inquiries
             </p>
-            <h2 className="text-xl sm:text-2xl font-serif text-[#421424] mb-3 font-normal">
+            <h2 className="text-xl sm:text-2xl font-serif text-[#421424] mb-2 font-normal">
               Contact the Couple
             </h2>
-            <div className="flex flex-wrap items-center justify-center gap-3 max-w-[380px] mx-auto">
-              <a
-                href={`tel:${settings.contactPhone.replace(/[^0-9+]/g, "")}`}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white border border-[#eddcd2] shadow-xs hover:shadow-md text-[#541221] text-xs font-serif font-semibold transition hover:bg-[#fff9f6]"
-              >
-                <Phone className="w-3.5 h-3.5 text-[#8a3b53]" />
-                <span>Call {settings.contactPhone}</span>
-              </a>
-              <a
-                href={`https://wa.me/${settings.contactPhone.replace(/[^0-9]/g, "").replace(/^0/, "94")}?text=${encodeURIComponent(
-                  `Hello ${groomName} & ${brideName}! Regarding your wedding invitation celebration:`
-                )}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-emerald-900/10 border border-emerald-600/40 text-emerald-800 text-xs font-serif font-semibold hover:bg-emerald-900/20 transition"
-              >
-                <MessageCircle className="w-3.5 h-3.5 text-emerald-700" />
-                <span>WhatsApp</span>
-              </a>
+            <div className="flex justify-center mb-6">
+              <Image
+                src="/images/templates/blush-floral/floral-divider.svg"
+                alt="Floral Divider"
+                width={140}
+                height={20}
+                className="opacity-90"
+              />
+            </div>
+
+            <div className="space-y-3 max-w-[360px] mx-auto text-left">
+              {/* Groom's Phone */}
+              {(contactInfo.groomPhone || (!contactInfo.bridePhone && contactInfo.generalPhone)) && (
+                <div className="bg-gradient-to-r from-[#fff9f6] to-[#fffdfa] rounded-2xl p-3.5 sm:p-4 border border-[#eddcd2] shadow-xs flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <span className="text-[10px] font-sans font-semibold tracking-wider text-[#8a3b53] uppercase block">
+                      {groomName} ({contactInfo.bridePhone ? "Groom" : "Couple"})
+                    </span>
+                    <span className="text-xs sm:text-sm font-serif font-bold text-[#421424] truncate block mt-0.5">
+                      {contactInfo.groomPhone || contactInfo.generalPhone}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <a
+                      href={`tel:${cleanPhoneForUrl(contactInfo.groomPhone || contactInfo.generalPhone)}`}
+                      className="px-3 py-1.5 rounded-xl bg-white border border-[#eddcd2] hover:bg-[#8a3b53] hover:text-white text-[#541221] text-xs font-serif font-semibold transition flex items-center gap-1.5 shadow-2xs"
+                      title={`Call ${groomName}`}
+                    >
+                      <Phone className="w-3 h-3 text-[#8a3b53]" />
+                      <span>Call</span>
+                    </a>
+                    <a
+                      href={`https://wa.me/${cleanPhoneForWhatsApp(contactInfo.groomPhone || contactInfo.generalPhone)}?text=${encodeURIComponent(
+                        `Hello ${groomName}! Regarding your wedding celebration:`
+                      )}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-3 py-1.5 rounded-xl bg-emerald-50 border border-emerald-600/30 text-emerald-800 hover:bg-emerald-600 hover:text-white text-xs font-serif font-semibold transition flex items-center gap-1.5 shadow-2xs"
+                      title={`WhatsApp ${groomName}`}
+                    >
+                      <MessageCircle className="w-3 h-3 text-emerald-700" />
+                      <span>WhatsApp</span>
+                    </a>
+                  </div>
+                </div>
+              )}
+
+              {/* Bride's Phone */}
+              {contactInfo.bridePhone && (
+                <div className="bg-gradient-to-r from-[#fff9f6] to-[#fffdfa] rounded-2xl p-3.5 sm:p-4 border border-[#eddcd2] shadow-xs flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <span className="text-[10px] font-sans font-semibold tracking-wider text-[#8a3b53] uppercase block">
+                      {brideName} (Bride)
+                    </span>
+                    <span className="text-xs sm:text-sm font-serif font-bold text-[#421424] truncate block mt-0.5">
+                      {contactInfo.bridePhone}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <a
+                      href={`tel:${cleanPhoneForUrl(contactInfo.bridePhone)}`}
+                      className="px-3 py-1.5 rounded-xl bg-white border border-[#eddcd2] hover:bg-[#8a3b53] hover:text-white text-[#541221] text-xs font-serif font-semibold transition flex items-center gap-1.5 shadow-2xs"
+                      title={`Call ${brideName}`}
+                    >
+                      <Phone className="w-3 h-3 text-[#8a3b53]" />
+                      <span>Call</span>
+                    </a>
+                    <a
+                      href={`https://wa.me/${cleanPhoneForWhatsApp(contactInfo.bridePhone)}?text=${encodeURIComponent(
+                        `Hello ${brideName}! Regarding your wedding celebration:`
+                      )}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-3 py-1.5 rounded-xl bg-emerald-50 border border-emerald-600/30 text-emerald-800 hover:bg-emerald-600 hover:text-white text-xs font-serif font-semibold transition flex items-center gap-1.5 shadow-2xs"
+                      title={`WhatsApp ${brideName}`}
+                    >
+                      <MessageCircle className="w-3 h-3 text-emerald-700" />
+                      <span>WhatsApp</span>
+                    </a>
+                  </div>
+                </div>
+              )}
             </div>
           </section>
         )}
