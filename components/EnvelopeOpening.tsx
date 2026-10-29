@@ -66,7 +66,7 @@ export default function EnvelopeOpening({
   const [stage, setStage] = useState<"couple" | "envelope">("couple");
   const [isOpen, setIsOpen] = useState(false);
   const [isOpening, setIsOpening] = useState(false);
-  const [hasDismissed, setHasDismissed] = useState(initialOpened);
+  const [hasDismissed, setHasDismissed] = useState(Boolean(initialOpened));
   const containerRef = useRef<HTMLDivElement>(null);
   const envelopeRef = useRef<HTMLDivElement>(null);
   const autoTransitionTimerRef = useRef<NodeJS.Timeout | null>(null);

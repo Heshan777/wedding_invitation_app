@@ -102,6 +102,11 @@ import {
   Pencil,
   AlertCircle,
   RefreshCw,
+  LayoutGrid,
+  List,
+  Info,
+  Gem,
+  Shield,
 } from "lucide-react";
 
 export type WeddingEventItem = {
@@ -182,6 +187,17 @@ export type EventManagerListItem = {
     coupleNames: string;
     eventDate: string;
     venueName: string;
+    venueAddress?: string | null;
+    contactPhone?: string | null;
+    heroImageUrl?: string | null;
+    templateId?: string | null;
+    plan?: string | null;
+    _count?: {
+      guests: number;
+      photos: number;
+      tables: number;
+      wishes: number;
+    };
   }[];
 };
 
@@ -378,6 +394,10 @@ export default function AdminDashboard() {
     createStarterWedding: true,
     starterCoupleNames: "",
     starterVenueName: "",
+    starterVenueAddress: "Colombo, Sri Lanka",
+    starterTemplateId: "royal-heritage",
+    starterPlan: "FREE",
+    starterContactPhone: "",
   });
   const [creatingManager, setCreatingManager] = useState(false);
   const [eventSearchQuery, setEventSearchQuery] = useState("");
@@ -385,7 +405,10 @@ export default function AdminDashboard() {
   const [quickUpgradingEventId, setQuickUpgradingEventId] = useState<string | null>(null);
   const [managerSearchQuery, setManagerSearchQuery] = useState("");
   const [selectedManagerFilter, setSelectedManagerFilter] = useState<"ALL" | "SUPER_ADMIN" | "MANAGER">("ALL");
-  const [managerSortBy, setManagerSortBy] = useState<"newest" | "name" | "weddings">("newest");
+  const [managerPlanFilter, setManagerPlanFilter] = useState<string>("ALL");
+  const [managerSortBy, setManagerSortBy] = useState<"newest" | "oldest" | "name" | "weddings" | "guests">("newest");
+  const [accountsViewMode, setAccountsViewMode] = useState<"cards" | "table">("cards");
+  const [viewingAccountDetails, setViewingAccountDetails] = useState<EventManagerListItem | null>(null);
   const [copiedUsername, setCopiedUsername] = useState<string | null>(null);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
 
@@ -399,6 +422,14 @@ export default function AdminDashboard() {
     phone: "",
     role: "MANAGER",
     newPassword: "",
+    weddingId: "",
+    coupleNames: "",
+    venueName: "",
+    venueAddress: "",
+    contactPhone: "",
+    templateId: "royal-heritage",
+    plan: "FREE",
+    slug: "",
   });
   const [updatingManager, setUpdatingManager] = useState(false);
 
@@ -410,6 +441,10 @@ export default function AdminDashboard() {
     weddingCount: number;
   } | null>(null);
   const [deletingManager, setDeletingManager] = useState(false);
+
+  // Super Admin: Event Deletion state
+  const [eventToDelete, setEventToDelete] = useState<{ id: string; coupleNames: string; slug: string } | null>(null);
+  const [deletingEvent, setDeletingEvent] = useState(false);
 
   // Create Wedding Modal
   const [showCreateEventModal, setShowCreateEventModal] = useState(false);
@@ -1205,6 +1240,10 @@ export default function AdminDashboard() {
           createStarterWedding: true,
           starterCoupleNames: "",
           starterVenueName: "",
+          starterVenueAddress: "Colombo, Sri Lanka",
+          starterTemplateId: "royal-heritage",
+          starterPlan: "FREE",
+          starterContactPhone: "",
         });
         loadManagers();
         loadData();
@@ -1220,6 +1259,7 @@ export default function AdminDashboard() {
 
   function handleOpenEditManager(mgr: EventManagerListItem) {
     setEditingManager(mgr);
+    const primaryEvent = mgr.events && mgr.events.length > 0 ? mgr.events[0] : null;
     setEditManagerForm({
       name: mgr.name,
       company: mgr.company || "",
@@ -1227,6 +1267,14 @@ export default function AdminDashboard() {
       phone: mgr.phone || "",
       role: mgr.role || "MANAGER",
       newPassword: "",
+      weddingId: primaryEvent?.id || "",
+      coupleNames: primaryEvent?.coupleNames || "",
+      venueName: primaryEvent?.venueName || "",
+      venueAddress: primaryEvent?.venueAddress || "",
+      contactPhone: primaryEvent?.contactPhone || mgr.phone || "",
+      templateId: primaryEvent?.templateId || "royal-heritage",
+      plan: (primaryEvent?.plan || "FREE").toUpperCase(),
+      slug: primaryEvent?.slug || "",
     });
     setShowEditManagerModal(true);
   }
@@ -1247,20 +1295,28 @@ export default function AdminDashboard() {
           phone: editManagerForm.phone,
           role: editManagerForm.role,
           newPassword: editManagerForm.newPassword || undefined,
+          weddingId: editManagerForm.weddingId || undefined,
+          coupleNames: editManagerForm.coupleNames || undefined,
+          venueName: editManagerForm.venueName || undefined,
+          venueAddress: editManagerForm.venueAddress || undefined,
+          contactPhone: editManagerForm.contactPhone || undefined,
+          templateId: editManagerForm.templateId || undefined,
+          plan: editManagerForm.plan || undefined,
+          slug: editManagerForm.slug || undefined,
         }),
       });
       const data = await res.json();
       if (res.ok) {
-        showToast(`Event Manager "@${editingManager.username}" updated successfully!`);
+        showToast(`Account "@${editingManager.username}" updated successfully!`);
         setShowEditManagerModal(false);
         setEditingManager(null);
         loadManagers();
         loadData();
       } else {
-        showToast(data.error || "Failed to update Event Manager", "error");
+        showToast(data.error || "Failed to update Account", "error");
       }
     } catch {
-      showToast("Network error updating Event Manager", "error");
+      showToast("Network error updating Account", "error");
     } finally {
       setUpdatingManager(false);
     }
@@ -1273,6 +1329,29 @@ export default function AdminDashboard() {
       name: mgr.name,
       weddingCount: mgr._count?.events || mgr.events?.length || 0,
     });
+  }
+
+  async function handleConfirmDeleteEvent() {
+    if (!eventToDelete) return;
+    setDeletingEvent(true);
+    try {
+      const res = await fetch(`/api/admin/events/${eventToDelete.id}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showToast(`Wedding "${eventToDelete.coupleNames}" deleted.`);
+        setEventToDelete(null);
+        loadData();
+        loadManagers();
+      } else {
+        showToast(data.error || "Failed to delete wedding", "error");
+      }
+    } catch {
+      showToast("Network error deleting wedding", "error");
+    } finally {
+      setDeletingEvent(false);
+    }
   }
 
   async function handleConfirmDeleteManager() {
@@ -1319,7 +1398,16 @@ export default function AdminDashboard() {
       list = list.filter((m) => m.role !== "SUPER_ADMIN");
     }
 
-    // Search query filter
+    // Plan tier filter
+    if (managerPlanFilter !== "ALL") {
+      list = list.filter((m) =>
+        m.events?.some(
+          (ev) => (ev.plan || "FREE").toUpperCase() === managerPlanFilter.toUpperCase()
+        )
+      );
+    }
+
+    // Search query filter (matches manager, couple names, slug, venue, email, phone)
     if (managerSearchQuery.trim()) {
       const q = managerSearchQuery.toLowerCase().trim();
       list = list.filter(
@@ -1328,7 +1416,14 @@ export default function AdminDashboard() {
           m.username.toLowerCase().includes(q) ||
           (m.company && m.company.toLowerCase().includes(q)) ||
           (m.email && m.email.toLowerCase().includes(q)) ||
-          (m.phone && m.phone.includes(q))
+          (m.phone && m.phone.includes(q)) ||
+          m.events?.some(
+            (ev) =>
+              ev.coupleNames.toLowerCase().includes(q) ||
+              ev.slug.toLowerCase().includes(q) ||
+              ev.venueName.toLowerCase().includes(q) ||
+              (ev.contactPhone && ev.contactPhone.includes(q))
+          )
       );
     }
 
@@ -1342,12 +1437,20 @@ export default function AdminDashboard() {
         const countB = b._count?.events || b.events?.length || 0;
         return countB - countA;
       }
+      if (managerSortBy === "guests") {
+        const guestsA = a.events?.reduce((acc, ev) => acc + (ev._count?.guests || 0), 0) || 0;
+        const guestsB = b.events?.reduce((acc, ev) => acc + (ev._count?.guests || 0), 0) || 0;
+        return guestsB - guestsA;
+      }
+      if (managerSortBy === "oldest") {
+        return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      }
       // default: newest
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
 
     return list;
-  }, [managers, managerSearchQuery, selectedManagerFilter, managerSortBy]);
+  }, [managers, managerSearchQuery, selectedManagerFilter, managerPlanFilter, managerSortBy]);
 
   useEffect(() => {
     loadData();
@@ -2577,15 +2680,15 @@ export default function AdminDashboard() {
                 onClick={() => setActiveTab("managers")}
                 className={`w-full xl:w-auto royal-nav-tab px-3.5 sm:px-4 py-2.5 rounded-xl text-xs font-cinzel font-bold tracking-wider transition cursor-pointer flex items-center justify-center sm:justify-start gap-2 touch-manipulation min-h-[44px] col-span-1 sm:col-span-1 xl:col-auto ${
                   activeTab === "managers"
-                    ? "bg-[#800020] text-[#fdfbf7] border border-[#dfba73] shadow-lg ring-1 ring-[#dfba73]/40"
-                    : "bg-[#2a1721] text-[#dfba73] hover:bg-[#c5a059]/15 border border-[#c5a059]/30"
+                    ? "bg-[#800020] text-[#fdfbf7] border border-[#dfba73] shadow-lg shadow-[#800020]/40 ring-1 ring-[#dfba73]/40"
+                    : "bg-[#271620] text-[#dfba73] hover:bg-[#c5a059]/20 border border-[#c5a059]/40"
                 }`}
               >
-                <ShieldCheck className="w-4 h-4 text-[#dfba73] shrink-0" />
-                <span className="truncate hidden sm:inline">Event Managers</span>
-                <span className="truncate sm:hidden">Managers</span>
-                <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-mono shrink-0 ${
-                  activeTab === "managers" ? "bg-white/20 text-white" : "bg-[#181216] text-[#dfba73]"
+                <Crown className="w-4 h-4 text-[#ffd700] shrink-0" />
+                <span className="truncate hidden sm:inline">All Accounts & Weddings</span>
+                <span className="truncate sm:hidden">All Accounts</span>
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold shrink-0 ${
+                  activeTab === "managers" ? "bg-white/20 text-white" : "bg-[#181216] text-[#dfba73] border border-[#c5a059]/30"
                 }`}>
                   {managers.length}
                 </span>
@@ -5477,6 +5580,20 @@ export default function AdminDashboard() {
                         >
                           <ExternalLink className="w-3 h-3" /> Preview
                         </a>
+
+                        <button
+                          onClick={() =>
+                            setEventToDelete({
+                              id: ev.id,
+                              coupleNames: ev.coupleNames,
+                              slug: ev.slug,
+                            })
+                          }
+                          className="p-1.5 rounded-lg bg-rose-950/40 hover:bg-rose-900/70 border border-rose-800/40 hover:border-rose-600/60 text-rose-300 text-xs transition cursor-pointer shrink-0"
+                          title="Delete Wedding Event"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -5486,55 +5603,60 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* TAB: EVENT MANAGERS DIRECTORY (Super Admin Exclusive) */}
+        {/* TAB: EVENT MANAGERS & ALL ACCOUNTS DIRECTORY (Super Admin Exclusive) */}
         {activeTab === "managers" && manager?.role === "SUPER_ADMIN" && (
           <div className="space-y-6">
             {/* Header Banner */}
             <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#1e151b] via-[#241a22] to-[#171115] border border-[#c5a059]/40 p-5 sm:p-7 shadow-2xl">
-              <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 rounded-full bg-[#dfba73]/5 blur-3xl pointer-events-none" />
+              <div className="absolute top-0 right-0 -mr-16 -mt-16 w-72 h-72 rounded-full bg-[#dfba73]/10 blur-3xl pointer-events-none" />
               <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-5">
                 <div>
                   <div className="flex flex-wrap items-center gap-2 mb-2">
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#800020]/30 text-[#dfba73] text-[11px] font-cinzel font-bold border border-[#dfba73]/40 shadow-sm">
-                      <ShieldCheck className="w-3.5 h-3.5 text-[#edd892]" /> Super Admin Console
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#800020]/40 text-[#dfba73] text-[11px] font-cinzel font-bold border border-[#dfba73]/40 shadow-sm">
+                      <Crown className="w-3.5 h-3.5 text-[#edd892]" /> Super Admin Command Suite
                     </span>
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-[#251820] text-[#edd892] font-mono text-[11px] border border-[#c5a059]/25">
-                      {managers.length} {managers.length === 1 ? "Planner Registered" : "Planners Registered"}
+                      {managers.length} {managers.length === 1 ? "Account Registered" : "Accounts Registered"}
+                    </span>
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-emerald-950/70 text-emerald-300 font-mono text-[11px] border border-emerald-600/30">
+                      {events.length} Client Weddings
                     </span>
                   </div>
                   <h2 className="font-cinzel text-xl sm:text-2xl lg:text-3xl font-bold text-[#dfba73]">
-                    Event Managers & Planners Directory
+                    All Accounts & Client Weddings Master Suite
                   </h2>
                   <p className="text-xs sm:text-sm text-[#fdfbf7]/70 mt-1.5 max-w-2xl leading-relaxed">
-                    Centrally provision, supervise, and administer independent Event Manager accounts. Each planner operates within an isolated workspace with dedicated wedding portals, guest registries, and RSVP tracking.
+                    Centrally supervise, inspect, and perform full CRUD operations across all client accounts. 1-click plan tier upgrades, live URL inspection, password resets, direct suite impersonation, and WhatsApp communication.
                   </p>
                 </div>
 
-                <button
-                  onClick={() => setShowCreateManagerModal(true)}
-                  className="btn-gold-shimmer px-5 py-3 rounded-xl text-xs font-cinzel font-bold flex items-center justify-center gap-2 shadow-lg cursor-pointer w-full md:w-auto min-h-[44px] touch-manipulation shrink-0"
-                >
-                  <UserPlus className="w-4 h-4" /> Add Event Manager
-                </button>
+                <div className="flex flex-col sm:flex-row items-center gap-2.5 shrink-0">
+                  <button
+                    onClick={() => setShowCreateManagerModal(true)}
+                    className="btn-gold-shimmer px-5 py-3 rounded-xl text-xs font-cinzel font-bold flex items-center justify-center gap-2 shadow-lg cursor-pointer w-full sm:w-auto min-h-[44px] touch-manipulation"
+                  >
+                    <UserPlus className="w-4 h-4" /> Add Account & Wedding
+                  </button>
+                </div>
               </div>
             </div>
 
-            {/* Quick Metrics */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+            {/* Quick Metrics Bar */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
               <div className="relative overflow-hidden p-4 sm:p-5 rounded-2xl bg-gradient-to-b from-[#1e151b] to-[#171115] border border-[#c5a059]/30 shadow-lg">
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold">
-                    Total Event Managers
+                    Total Registered Accounts
                   </span>
                   <div className="w-8 h-8 rounded-lg bg-[#dfba73]/10 border border-[#dfba73]/25 flex items-center justify-center text-[#dfba73]">
                     <Users className="w-4 h-4" />
                   </div>
                 </div>
-                <div className="font-cinzel text-3xl font-bold text-[#fdfbf7] mt-2">{managers.length}</div>
+                <div className="font-cinzel text-2xl sm:text-3xl font-bold text-[#fdfbf7] mt-2">{managers.length}</div>
                 <div className="flex items-center gap-2 mt-1.5 text-[11px] text-[#edd892]/70 font-sans">
-                  <span>{managers.filter((m) => m.role === "SUPER_ADMIN").length} Super Admins</span>
+                  <span>{managers.filter((m) => m.role === "SUPER_ADMIN").length} Admins</span>
                   <span>•</span>
-                  <span>{managers.filter((m) => m.role !== "SUPER_ADMIN").length} Event Managers</span>
+                  <span>{managers.filter((m) => m.role !== "SUPER_ADMIN").length} Planners</span>
                 </div>
               </div>
 
@@ -5547,42 +5669,59 @@ export default function AdminDashboard() {
                     <Heart className="w-4 h-4" />
                   </div>
                 </div>
-                <div className="font-cinzel text-3xl font-bold text-[#edd892] mt-2">{events.length}</div>
+                <div className="font-cinzel text-2xl sm:text-3xl font-bold text-[#edd892] mt-2">{events.length}</div>
                 <span className="text-[11px] text-[#fdfbf7]/50 mt-1.5 block font-sans">
-                  Portfolios managed across SaaS accounts
+                  {paidEventsCount} paid packages • {freeEventsCount} free tier
                 </span>
               </div>
 
               <div className="relative overflow-hidden p-4 sm:p-5 rounded-2xl bg-gradient-to-b from-[#1e151b] to-[#171115] border border-[#c5a059]/30 shadow-lg">
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold">
-                    Total Platform Guests
+                    Estimated Revenue
+                  </span>
+                  <div className="w-8 h-8 rounded-lg bg-[#dfba73]/15 border border-[#dfba73]/30 flex items-center justify-center text-[#dfba73]">
+                    <Crown className="w-4 h-4" />
+                  </div>
+                </div>
+                <div className="font-cinzel text-2xl sm:text-3xl font-bold text-[#fdfbf7] mt-2">
+                  රු. {totalRevenueLKR.toLocaleString()}
+                </div>
+                <span className="text-[11px] text-[#edd892]/80 mt-1.5 block font-sans">
+                  {paidEventsCount} active paid tier client(s)
+                </span>
+              </div>
+
+              <div className="relative overflow-hidden p-4 sm:p-5 rounded-2xl bg-gradient-to-b from-[#1e151b] to-[#171115] border border-[#c5a059]/30 shadow-lg">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold">
+                    Platform Guest Invites
                   </span>
                   <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center text-emerald-400">
                     <Sparkles className="w-4 h-4" />
                   </div>
                 </div>
-                <div className="font-cinzel text-3xl font-bold text-emerald-400 mt-2">
-                  {events.reduce((acc, ev) => acc + (ev._count?.guests || 0), 0)}
+                <div className="font-cinzel text-2xl sm:text-3xl font-bold text-emerald-400 mt-2">
+                  {totalPlatformGuests.toLocaleString()}
                 </div>
                 <span className="text-[11px] text-[#fdfbf7]/50 mt-1.5 block font-sans">
-                  Invitations provisioned platform-wide
+                  Personalized invitation links issued
                 </span>
               </div>
             </div>
 
-            {/* Smart Search, Filter & Sort Control Bar */}
-            <div className="p-3 sm:p-4 rounded-2xl bg-[#1b1419] border border-[#c5a059]/30 shadow-xl space-y-3">
+            {/* Smart Search, Filter, Sort & View Mode Bar */}
+            <div className="p-3 sm:p-4 rounded-2xl saas-inner-box shadow-xl space-y-3">
               <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
                 {/* Search Box */}
                 <div className="relative flex-1">
                   <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#c5a059]/70" />
                   <input
                     type="text"
-                    placeholder="Search by manager name, username, agency, email, or phone..."
+                    placeholder="Search by couple names, username, agency, email, phone, slug, or venue..."
                     value={managerSearchQuery}
                     onChange={(e) => setManagerSearchQuery(e.target.value)}
-                    className="w-full pl-10 pr-9 py-2.5 rounded-xl bg-[#22171f] border border-[#c5a059]/30 text-xs text-[#fdfbf7] placeholder-[#fdfbf7]/40 focus:outline-none focus:border-[#dfba73] focus:ring-1 focus:ring-[#dfba73]/30 min-h-[40px] transition"
+                    className="w-full pl-10 pr-9 py-2.5 rounded-xl saas-select text-xs text-[#fdfbf7] placeholder-[#fdfbf7]/40 focus:outline-none focus:border-[#dfba73] focus:ring-1 focus:ring-[#dfba73]/30 min-h-[40px] transition"
                   />
                   {managerSearchQuery && (
                     <button
@@ -5595,55 +5734,136 @@ export default function AdminDashboard() {
                   )}
                 </div>
 
-                {/* Filter & Sort Controls */}
+                {/* Filter & View Mode Controls */}
                 <div className="flex flex-wrap items-center gap-2">
                   {/* Role Tabs */}
-                  <div className="inline-flex rounded-xl bg-[#22171f] p-1 border border-[#c5a059]/25">
+                  <div className="inline-flex rounded-xl saas-stat-tile p-1">
                     <button
                       onClick={() => setSelectedManagerFilter("ALL")}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-cinzel font-semibold transition cursor-pointer ${
+                      className={`px-2.5 py-1.5 rounded-lg text-xs font-cinzel font-semibold transition cursor-pointer ${
                         selectedManagerFilter === "ALL"
-                          ? "bg-[#800020] text-[#dfba73] shadow-md border border-[#dfba73]/40"
-                          : "text-[#fdfbf7]/60 hover:text-[#dfba73]"
+                          ? "bg-[#800020] text-white shadow-md border border-[#dfba73]/40"
+                          : "text-secondary-sub hover:text-[#dfba73]"
                       }`}
                     >
                       All ({managers.length})
                     </button>
                     <button
                       onClick={() => setSelectedManagerFilter("MANAGER")}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-cinzel font-semibold transition cursor-pointer ${
+                      className={`px-2.5 py-1.5 rounded-lg text-xs font-cinzel font-semibold transition cursor-pointer ${
                         selectedManagerFilter === "MANAGER"
-                          ? "bg-[#800020] text-[#dfba73] shadow-md border border-[#dfba73]/40"
-                          : "text-[#fdfbf7]/60 hover:text-[#dfba73]"
+                          ? "bg-[#800020] text-white shadow-md border border-[#dfba73]/40"
+                          : "text-secondary-sub hover:text-[#dfba73]"
                       }`}
                     >
-                      Managers ({managers.filter((m) => m.role !== "SUPER_ADMIN").length})
+                      Planners ({managers.filter((m) => m.role !== "SUPER_ADMIN").length})
                     </button>
                     <button
                       onClick={() => setSelectedManagerFilter("SUPER_ADMIN")}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-cinzel font-semibold transition cursor-pointer ${
+                      className={`px-2.5 py-1.5 rounded-lg text-xs font-cinzel font-semibold transition cursor-pointer ${
                         selectedManagerFilter === "SUPER_ADMIN"
-                          ? "bg-[#800020] text-[#dfba73] shadow-md border border-[#dfba73]/40"
-                          : "text-[#fdfbf7]/60 hover:text-[#dfba73]"
+                          ? "bg-[#800020] text-white shadow-md border border-[#dfba73]/40"
+                          : "text-secondary-sub hover:text-[#dfba73]"
                       }`}
                     >
                       Admins ({managers.filter((m) => m.role === "SUPER_ADMIN").length})
                     </button>
                   </div>
 
+                  {/* Plan Tier Filter */}
+                  <div className="inline-flex rounded-xl saas-stat-tile p-1">
+                    <button
+                      onClick={() => setManagerPlanFilter("ALL")}
+                      className={`px-2.5 py-1.5 rounded-lg text-xs font-cinzel transition cursor-pointer ${
+                        managerPlanFilter === "ALL"
+                          ? "bg-[#dfba73]/20 text-[#edd892] text-gold-accent font-bold border border-[#dfba73]/40"
+                          : "text-secondary-sub hover:text-[#dfba73]"
+                      }`}
+                    >
+                      All Plans
+                    </button>
+                    <button
+                      onClick={() => setManagerPlanFilter("FREE")}
+                      className={`px-2 py-1.5 rounded-lg text-[11px] font-cinzel transition cursor-pointer ${
+                        managerPlanFilter === "FREE"
+                          ? "bg-slate-700 text-white font-bold"
+                          : "text-secondary-sub hover:text-[#dfba73]"
+                      }`}
+                    >
+                      Free
+                    </button>
+                    <button
+                      onClick={() => setManagerPlanFilter("SILVER")}
+                      className={`px-2 py-1.5 rounded-lg text-[11px] font-cinzel transition cursor-pointer ${
+                        managerPlanFilter === "SILVER"
+                          ? "bg-slate-600 text-white font-bold"
+                          : "text-secondary-sub hover:text-[#dfba73]"
+                      }`}
+                    >
+                      Silver
+                    </button>
+                    <button
+                      onClick={() => setManagerPlanFilter("GOLD")}
+                      className={`px-2 py-1.5 rounded-lg text-[11px] font-cinzel transition cursor-pointer ${
+                        managerPlanFilter === "GOLD"
+                          ? "bg-amber-600 text-white font-bold"
+                          : "text-secondary-sub hover:text-amber-500"
+                      }`}
+                    >
+                      👑 Gold
+                    </button>
+                    <button
+                      onClick={() => setManagerPlanFilter("PLATINUM")}
+                      className={`px-2 py-1.5 rounded-lg text-[11px] font-cinzel transition cursor-pointer ${
+                        managerPlanFilter === "PLATINUM"
+                          ? "bg-purple-900 text-white font-bold"
+                          : "text-secondary-sub hover:text-purple-400"
+                      }`}
+                    >
+                      💎 Plat
+                    </button>
+                  </div>
+
                   {/* Sort Dropdown */}
-                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#22171f] border border-[#c5a059]/25 text-xs text-[#edd892]">
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl saas-select text-xs">
                     <ArrowUpDown className="w-3.5 h-3.5 text-[#dfba73]" />
-                    <span className="text-white/40 hidden sm:inline">Sort:</span>
                     <select
                       value={managerSortBy}
                       onChange={(e) => setManagerSortBy(e.target.value as any)}
-                      className="bg-transparent text-xs text-[#edd892] focus:outline-none cursor-pointer"
+                      className="bg-transparent text-xs text-inherit focus:outline-none cursor-pointer"
                     >
                       <option value="newest" className="bg-[#1c1519] text-[#fdfbf7]">Newest First</option>
+                      <option value="oldest" className="bg-[#1c1519] text-[#fdfbf7]">Oldest First</option>
                       <option value="name" className="bg-[#1c1519] text-[#fdfbf7]">Name (A-Z)</option>
                       <option value="weddings" className="bg-[#1c1519] text-[#fdfbf7]">Most Weddings</option>
+                      <option value="guests" className="bg-[#1c1519] text-[#fdfbf7]">Most Guests</option>
                     </select>
+                  </div>
+
+                  {/* View Mode Toggle: Cards vs Table */}
+                  <div className="inline-flex rounded-xl saas-stat-tile p-1">
+                    <button
+                      onClick={() => setAccountsViewMode("cards")}
+                      className={`p-1.5 rounded-lg text-xs transition cursor-pointer ${
+                        accountsViewMode === "cards"
+                          ? "bg-[#800020] text-white shadow-md border border-[#dfba73]/40"
+                          : "text-secondary-sub hover:text-[#dfba73]"
+                      }`}
+                      title="Cards Grid View"
+                    >
+                      <LayoutGrid className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => setAccountsViewMode("table")}
+                      className={`p-1.5 rounded-lg text-xs transition cursor-pointer ${
+                        accountsViewMode === "table"
+                          ? "bg-[#800020] text-white shadow-md border border-[#dfba73]/40"
+                          : "text-secondary-sub hover:text-[#dfba73]"
+                      }`}
+                      title="Spreadsheet Table View"
+                    >
+                      <List className="w-4 h-4" />
+                    </button>
                   </div>
                 </div>
               </div>
@@ -5654,11 +5874,12 @@ export default function AdminDashboard() {
                   Showing <strong className="text-[#edd892]">{filteredManagers.length}</strong> of{" "}
                   {managers.length} accounts
                 </span>
-                {(managerSearchQuery || selectedManagerFilter !== "ALL") && (
+                {(managerSearchQuery || selectedManagerFilter !== "ALL" || managerPlanFilter !== "ALL") && (
                   <button
                     onClick={() => {
                       setManagerSearchQuery("");
                       setSelectedManagerFilter("ALL");
+                      setManagerPlanFilter("ALL");
                     }}
                     className="text-[#dfba73] hover:underline cursor-pointer"
                   >
@@ -5675,7 +5896,7 @@ export default function AdminDashboard() {
                   <Search className="w-6 h-6" />
                 </div>
                 <h3 className="font-cinzel text-base sm:text-lg font-bold text-[#dfba73]">
-                  No Event Planners Found
+                  No Accounts Found
                 </h3>
                 <p className="text-xs text-[#fdfbf7]/60 max-w-sm mx-auto">
                   No accounts matched your search criteria. Try modifying your keywords or resetting filters.
@@ -5684,6 +5905,7 @@ export default function AdminDashboard() {
                   onClick={() => {
                     setManagerSearchQuery("");
                     setSelectedManagerFilter("ALL");
+                    setManagerPlanFilter("ALL");
                   }}
                   className="px-4 py-2 rounded-xl bg-[#2a1c24] text-[#dfba73] border border-[#c5a059]/40 text-xs font-cinzel hover:bg-[#800020] transition cursor-pointer"
                 >
@@ -5692,150 +5914,278 @@ export default function AdminDashboard() {
               </div>
             )}
 
-            {/* MOBILE VIEW (< md): Responsive Manager Cards */}
-            {filteredManagers.length > 0 && (
-              <div className="block md:hidden space-y-3.5">
+            {/* VIEW MODE 1: EXECUTIVE LUXURY CARDS GRID */}
+            {filteredManagers.length > 0 && accountsViewMode === "cards" && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                 {filteredManagers.map((mgr) => {
                   const isSelf = mgr.id === manager.id;
-                  const weddingCount = mgr._count?.events || mgr.events?.length || 0;
-                  const initials = mgr.name
-                    ? mgr.name
-                        .trim()
-                        .split(/\s+/)
-                        .map((w) => w[0])
-                        .slice(0, 2)
-                        .join("")
-                        .toUpperCase()
-                    : "EM";
+                  const primaryEvent = mgr.events && mgr.events.length > 0 ? mgr.events[0] : null;
+                  const isCurrent = primaryEvent ? primaryEvent.id === activeEventId : false;
+                  const evPlan: PlanTier = (primaryEvent?.plan || "FREE").toUpperCase() as PlanTier;
+                  const isUpgradingThis = primaryEvent ? quickUpgradingEventId === primaryEvent.id : false;
+                  const guestCount = primaryEvent?._count?.guests || 0;
+                  const photoCount = primaryEvent?._count?.photos || 0;
+                  const tableCount = primaryEvent?._count?.tables || 0;
+                  const currentTpl = primaryEvent?.templateId ? getTemplate(primaryEvent.templateId) : null;
+                  const initials = (primaryEvent?.coupleNames || mgr.name || "EM")
+                    .trim()
+                    .split(/\s+/)
+                    .map((w) => w[0])
+                    .slice(0, 2)
+                    .join("")
+                    .toUpperCase();
+
+                  const planBadgeClass =
+                    evPlan === "PLATINUM"
+                      ? "saas-badge-platinum"
+                      : evPlan === "GOLD"
+                      ? "saas-badge-gold"
+                      : evPlan === "SILVER"
+                      ? "saas-badge-silver"
+                      : "saas-badge-free";
 
                   return (
                     <div
-                      key={`mobile-mgr-${mgr.id}`}
-                      className="rounded-2xl bg-gradient-to-b from-[#1e151b] to-[#161014] border border-[#c5a059]/35 p-4 shadow-xl space-y-3.5 relative overflow-hidden"
+                      key={`mgr-card-${mgr.id}`}
+                      className={`saas-card rounded-2xl p-4.5 sm:p-5 flex flex-col justify-between relative transition-all duration-200 ${
+                        isCurrent ? "saas-card-active" : ""
+                      }`}
                     >
-                      {/* Top Row: Avatar, Name, Role */}
-                      <div className="flex items-start gap-3">
-                        <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#420614] via-[#241a22] to-[#171115] border border-[#dfba73]/50 flex items-center justify-center font-cinzel font-bold text-[#dfba73] text-sm shadow-md shrink-0">
-                          {initials}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-1.5">
-                            <h3 className="font-cinzel font-bold text-[#fdfbf7] text-sm truncate">
-                              {mgr.name}
-                            </h3>
-                            {isSelf && (
-                              <span className="px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[9px] font-mono border border-amber-500/40 shrink-0">
-                                You
+                      {/* Card Top: Avatar, Couple Name/Title, Role/Plan Badges */}
+                      <div>
+                        <div className="flex items-start gap-3 mb-3.5">
+                          {/* Luxury Avatar Initials */}
+                          <div className="saas-avatar w-11 h-11 rounded-xl flex items-center justify-center font-cinzel font-bold text-sm shadow-md shrink-0">
+                            {initials}
+                          </div>
+
+                          {/* Title & Subtitle */}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <h3 className="font-cinzel font-bold text-[#fdfbf7] text-base truncate text-hero-couple">
+                                {primaryEvent?.coupleNames || mgr.name}
+                              </h3>
+                              {isSelf && (
+                                <span className="px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[9px] font-mono border border-amber-500/40 shrink-0">
+                                  You
+                                </span>
+                              )}
+                              {isCurrent && (
+                                <span className="px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[9px] font-cinzel font-bold border border-emerald-500/40 shrink-0">
+                                  Active
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Subtitle: Account Owner & Company */}
+                            <div className="flex items-center gap-1.5 text-xs text-[#edd892]/80 text-secondary-sub mt-0.5 truncate">
+                              <button
+                                onClick={() => handleCopyUsername(mgr.username)}
+                                className="inline-flex items-center gap-1 font-mono hover:text-[#dfba73] transition cursor-pointer shrink-0"
+                                title="Click to copy username"
+                              >
+                                <span>@{mgr.username}</span>
+                                {copiedUsername === mgr.username ? (
+                                  <Check className="w-3 h-3 text-emerald-400" />
+                                ) : (
+                                  <Copy className="w-3 h-3 opacity-60" />
+                                )}
+                              </button>
+                              <span>•</span>
+                              <span className="truncate">{mgr.company || (mgr.role === "SUPER_ADMIN" ? "Platform Admin" : "Independent Planner")}</span>
+                            </div>
+                          </div>
+
+                          {/* Plan Tier Badge */}
+                          <div className="shrink-0 flex flex-col items-end gap-1">
+                            <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-cinzel font-bold border shadow-xs ${planBadgeClass}`}>
+                              {evPlan === "GOLD" && <Crown className="w-3 h-3 text-amber-400 shrink-0" />}
+                              {evPlan === "PLATINUM" && <Gem className="w-3 h-3 text-purple-400 shrink-0" />}
+                              {evPlan === "SILVER" && <Shield className="w-3 h-3 text-slate-300 shrink-0" />}
+                              {evPlan === "FREE" && <Sparkles className="w-3 h-3 text-slate-400 shrink-0" />}
+                              {evPlan}
+                            </span>
+                            {mgr.role === "SUPER_ADMIN" && (
+                              <span className="text-[9px] text-[#dfba73] text-gold-accent font-cinzel font-semibold tracking-wider uppercase">
+                                Admin
                               </span>
                             )}
                           </div>
-                          <div className="text-[11px] text-[#edd892]/80 flex items-center gap-1 mt-0.5 truncate">
-                            <Building2 className="w-3 h-3 text-[#dfba73]/70 shrink-0" />
-                            <span className="truncate">{mgr.company || "Independent Studio"}</span>
-                          </div>
                         </div>
 
-                        {/* Role Badge */}
-                        <div className="shrink-0">
-                          {mgr.role === "SUPER_ADMIN" ? (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#800020]/50 text-[#dfba73] text-[10px] font-cinzel font-bold border border-[#dfba73]/40 shadow-sm">
-                              <Crown className="w-2.5 h-2.5" /> Admin
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-950/60 text-emerald-300 text-[10px] font-sans font-medium border border-emerald-600/40">
-                              <ShieldCheck className="w-2.5 h-2.5 text-emerald-400" /> Planner
-                            </span>
-                          )}
-                        </div>
-                      </div>
+                        {/* Wedding Details & Vanity Link Box */}
+                        {primaryEvent ? (
+                          <div className="saas-inner-box rounded-xl p-3 space-y-2 mb-3">
+                            {/* Venue & Date */}
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-xs text-[#fdfbf7]/80 text-secondary-sub">
+                              <div className="flex items-center gap-1.5 truncate">
+                                <MapPin className="w-3.5 h-3.5 text-[#dfba73] shrink-0" />
+                                <span className="truncate font-medium">{primaryEvent.venueName || "Venue not set"}</span>
+                              </div>
+                              <div className="flex items-center gap-1.5 shrink-0 text-[11px] opacity-80 font-mono">
+                                <Calendar className="w-3 h-3 text-[#dfba73] shrink-0" />
+                                <span>{new Date(primaryEvent.eventDate).toLocaleDateString(undefined, { dateStyle: "medium" })}</span>
+                              </div>
+                            </div>
 
-                      {/* Middle Details Grid */}
-                      <div className="rounded-xl bg-[#22171f]/80 border border-[#c5a059]/15 p-3 space-y-2 text-xs">
-                        {/* Username & Weddings count */}
-                        <div className="flex items-center justify-between gap-2">
-                          <button
-                            onClick={() => handleCopyUsername(mgr.username)}
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#1a1217] border border-[#c5a059]/30 text-[#edd892] font-mono text-xs hover:border-[#dfba73] transition cursor-pointer"
-                            title="Click to copy username"
-                          >
-                            <span>@{mgr.username}</span>
-                            {copiedUsername === mgr.username ? (
-                              <Check className="w-3 h-3 text-emerald-400" />
-                            ) : (
-                              <Copy className="w-3 h-3 text-[#dfba73]/60" />
-                            )}
-                          </button>
-
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#1a1217] border border-[#c5a059]/25 text-[#edd892] font-mono text-[11px]">
-                            <Heart className="w-3 h-3 text-[#dfba73]" />
-                            {weddingCount} {weddingCount === 1 ? "Wedding" : "Weddings"}
-                          </span>
-                        </div>
-
-                        {/* Contact details */}
-                        {(mgr.email || mgr.phone) ? (
-                          <div className="space-y-1 pt-1 border-t border-[#c5a059]/15 text-[11px]">
-                            {mgr.email && (
-                              <a
-                                href={`mailto:${mgr.email}`}
-                                className="flex items-center gap-1.5 text-[#fdfbf7]/80 hover:text-[#dfba73] truncate"
+                            {/* Vanity Slug Link & Action Strip */}
+                            <div className="flex items-center justify-between gap-1.5 pt-0.5">
+                              <button
+                                onClick={() => copyWeddingLink(primaryEvent.slug)}
+                                className="saas-stat-tile flex-1 min-w-0 px-2.5 py-1.5 rounded-lg text-[11px] font-mono text-[#dfba73] hover:border-[#dfba73] transition flex items-center gap-1.5 cursor-pointer truncate"
+                                title="Click to copy live wedding invitation URL"
                               >
-                                <Mail className="w-3 h-3 text-[#dfba73]/70 shrink-0" />
-                                <span className="truncate">{mgr.email}</span>
+                                <Link2 className="w-3 h-3 shrink-0 text-[#dfba73]" />
+                                <span className="truncate">/e/{primaryEvent.slug}</span>
+                                <Copy className="w-3 h-3 shrink-0 ml-auto opacity-50" />
+                              </button>
+
+                              <a
+                                href={`/e/${primaryEvent.slug}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="saas-btn-secondary px-2.5 py-1.5 rounded-lg text-[11px] font-sans font-medium flex items-center gap-1 transition shrink-0"
+                                title="Preview Live Wedding Invitation"
+                              >
+                                <ExternalLink className="w-3 h-3" />
+                                <span className="hidden sm:inline">Preview</span>
                               </a>
-                            )}
-                            {mgr.phone && (
-                              <div className="flex items-center justify-between gap-2">
-                                <a
-                                  href={`tel:${mgr.phone}`}
-                                  className="flex items-center gap-1.5 text-[#fdfbf7]/70 font-mono hover:text-[#dfba73]"
-                                >
-                                  <Phone className="w-3 h-3 text-[#dfba73]/70 shrink-0" />
-                                  <span>{mgr.phone}</span>
-                                </a>
+
+                              {(mgr.phone || primaryEvent.contactPhone) && (
                                 <button
-                                  onClick={() => openWhatsAppCouple(mgr.phone, mgr.name, mgr.events?.[0]?.slug || "")}
-                                  className="px-2 py-0.5 rounded bg-emerald-950/70 border border-emerald-600/40 text-emerald-300 text-[10px] font-sans flex items-center gap-1 cursor-pointer"
+                                  onClick={() => openWhatsAppCouple(mgr.phone || primaryEvent.contactPhone, primaryEvent.coupleNames, primaryEvent.slug)}
+                                  className="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-medium flex items-center gap-1 shadow-xs transition cursor-pointer shrink-0"
+                                  title="Share invitation via WhatsApp"
                                 >
-                                  <MessageCircle className="w-3 h-3" /> WhatsApp
+                                  <MessageCircle className="w-3 h-3" />
+                                  <span className="hidden sm:inline">WhatsApp</span>
                                 </button>
+                              )}
+                            </div>
+
+                            {/* Template Tag */}
+                            {currentTpl && (
+                              <div className="flex items-center justify-between pt-1 text-[11px] border-t border-[#c5a059]/15">
+                                <span className="text-[10px] text-secondary-sub opacity-70">Design Theme:</span>
+                                <span className="font-cinzel font-semibold text-[#dfba73] text-gold-accent flex items-center gap-1">
+                                  <Palette className="w-3 h-3" />
+                                  {currentTpl.name}
+                                </span>
                               </div>
                             )}
                           </div>
                         ) : (
-                          <div className="pt-1 border-t border-[#c5a059]/15 text-[10px] text-white/40 italic">
-                            No contact details specified
+                          <div className="saas-inner-box rounded-xl p-3 text-center text-xs text-secondary-sub italic mb-3">
+                            No client wedding profile linked yet.
                           </div>
                         )}
 
-                        {/* Starter wedding couple name if present */}
-                        {mgr.events && mgr.events.length > 0 && (
-                          <div className="text-[11px] text-[#edd892]/80 pt-1 border-t border-[#c5a059]/15 flex items-center gap-1.5 truncate">
-                            <Sparkles className="w-3 h-3 text-[#dfba73] shrink-0" />
-                            <span className="truncate">{mgr.events[0].coupleNames}</span>
+                        {/* Quota & Capacity Stats Strip */}
+                        {primaryEvent && (
+                          <div className="grid grid-cols-3 gap-1.5 mb-3">
+                            <div className="saas-stat-tile rounded-xl p-2 text-center">
+                              <div className="text-[9px] uppercase tracking-wider text-secondary-sub opacity-75 font-sans">
+                                Guest Links
+                              </div>
+                              <div className="font-mono text-xs font-bold text-[#dfba73] text-gold-accent mt-0.5">
+                                {guestCount}{" "}
+                                <span className="text-[10px] opacity-60 font-normal">
+                                  / {evPlan === "FREE" ? "4" : "∞"}
+                                </span>
+                              </div>
+                            </div>
+
+                            <div className="saas-stat-tile rounded-xl p-2 text-center">
+                              <div className="text-[9px] uppercase tracking-wider text-secondary-sub opacity-75 font-sans">
+                                Photos
+                              </div>
+                              <div className="font-mono text-xs font-bold text-emerald-400 mt-0.5">
+                                {photoCount}
+                              </div>
+                            </div>
+
+                            <div className="saas-stat-tile rounded-xl p-2 text-center">
+                              <div className="text-[9px] uppercase tracking-wider text-secondary-sub opacity-75 font-sans">
+                                Tables
+                              </div>
+                              <div className="font-mono text-xs font-bold text-[#edd892] text-gold-accent mt-0.5">
+                                {tableCount}
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Commercial Plan 1-Click Dropdown */}
+                        {primaryEvent && (
+                          <div className="flex items-center justify-between gap-2 p-2 rounded-xl saas-inner-box mb-3.5">
+                            <div className="flex items-center gap-1.5 text-xs font-cinzel font-semibold text-[#dfba73] text-gold-accent shrink-0">
+                              <Crown className="w-3.5 h-3.5 text-amber-400" />
+                              <span>Plan:</span>
+                            </div>
+
+                            <div className="flex-1 min-w-0">
+                              {isUpgradingThis ? (
+                                <div className="flex items-center justify-center gap-1 text-xs text-amber-400 py-1">
+                                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                  <span>Saving tier...</span>
+                                </div>
+                              ) : (
+                                <select
+                                  value={evPlan}
+                                  disabled={isUpgradingThis}
+                                  onChange={(e) => handleQuickPlanChange(primaryEvent.id, e.target.value as PlanTier)}
+                                  className="saas-select w-full px-2 py-1 rounded-lg text-xs font-cinzel font-semibold focus:outline-none cursor-pointer"
+                                >
+                                  <option value="FREE">FREE (4 Guests Limit • No Photos)</option>
+                                  <option value="SILVER">SILVER ROYAL (රු. 5,000 • 150 Guests)</option>
+                                  <option value="GOLD">👑 GOLD PRESTIGE (රු. 8,500 • Unlimited)</option>
+                                  <option value="PLATINUM">💎 PLATINUM HERITAGE (රු. 14,500 • VIP Suite)</option>
+                                </select>
+                              )}
+                            </div>
                           </div>
                         )}
                       </div>
 
-                      {/* Bottom Action Buttons */}
-                      <div className="pt-1 flex items-center gap-2">
-                        {mgr.events && mgr.events.length > 0 && (
+                      {/* Card Bottom: Primary Manage CTA & Action Suite */}
+                      <div className="pt-2 border-t border-[#c5a059]/20 flex items-center gap-2">
+                        {primaryEvent ? (
                           <button
                             onClick={() => {
-                              handleSelectEvent(mgr.events![0].id);
+                              handleSelectEvent(primaryEvent.id);
                               setActiveTab("guests");
                             }}
-                            className="flex-1 py-2.5 rounded-xl bg-[#2a1c24] hover:bg-[#800020] text-[#dfba73] hover:text-white border border-[#c5a059]/40 text-xs font-cinzel font-bold transition cursor-pointer flex items-center justify-center gap-1.5 min-h-[40px] touch-manipulation"
+                            className={`flex-1 py-2 rounded-xl text-xs font-cinzel font-bold transition flex items-center justify-center gap-1.5 min-h-[38px] cursor-pointer shadow-sm ${
+                              isCurrent
+                                ? "btn-gold-shimmer text-black font-extrabold"
+                                : "bg-[#800020] hover:bg-[#9a0028] text-white border border-[#dfba73]/40"
+                            }`}
+                            title="Open and manage this wedding in the active workspace"
                           >
-                            <ExternalLink className="w-3.5 h-3.5" /> Manage Wedding
+                            <Sparkles className="w-3.5 h-3.5" />
+                            <span>{isCurrent ? "Active Suite" : "Manage Wedding"}</span>
                           </button>
+                        ) : (
+                          <div className="flex-1 py-2 text-center text-xs text-secondary-sub italic">
+                            No active event
+                          </div>
                         )}
+
+                        {/* Dossier Details Button */}
+                        <button
+                          onClick={() => setViewingAccountDetails(mgr)}
+                          className="saas-btn-secondary px-3 py-2 rounded-xl text-xs font-cinzel transition flex items-center justify-center gap-1 min-h-[38px] cursor-pointer shrink-0"
+                          title="View full account details & credentials dossier"
+                        >
+                          <Info className="w-3.5 h-3.5 text-[#dfba73]" />
+                          <span className="hidden sm:inline">Details</span>
+                        </button>
 
                         {/* Edit Button */}
                         <button
                           onClick={() => handleOpenEditManager(mgr)}
-                          className="px-3 py-2.5 rounded-xl bg-[#22171f] hover:bg-[#2e1f2a] text-[#dfba73] border border-[#c5a059]/35 text-xs font-cinzel transition cursor-pointer flex items-center justify-center gap-1 min-h-[40px] touch-manipulation"
-                          title="Edit Planner Details"
+                          className="saas-btn-secondary px-2.5 py-2 rounded-xl text-xs transition flex items-center justify-center min-h-[38px] cursor-pointer shrink-0"
+                          title="Edit Account Credentials & Wedding Details"
                         >
                           <Pencil className="w-3.5 h-3.5" />
                         </button>
@@ -5844,10 +6194,10 @@ export default function AdminDashboard() {
                         {!isSelf && mgr.username !== "admin" && (
                           <button
                             onClick={() => handleOpenDeleteModal(mgr)}
-                            className="w-10 h-10 rounded-xl bg-rose-950/40 hover:bg-rose-900/60 border border-rose-800/40 text-rose-300 flex items-center justify-center transition cursor-pointer touch-manipulation shrink-0"
-                            title="Delete Event Manager Account"
+                            className="w-9 h-9 rounded-xl bg-rose-950/40 hover:bg-rose-900/70 border border-rose-800/40 text-rose-300 flex items-center justify-center transition cursor-pointer shrink-0"
+                            title="Delete Account & Cascade Erase"
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         )}
                       </div>
@@ -5857,182 +6207,234 @@ export default function AdminDashboard() {
               </div>
             )}
 
-            {/* DESKTOP VIEW (≥ md): Executive Management Table */}
-            {filteredManagers.length > 0 && (
-              <div className="hidden md:block rounded-3xl bg-[#181216]/95 border border-[#c5a059]/35 overflow-hidden shadow-2xl backdrop-blur-sm">
+            {/* VIEW MODE 2: EXECUTIVE DATA TABLE */}
+            {filteredManagers.length > 0 && accountsViewMode === "table" && (
+              <div className="saas-table-container rounded-2xl overflow-hidden shadow-xl backdrop-blur-sm">
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-xs">
-                    <thead className="bg-[#241a21]/90 text-[#dfba73] font-cinzel text-[11px] uppercase tracking-wider font-semibold border-b border-[#c5a059]/30">
+                    <thead className="saas-thead font-cinzel text-[11px] uppercase tracking-wider font-semibold">
                       <tr>
-                        <th className="py-4 px-5">Manager / Agency</th>
-                        <th className="py-4 px-4">Login Username</th>
-                        <th className="py-4 px-4">Contact Info</th>
-                        <th className="py-4 px-4 text-center">Role</th>
-                        <th className="py-4 px-4 text-center">Wedding Portfolio</th>
-                        <th className="py-4 px-4">Joined Date</th>
-                        <th className="py-4 px-5 text-right">Actions</th>
+                        <th className="py-3.5 px-4">Client / Couple</th>
+                        <th className="py-3.5 px-4">Manager & Account</th>
+                        <th className="py-3.5 px-4 text-center">Subscription Plan</th>
+                        <th className="py-3.5 px-4 text-center">Design Theme</th>
+                        <th className="py-3.5 px-4 text-center">Guest Links</th>
+                        <th className="py-3.5 px-4 text-center">Photos</th>
+                        <th className="py-3.5 px-4">Direct Contact</th>
+                        <th className="py-3.5 px-4">Created</th>
+                        <th className="py-3.5 px-4 text-right">Actions</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-[#c5a059]/15">
+                    <tbody>
                       {filteredManagers.map((mgr) => {
                         const isSelf = mgr.id === manager.id;
-                        const weddingCount = mgr._count?.events || mgr.events?.length || 0;
-                        const initials = mgr.name
-                          ? mgr.name
-                              .trim()
-                              .split(/\s+/)
-                              .map((w) => w[0])
-                              .slice(0, 2)
-                              .join("")
-                              .toUpperCase()
-                          : "EM";
+                        const primaryEvent = mgr.events && mgr.events.length > 0 ? mgr.events[0] : null;
+                        const isCurrent = primaryEvent ? primaryEvent.id === activeEventId : false;
+                        const evPlan: PlanTier = (primaryEvent?.plan || "FREE").toUpperCase() as PlanTier;
+                        const isUpgradingThis = primaryEvent ? quickUpgradingEventId === primaryEvent.id : false;
+                        const guestCount = primaryEvent?._count?.guests || 0;
+                        const photoCount = primaryEvent?._count?.photos || 0;
+                        const currentTpl = primaryEvent?.templateId ? getTemplate(primaryEvent.templateId) : null;
+                        const initials = (primaryEvent?.coupleNames || mgr.name || "EM")
+                          .trim()
+                          .split(/\s+/)
+                          .map((w) => w[0])
+                          .slice(0, 2)
+                          .join("")
+                          .toUpperCase();
+
+                        const planBadgeClass =
+                          evPlan === "PLATINUM"
+                            ? "saas-badge-platinum"
+                            : evPlan === "GOLD"
+                            ? "saas-badge-gold"
+                            : evPlan === "SILVER"
+                            ? "saas-badge-silver"
+                            : "saas-badge-free";
 
                         return (
                           <tr
-                            key={mgr.id}
-                            className="hover:bg-[#231a20]/60 transition-colors duration-150 group"
+                            key={`table-mgr-${mgr.id}`}
+                            className={`saas-row ${isCurrent ? "saas-row-active" : ""}`}
                           >
-                            {/* Planner & Agency */}
-                            <td className="py-4 px-5">
-                              <div className="flex items-center gap-3.5">
-                                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#420614] via-[#241a22] to-[#171115] border border-[#dfba73]/50 flex items-center justify-center font-cinzel font-bold text-[#dfba73] text-sm shadow-md shrink-0">
+                            {/* Couple / Wedding Client */}
+                            <td className="py-3 px-4">
+                              {primaryEvent ? (
+                                <div className="space-y-1">
+                                  <div className="font-cinzel font-bold text-sm text-[#fdfbf7] text-hero-couple truncate max-w-[200px]">
+                                    {primaryEvent.coupleNames}
+                                  </div>
+                                  <div className="flex items-center gap-1.5 text-[11px] text-[#dfba73]">
+                                    <button
+                                      onClick={() => copyWeddingLink(primaryEvent.slug)}
+                                      className="font-mono hover:underline truncate max-w-[130px] flex items-center gap-1 cursor-pointer"
+                                      title="Click to copy wedding URL"
+                                    >
+                                      <Link2 className="w-3 h-3 shrink-0" />
+                                      <span>/e/{primaryEvent.slug}</span>
+                                    </button>
+                                    <a
+                                      href={`/e/${primaryEvent.slug}`}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="text-secondary-sub hover:text-[#dfba73] transition shrink-0"
+                                      title="Preview Live Invitation"
+                                    >
+                                      <ExternalLink className="w-3 h-3" />
+                                    </a>
+                                  </div>
+                                </div>
+                              ) : (
+                                <span className="text-secondary-sub italic text-xs">No wedding linked</span>
+                              )}
+                            </td>
+
+                            {/* Manager Account & Username */}
+                            <td className="py-3 px-4">
+                              <div className="flex items-center gap-2.5">
+                                <div className="saas-avatar w-8 h-8 rounded-lg flex items-center justify-center font-cinzel font-bold text-xs shrink-0 shadow-xs">
                                   {initials}
                                 </div>
                                 <div className="min-w-0">
-                                  <div className="font-cinzel font-bold text-[#fdfbf7] text-sm group-hover:text-[#edd892] transition-colors flex items-center gap-2">
+                                  <div className="font-medium text-xs text-[#fdfbf7] text-hero-couple flex items-center gap-1 truncate">
                                     <span className="truncate">{mgr.name}</span>
                                     {isSelf && (
-                                      <span className="px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[9px] font-mono border border-amber-500/40 shrink-0">
+                                      <span className="px-1 py-0.2 rounded-full bg-amber-500/20 text-amber-300 text-[8px] font-mono border border-amber-500/40 shrink-0">
                                         You
                                       </span>
                                     )}
                                   </div>
-                                  <div className="text-[11px] text-[#edd892]/70 flex items-center gap-1.5 mt-0.5 truncate">
-                                    <Building2 className="w-3 h-3 text-[#dfba73]/70 shrink-0" />
-                                    <span className="truncate">{mgr.company || "Independent Studio"}</span>
-                                  </div>
+                                  <button
+                                    onClick={() => handleCopyUsername(mgr.username)}
+                                    className="inline-flex items-center gap-1 font-mono text-[10px] text-secondary-sub hover:text-[#dfba73] transition cursor-pointer"
+                                    title="Click to copy username"
+                                  >
+                                    <span>@{mgr.username}</span>
+                                    {copiedUsername === mgr.username ? (
+                                      <Check className="w-2.5 h-2.5 text-emerald-400" />
+                                    ) : (
+                                      <Copy className="w-2.5 h-2.5 opacity-50" />
+                                    )}
+                                  </button>
                                 </div>
                               </div>
                             </td>
 
-                            {/* Login Username */}
-                            <td className="py-4 px-4">
-                              <button
-                                onClick={() => handleCopyUsername(mgr.username)}
-                                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#22171f] border border-[#c5a059]/25 text-[#edd892] font-mono text-xs hover:border-[#dfba73] hover:bg-[#2a1c24] transition cursor-pointer group/copy"
-                                title="Click to copy username"
-                              >
-                                <span>@{mgr.username}</span>
-                                {copiedUsername === mgr.username ? (
-                                  <span className="inline-flex items-center gap-0.5 text-emerald-400 font-sans text-[10px] font-semibold">
-                                    <Check className="w-3 h-3" />
-                                  </span>
-                                ) : (
-                                  <Copy className="w-3 h-3 text-[#dfba73]/50 group-hover/copy:text-[#dfba73] transition-colors" />
-                                )}
-                              </button>
-                            </td>
-
-                            {/* Contact Info */}
-                            <td className="py-4 px-4 text-[11px] space-y-1">
-                              {mgr.email ? (
-                                <a
-                                  href={`mailto:${mgr.email}`}
-                                  className="flex items-center gap-1.5 text-[#fdfbf7]/80 hover:text-[#dfba73] transition truncate max-w-[190px]"
-                                  title={mgr.email}
-                                >
-                                  <Mail className="w-3 h-3 text-[#dfba73]/70 shrink-0" />
-                                  <span className="truncate">{mgr.email}</span>
-                                </a>
-                              ) : null}
-                              {mgr.phone ? (
-                                <a
-                                  href={`tel:${mgr.phone}`}
-                                  className="flex items-center gap-1.5 text-[#fdfbf7]/60 font-mono hover:text-[#dfba73] transition"
-                                  title={mgr.phone}
-                                >
-                                  <Phone className="w-3 h-3 text-[#dfba73]/70 shrink-0" />
-                                  <span>{mgr.phone}</span>
-                                </a>
-                              ) : null}
-                              {!mgr.email && !mgr.phone && (
-                                <span className="text-white/30 italic text-[11px]">— No contact details —</span>
+                            {/* Subscription Plan with 1-Click Dropdown */}
+                            <td className="py-3 px-4 text-center">
+                              {primaryEvent ? (
+                                <div className="inline-flex flex-col items-center gap-1">
+                                  {isUpgradingThis ? (
+                                    <div className="flex items-center gap-1 text-[11px] text-amber-400">
+                                      <Loader2 className="w-3 h-3 animate-spin" />
+                                      <span>Saving...</span>
+                                    </div>
+                                  ) : (
+                                    <select
+                                      value={evPlan}
+                                      disabled={isUpgradingThis}
+                                      onChange={(e) => handleQuickPlanChange(primaryEvent.id, e.target.value as PlanTier)}
+                                      className={`saas-select px-2 py-0.5 rounded-lg text-xs font-cinzel font-bold cursor-pointer ${planBadgeClass}`}
+                                    >
+                                      <option value="FREE">FREE</option>
+                                      <option value="SILVER">SILVER</option>
+                                      <option value="GOLD">👑 GOLD</option>
+                                      <option value="PLATINUM">💎 PLAT</option>
+                                    </select>
+                                  )}
+                                </div>
+                              ) : (
+                                <span className="text-secondary-sub text-xs">—</span>
                               )}
                             </td>
 
-                            {/* Role */}
-                            <td className="py-4 px-4 text-center">
-                              {mgr.role === "SUPER_ADMIN" ? (
-                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-[#800020]/50 to-[#420614]/70 text-[#edd892] text-[10px] font-cinzel font-bold border border-[#dfba73]/50 shadow-sm">
-                                  <Crown className="w-3 h-3 text-[#dfba73]" /> Super Admin
+                            {/* Theme Template */}
+                            <td className="py-3 px-4 text-center">
+                              {currentTpl ? (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md saas-stat-tile text-[10px] font-cinzel font-semibold text-[#dfba73] text-gold-accent whitespace-nowrap">
+                                  <Palette className="w-2.5 h-2.5" />
+                                  {currentTpl.name}
                                 </span>
                               ) : (
-                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-950/60 text-emerald-300 text-[10px] font-sans font-medium border border-emerald-600/40 shadow-sm">
-                                  <ShieldCheck className="w-3 h-3 text-emerald-400" /> Event Manager
-                                </span>
+                                <span className="text-secondary-sub text-xs">—</span>
                               )}
                             </td>
 
-                            {/* Managed Weddings */}
-                            <td className="py-4 px-4 text-center">
-                              <div className="inline-flex flex-col items-center">
-                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-[#251820] border border-[#c5a059]/30 text-[#edd892] font-mono font-semibold text-xs">
-                                  <Heart className="w-3 h-3 text-[#dfba73]" />
-                                  {weddingCount} {weddingCount === 1 ? "Wedding" : "Weddings"}
-                                </span>
-                                {mgr.events && mgr.events.length > 0 && (
-                                  <span className="text-[10px] text-[#dfba73]/70 font-sans truncate max-w-[140px] mt-1 flex items-center gap-1">
-                                    <Sparkles className="w-2.5 h-2.5 text-[#dfba73]" />
-                                    {mgr.events[0].coupleNames}
-                                  </span>
+                            {/* Guests */}
+                            <td className="py-3 px-4 text-center font-mono text-xs">
+                              <span className="font-bold text-[#dfba73] text-gold-accent">{guestCount}</span>
+                              <span className="text-secondary-sub text-[10px] opacity-70"> / {evPlan === "FREE" ? "4" : "∞"}</span>
+                            </td>
+
+                            {/* Photos */}
+                            <td className="py-3 px-4 text-center font-mono text-xs font-bold text-emerald-400">
+                              {photoCount}
+                            </td>
+
+                            {/* Direct Contact & WhatsApp */}
+                            <td className="py-3 px-4 text-xs">
+                              <div className="space-y-0.5 max-w-[150px]">
+                                {mgr.email && (
+                                  <a href={`mailto:${mgr.email}`} className="text-secondary-sub hover:text-[#dfba73] truncate block text-[11px]" title={mgr.email}>
+                                    {mgr.email}
+                                  </a>
+                                )}
+                                {(mgr.phone || primaryEvent?.contactPhone) && (
+                                  <div className="flex items-center gap-1.5 font-mono text-[10px] text-secondary-sub">
+                                    <span>{mgr.phone || primaryEvent?.contactPhone}</span>
+                                    <button
+                                      onClick={() => openWhatsAppCouple(mgr.phone || primaryEvent?.contactPhone, primaryEvent?.coupleNames || mgr.name, primaryEvent?.slug || "")}
+                                      className="text-emerald-500 hover:text-emerald-400 cursor-pointer"
+                                      title="Send WhatsApp"
+                                    >
+                                      <MessageCircle className="w-3 h-3" />
+                                    </button>
+                                  </div>
                                 )}
                               </div>
                             </td>
 
                             {/* Created Date */}
-                            <td className="py-4 px-4 font-mono text-[11px] text-[#fdfbf7]/60">
-                              <div className="flex items-center gap-1.5">
-                                <Calendar className="w-3 h-3 text-[#dfba73]/60 shrink-0" />
-                                <span>
-                                  {new Date(mgr.createdAt).toLocaleDateString("en-US", {
-                                    month: "short",
-                                    day: "numeric",
-                                    year: "numeric",
-                                  })}
-                                </span>
-                              </div>
+                            <td className="py-3 px-4 font-mono text-[11px] text-secondary-sub whitespace-nowrap">
+                              {new Date(mgr.createdAt).toLocaleDateString(undefined, { dateStyle: "short" })}
                             </td>
 
                             {/* Actions */}
-                            <td className="py-4 px-5 text-right">
-                              <div className="flex items-center justify-end gap-2">
-                                {mgr.phone && (
-                                  <button
-                                    onClick={() => openWhatsAppCouple(mgr.phone, mgr.name, mgr.events?.[0]?.slug || "")}
-                                    className="p-1.5 rounded-lg bg-emerald-950/50 hover:bg-emerald-900 border border-emerald-600/40 text-emerald-300 text-xs transition cursor-pointer flex items-center justify-center"
-                                    title={`WhatsApp ${mgr.name}`}
-                                  >
-                                    <Phone className="w-3.5 h-3.5" />
-                                  </button>
-                                )}
-                                {mgr.events && mgr.events.length > 0 && (
+                            <td className="py-3 px-4 text-right">
+                              <div className="flex items-center justify-end gap-1.5">
+                                {/* Manage Suite Button */}
+                                {primaryEvent && (
                                   <button
                                     onClick={() => {
-                                      handleSelectEvent(mgr.events![0].id);
+                                      handleSelectEvent(primaryEvent.id);
                                       setActiveTab("guests");
                                     }}
-                                    className="px-3 py-1.5 rounded-lg bg-[#2a1c24] hover:bg-[#800020] text-[#dfba73] hover:text-white border border-[#c5a059]/40 text-xs font-cinzel font-semibold transition cursor-pointer flex items-center gap-1.5"
-                                    title="Open Manager's Wedding Portal"
+                                    className={`px-2.5 py-1.5 rounded-lg text-xs font-cinzel font-semibold transition cursor-pointer flex items-center gap-1 ${
+                                      isCurrent
+                                        ? "bg-emerald-600 text-white font-bold"
+                                        : "bg-[#800020] hover:bg-[#9a0028] text-white border border-[#dfba73]/40"
+                                    }`}
+                                    title="Manage Wedding Portal"
                                   >
-                                    <ExternalLink className="w-3 h-3" /> View Wedding
+                                    <Sparkles className="w-3 h-3" />
+                                    <span className="hidden lg:inline">{isCurrent ? "Active" : "Manage"}</span>
                                   </button>
                                 )}
+
+                                {/* Dossier Details */}
+                                <button
+                                  onClick={() => setViewingAccountDetails(mgr)}
+                                  className="saas-btn-secondary p-1.5 rounded-lg text-xs transition cursor-pointer"
+                                  title="View Account Dossier"
+                                >
+                                  <Info className="w-3.5 h-3.5 text-[#dfba73]" />
+                                </button>
 
                                 {/* Edit Button */}
                                 <button
                                   onClick={() => handleOpenEditManager(mgr)}
-                                  className="p-1.5 rounded-lg bg-[#22171f] hover:bg-[#2e1f2a] text-[#dfba73] border border-[#c5a059]/35 hover:border-[#dfba73] text-xs transition cursor-pointer"
-                                  title="Edit Planner Details & Credentials"
+                                  className="saas-btn-secondary p-1.5 rounded-lg text-xs transition cursor-pointer"
+                                  title="Edit Account & Wedding Details"
                                 >
                                   <Pencil className="w-3.5 h-3.5" />
                                 </button>
@@ -6041,8 +6443,8 @@ export default function AdminDashboard() {
                                 {!isSelf && mgr.username !== "admin" && (
                                   <button
                                     onClick={() => handleOpenDeleteModal(mgr)}
-                                    className="p-1.5 rounded-lg bg-rose-950/40 hover:bg-rose-900/70 border border-rose-800/40 hover:border-rose-600/60 text-rose-300 text-xs transition cursor-pointer"
-                                    title="Delete Event Manager Account"
+                                    className="p-1.5 rounded-lg bg-rose-950/40 hover:bg-rose-900/70 border border-rose-800/40 text-rose-300 text-xs transition cursor-pointer"
+                                    title="Delete Account & Cascade Erase"
                                   >
                                     <Trash2 className="w-3.5 h-3.5" />
                                   </button>
@@ -7086,10 +7488,10 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {/* CREATE EVENT MANAGER MODAL (Super Admin) */}
+      {/* CREATE EVENT MANAGER & WEDDING MODAL (Super Admin) */}
       {showCreateManagerModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-3 sm:p-4 overflow-y-auto overscroll-contain">
-          <div className="relative w-full max-w-lg max-h-[92dvh] overflow-y-auto overscroll-contain rounded-3xl bg-[#1c1519] border border-[#dfba73]/60 p-5 sm:p-8 shadow-2xl my-auto">
+          <div className="relative w-full max-w-xl max-h-[92dvh] overflow-y-auto overscroll-contain rounded-3xl bg-[#1c1519] border border-[#dfba73]/60 p-5 sm:p-8 shadow-2xl my-auto">
             <button
               onClick={() => setShowCreateManagerModal(false)}
               className="absolute top-4 right-4 sm:top-5 sm:right-5 text-[#fdfbf7]/60 hover:text-[#dfba73] cursor-pointer min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg hover:bg-[#c5a059]/10 transition-colors"
@@ -7102,137 +7504,196 @@ export default function AdminDashboard() {
               <ShieldCheck className="w-3.5 h-3.5 text-[#edd892]" /> Super Admin Provisioning
             </div>
             <h2 className="font-cinzel text-lg sm:text-xl font-bold text-[#dfba73] mb-1">
-              Add New Event Manager
+              Add New Account & Wedding Suite
             </h2>
             <p className="text-xs text-[#fdfbf7]/60 mb-5">
-              Create an isolated planner account. The event manager can log in with their unique username and password to access their own isolated wedding dashboard and client portfolios.
+              Create a new client planner account with their login credentials and auto-provision their dedicated wedding invitation portal.
             </p>
 
             <form onSubmit={handleCreateManager} className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold mb-1">
-                    Unique Username *
-                  </label>
-                  <input
-                    required
-                    placeholder="e.g. royal_planner"
-                    value={newManagerForm.username}
-                    onChange={(e) =>
-                      setNewManagerForm({
-                        ...newManagerForm,
-                        username: e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, ""),
-                      })
-                    }
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#261c22] border border-[#c5a059]/40 text-xs font-mono text-[#edd892] focus:outline-none focus:border-[#dfba73]"
-                  />
+              {/* SECTION 1: ACCOUNT CREDENTIALS */}
+              <div className="p-4 rounded-2xl bg-[#241a22] border border-[#c5a059]/30 space-y-3">
+                <div className="text-xs font-cinzel font-bold text-[#dfba73] flex items-center gap-1.5">
+                  <User className="w-3.5 h-3.5 text-[#edd892]" /> 1. Account Credentials & Profile
                 </div>
 
-                <div>
-                  <label className="block text-xs uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold mb-1">
-                    Password *
-                  </label>
-                  <input
-                    type="password"
-                    required
-                    placeholder="Minimum 5 characters"
-                    value={newManagerForm.password}
-                    onChange={(e) => setNewManagerForm({ ...newManagerForm, password: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#261c22] border border-[#c5a059]/40 text-xs text-[#fdfbf7] focus:outline-none focus:border-[#dfba73]"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold mb-1">
-                    Planner Full Name *
-                  </label>
-                  <input
-                    required
-                    placeholder="e.g. Kasun Fernando"
-                    value={newManagerForm.name}
-                    onChange={(e) => setNewManagerForm({ ...newManagerForm, name: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#261c22] border border-[#c5a059]/40 text-xs text-[#fdfbf7] focus:outline-none focus:border-[#dfba73]"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold mb-1">
-                    Agency / Company Name
-                  </label>
-                  <input
-                    placeholder="e.g. Royal Blooms Wedding Co."
-                    value={newManagerForm.company}
-                    onChange={(e) => setNewManagerForm({ ...newManagerForm, company: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#261c22] border border-[#c5a059]/40 text-xs text-[#fdfbf7] focus:outline-none focus:border-[#dfba73]"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold mb-1">
-                    Email Address
-                  </label>
-                  <input
-                    type="email"
-                    placeholder="planner@company.com"
-                    value={newManagerForm.email}
-                    onChange={(e) => setNewManagerForm({ ...newManagerForm, email: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#261c22] border border-[#c5a059]/40 text-xs text-[#fdfbf7] focus:outline-none focus:border-[#dfba73]"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold mb-1">
-                    Contact Phone
-                  </label>
-                  <input
-                    placeholder="+94 77 123 4567"
-                    value={newManagerForm.phone}
-                    onChange={(e) => setNewManagerForm({ ...newManagerForm, phone: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#261c22] border border-[#c5a059]/40 text-xs text-[#fdfbf7] focus:outline-none focus:border-[#dfba73]"
-                  />
-                </div>
-              </div>
-
-              {/* Dedicated Wedding Provisioning */}
-              <div className="p-4 rounded-2xl bg-[#261c22] border border-[#c5a059]/30 space-y-2.5">
-                <div className="flex items-center gap-2 text-xs font-cinzel font-semibold text-[#dfba73]">
-                  <Sparkles className="w-3.5 h-3.5 text-[#edd892]" />
-                  <span>Dedicated Wedding Portal (1-to-1 Architecture)</span>
-                </div>
-                <p className="text-[11px] text-[#fdfbf7]/60">
-                  Each Event Manager is dedicated to exactly one wedding event. A starter wedding will be automatically provisioned for this manager.
-                </p>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[10px] uppercase tracking-wider text-[#edd892] font-cinzel font-semibold mb-1">
-                      Couple Names (Optional)
+                    <label className="block text-xs uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold mb-1">
+                      Unique Username *
                     </label>
                     <input
+                      required
+                      placeholder="e.g. kasun_wedding"
+                      value={newManagerForm.username}
+                      onChange={(e) =>
+                        setNewManagerForm({
+                          ...newManagerForm,
+                          username: e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, ""),
+                        })
+                      }
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#191116] border border-[#c5a059]/40 text-xs font-mono text-[#edd892] focus:outline-none focus:border-[#dfba73]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold mb-1">
+                      Initial Password *
+                    </label>
+                    <input
+                      type="password"
+                      required
+                      placeholder="Minimum 5 characters"
+                      value={newManagerForm.password}
+                      onChange={(e) => setNewManagerForm({ ...newManagerForm, password: e.target.value })}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#191116] border border-[#c5a059]/40 text-xs text-[#fdfbf7] focus:outline-none focus:border-[#dfba73]"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold mb-1">
+                      Account / Planner Name *
+                    </label>
+                    <input
+                      required
+                      placeholder="e.g. Kasun Fernando"
+                      value={newManagerForm.name}
+                      onChange={(e) => setNewManagerForm({ ...newManagerForm, name: e.target.value })}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#191116] border border-[#c5a059]/40 text-xs text-[#fdfbf7] focus:outline-none focus:border-[#dfba73]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold mb-1">
+                      Studio / Agency / Note
+                    </label>
+                    <input
+                      placeholder="e.g. Royal Blooms Wedding Co."
+                      value={newManagerForm.company}
+                      onChange={(e) => setNewManagerForm({ ...newManagerForm, company: e.target.value })}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#191116] border border-[#c5a059]/40 text-xs text-[#fdfbf7] focus:outline-none focus:border-[#dfba73]"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold mb-1">
+                      Email Address
+                    </label>
+                    <input
+                      type="email"
+                      placeholder="couple@email.com"
+                      value={newManagerForm.email}
+                      onChange={(e) => setNewManagerForm({ ...newManagerForm, email: e.target.value })}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#191116] border border-[#c5a059]/40 text-xs text-[#fdfbf7] focus:outline-none focus:border-[#dfba73]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold mb-1">
+                      Contact Phone (WhatsApp)
+                    </label>
+                    <input
+                      placeholder="+94 77 123 4567"
+                      value={newManagerForm.phone}
+                      onChange={(e) => setNewManagerForm({ ...newManagerForm, phone: e.target.value })}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#191116] border border-[#c5a059]/40 text-xs text-[#fdfbf7] focus:outline-none focus:border-[#dfba73]"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold mb-1">
+                    System Access Level
+                  </label>
+                  <select
+                    value={newManagerForm.role}
+                    onChange={(e) => setNewManagerForm({ ...newManagerForm, role: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#191116] border border-[#c5a059]/40 text-xs text-[#edd892] focus:outline-none cursor-pointer"
+                  >
+                    <option value="MANAGER">Event Manager / Couple (Standard Isolated Tenant)</option>
+                    <option value="SUPER_ADMIN">Super Administrator (Full System Authority)</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* SECTION 2: DEDICATED WEDDING PROVISIONING */}
+              <div className="p-4 rounded-2xl bg-[#261c22] border border-[#c5a059]/30 space-y-3">
+                <div className="flex items-center gap-2 text-xs font-cinzel font-semibold text-[#dfba73]">
+                  <Heart className="w-3.5 h-3.5 text-[#edd892]" />
+                  <span>2. Dedicated Wedding Portal Details</span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[11px] uppercase tracking-wider text-[#edd892] font-cinzel font-semibold mb-1">
+                      Couple Names *
+                    </label>
+                    <input
+                      required
                       placeholder="e.g. Kasun & Shenali"
                       value={newManagerForm.starterCoupleNames}
                       onChange={(e) =>
                         setNewManagerForm({ ...newManagerForm, starterCoupleNames: e.target.value })
                       }
-                      className="w-full px-3 py-2 rounded-lg bg-[#1a1217] border border-[#c5a059]/30 text-xs text-[#fdfbf7] focus:outline-none"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#1a1217] border border-[#c5a059]/30 text-xs text-[#fdfbf7] focus:outline-none focus:border-[#dfba73]"
                     />
                   </div>
+
                   <div>
-                    <label className="block text-[10px] uppercase tracking-wider text-[#edd892] font-cinzel font-semibold mb-1">
-                      Venue Name
+                    <label className="block text-[11px] uppercase tracking-wider text-[#edd892] font-cinzel font-semibold mb-1">
+                      Reception Venue Name
                     </label>
                     <input
-                      placeholder="e.g. Shangri-La Ballroom"
+                      placeholder="e.g. Shangri-La Grand Ballroom"
                       value={newManagerForm.starterVenueName}
                       onChange={(e) =>
                         setNewManagerForm({ ...newManagerForm, starterVenueName: e.target.value })
                       }
-                      className="w-full px-3 py-2 rounded-lg bg-[#1a1217] border border-[#c5a059]/30 text-xs text-[#fdfbf7] focus:outline-none"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#1a1217] border border-[#c5a059]/30 text-xs text-[#fdfbf7] focus:outline-none focus:border-[#dfba73]"
                     />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[11px] uppercase tracking-wider text-[#edd892] font-cinzel font-semibold mb-1">
+                      Initial Commercial Plan
+                    </label>
+                    <select
+                      value={newManagerForm.starterPlan}
+                      onChange={(e) =>
+                        setNewManagerForm({ ...newManagerForm, starterPlan: e.target.value })
+                      }
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#1a1217] border border-[#c5a059]/30 text-xs text-[#edd892] font-semibold focus:outline-none cursor-pointer"
+                    >
+                      <option value="FREE">FREE TIER (4 Guest Limit)</option>
+                      <option value="SILVER">SILVER ROYAL (රු. 5,000)</option>
+                      <option value="GOLD">👑 GOLD PRESTIGE (රු. 8,500 • Popular)</option>
+                      <option value="PLATINUM">💎 PLATINUM HERITAGE (රු. 14,500)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] uppercase tracking-wider text-[#edd892] font-cinzel font-semibold mb-1">
+                      Invitation Visual Theme
+                    </label>
+                    <select
+                      value={newManagerForm.starterTemplateId}
+                      onChange={(e) =>
+                        setNewManagerForm({ ...newManagerForm, starterTemplateId: e.target.value })
+                      }
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#1a1217] border border-[#c5a059]/30 text-xs text-[#edd892] focus:outline-none cursor-pointer"
+                    >
+                      {TEMPLATE_LIST.map((t) => (
+                        <option key={t.id} value={t.id}>
+                          {t.name} ({t.categoryLabel})
+                        </option>
+                      ))}
+                    </select>
                   </div>
                 </div>
               </div>
@@ -7251,7 +7712,7 @@ export default function AdminDashboard() {
                   className="flex-1 sm:flex-initial btn-gold-shimmer px-6 py-2.5 rounded-xl text-xs font-cinzel font-bold shadow-lg disabled:opacity-50 cursor-pointer flex items-center justify-center gap-1.5 min-h-[42px] touch-manipulation"
                 >
                   {creatingManager ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <UserPlus className="w-3.5 h-3.5" />}
-                  {creatingManager ? "Creating Planner Account..." : "Create Event Manager"}
+                  {creatingManager ? "Creating Account..." : "Create Account & Provision Wedding"}
                 </button>
               </div>
             </form>
@@ -7259,10 +7720,10 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {/* EDIT EVENT MANAGER MODAL (Super Admin) */}
+      {/* EDIT ACCOUNT & WEDDING MODAL (Super Admin) */}
       {showEditManagerModal && editingManager && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-3 sm:p-4 overflow-y-auto overscroll-contain">
-          <div className="relative w-full max-w-lg max-h-[92dvh] overflow-y-auto overscroll-contain rounded-3xl bg-[#1c1519] border border-[#dfba73]/60 p-5 sm:p-8 shadow-2xl my-auto">
+          <div className="relative w-full max-w-xl max-h-[92dvh] overflow-y-auto overscroll-contain rounded-3xl bg-[#1c1519] border border-[#dfba73]/60 p-5 sm:p-8 shadow-2xl my-auto">
             <button
               onClick={() => {
                 setShowEditManagerModal(false);
@@ -7275,110 +7736,209 @@ export default function AdminDashboard() {
             </button>
 
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#800020]/20 text-[#dfba73] text-xs font-cinzel font-semibold mb-2">
-              <Pencil className="w-3.5 h-3.5 text-[#edd892]" /> Account Administration
+              <Pencil className="w-3.5 h-3.5 text-[#edd892]" /> Comprehensive Account Administration
             </div>
             <h2 className="font-cinzel text-lg sm:text-xl font-bold text-[#dfba73] mb-1">
-              Edit Event Manager
+              Edit Account & Wedding Suite
             </h2>
             <p className="text-xs text-[#fdfbf7]/60 mb-5">
-              Update details for <span className="font-mono text-[#edd892]">@{editingManager.username}</span>. You can also reset their password if needed.
+              Modify account login credentials, reset passwords, and update wedding details for <span className="font-mono text-[#edd892]">@{editingManager.username}</span>.
             </p>
 
             <form onSubmit={handleUpdateManager} className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold mb-1">
-                    Username
-                  </label>
-                  <input
-                    disabled
-                    value={`@${editingManager.username}`}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#20161d] border border-[#c5a059]/20 text-xs font-mono text-[#edd892]/70 cursor-not-allowed opacity-75"
-                  />
+              {/* SECTION 1: ACCOUNT PROFILE & CREDENTIALS */}
+              <div className="p-4 rounded-2xl bg-[#241a22] border border-[#c5a059]/30 space-y-3">
+                <div className="text-xs font-cinzel font-bold text-[#dfba73] flex items-center gap-1.5">
+                  <User className="w-3.5 h-3.5 text-[#edd892]" /> Account Credentials
                 </div>
 
-                <div>
-                  <label className="block text-xs uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold mb-1">
-                    System Role *
-                  </label>
-                  <select
-                    value={editManagerForm.role}
-                    disabled={editingManager.username === "admin"}
-                    onChange={(e) => setEditManagerForm({ ...editManagerForm, role: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#261c22] border border-[#c5a059]/40 text-xs text-[#dfba73] focus:outline-none disabled:opacity-50 cursor-pointer"
-                  >
-                    <option value="MANAGER">Event Manager (Planner)</option>
-                    <option value="SUPER_ADMIN">Super Administrator</option>
-                  </select>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold mb-1">
+                      Username (Read Only)
+                    </label>
+                    <input
+                      disabled
+                      value={`@${editingManager.username}`}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#191116] border border-[#c5a059]/20 text-xs font-mono text-[#edd892]/70 cursor-not-allowed opacity-75"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold mb-1">
+                      System Role *
+                    </label>
+                    <select
+                      value={editManagerForm.role}
+                      disabled={editingManager.username === "admin"}
+                      onChange={(e) => setEditManagerForm({ ...editManagerForm, role: e.target.value })}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#191116] border border-[#c5a059]/40 text-xs text-[#dfba73] focus:outline-none disabled:opacity-50 cursor-pointer"
+                    >
+                      <option value="MANAGER">Event Manager / Planner</option>
+                      <option value="SUPER_ADMIN">Super Administrator</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold mb-1">
+                      Full Name *
+                    </label>
+                    <input
+                      required
+                      value={editManagerForm.name}
+                      onChange={(e) => setEditManagerForm({ ...editManagerForm, name: e.target.value })}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#191116] border border-[#c5a059]/40 text-xs text-[#fdfbf7] focus:outline-none focus:border-[#dfba73]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold mb-1">
+                      Company / Studio Name
+                    </label>
+                    <input
+                      value={editManagerForm.company}
+                      onChange={(e) => setEditManagerForm({ ...editManagerForm, company: e.target.value })}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#191116] border border-[#c5a059]/40 text-xs text-[#fdfbf7] focus:outline-none focus:border-[#dfba73]"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold mb-1">
+                      Email Address
+                    </label>
+                    <input
+                      type="email"
+                      value={editManagerForm.email}
+                      onChange={(e) => setEditManagerForm({ ...editManagerForm, email: e.target.value })}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#191116] border border-[#c5a059]/40 text-xs text-[#fdfbf7] focus:outline-none focus:border-[#dfba73]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold mb-1">
+                      Phone Number
+                    </label>
+                    <input
+                      value={editManagerForm.phone}
+                      onChange={(e) => setEditManagerForm({ ...editManagerForm, phone: e.target.value })}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#191116] border border-[#c5a059]/40 text-xs text-[#fdfbf7] focus:outline-none focus:border-[#dfba73]"
+                    />
+                  </div>
+                </div>
+
+                {/* Password Reset */}
+                <div className="p-3 rounded-xl bg-[#160f14] border border-[#c5a059]/25 space-y-1.5">
+                  <div className="flex items-center gap-1.5 text-xs font-cinzel font-semibold text-[#dfba73]">
+                    <Key className="w-3.5 h-3.5 text-[#edd892]" />
+                    <span>Reset Password (Optional)</span>
+                  </div>
+                  <input
+                    type="password"
+                    placeholder="New password (leave blank to keep current)"
+                    value={editManagerForm.newPassword}
+                    onChange={(e) => setEditManagerForm({ ...editManagerForm, newPassword: e.target.value })}
+                    className="w-full px-3 py-2 rounded-lg bg-[#22171f] border border-[#c5a059]/30 text-xs text-[#fdfbf7] placeholder-[#fdfbf7]/30 focus:outline-none focus:border-[#dfba73]"
+                  />
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold mb-1">
-                    Planner Full Name *
-                  </label>
-                  <input
-                    required
-                    value={editManagerForm.name}
-                    onChange={(e) => setEditManagerForm({ ...editManagerForm, name: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#261c22] border border-[#c5a059]/40 text-xs text-[#fdfbf7] focus:outline-none focus:border-[#dfba73]"
-                  />
+              {/* SECTION 2: WEDDING SUITE SETTINGS */}
+              <div className="p-4 rounded-2xl bg-[#261c22] border border-[#c5a059]/30 space-y-3">
+                <div className="text-xs font-cinzel font-bold text-[#dfba73] flex items-center gap-1.5">
+                  <Heart className="w-3.5 h-3.5 text-[#edd892]" /> Dedicated Wedding Suite Details
                 </div>
 
-                <div>
-                  <label className="block text-xs uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold mb-1">
-                    Agency / Company Name
-                  </label>
-                  <input
-                    value={editManagerForm.company}
-                    onChange={(e) => setEditManagerForm({ ...editManagerForm, company: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#261c22] border border-[#c5a059]/40 text-xs text-[#fdfbf7] focus:outline-none focus:border-[#dfba73]"
-                  />
-                </div>
-              </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold mb-1">
+                      Couple Names
+                    </label>
+                    <input
+                      value={editManagerForm.coupleNames}
+                      onChange={(e) => setEditManagerForm({ ...editManagerForm, coupleNames: e.target.value })}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#1a1217] border border-[#c5a059]/40 text-xs text-[#fdfbf7] focus:outline-none focus:border-[#dfba73]"
+                    />
+                  </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold mb-1">
-                    Email Address
-                  </label>
-                  <input
-                    type="email"
-                    value={editManagerForm.email}
-                    onChange={(e) => setEditManagerForm({ ...editManagerForm, email: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#261c22] border border-[#c5a059]/40 text-xs text-[#fdfbf7] focus:outline-none focus:border-[#dfba73]"
-                  />
+                  <div>
+                    <label className="block text-xs uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold mb-1">
+                      URL Vanity Slug
+                    </label>
+                    <input
+                      value={editManagerForm.slug}
+                      onChange={(e) =>
+                        setEditManagerForm({
+                          ...editManagerForm,
+                          slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""),
+                        })
+                      }
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#1a1217] border border-[#c5a059]/40 text-xs font-mono text-[#edd892] focus:outline-none focus:border-[#dfba73]"
+                    />
+                  </div>
                 </div>
 
-                <div>
-                  <label className="block text-xs uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold mb-1">
-                    Contact Phone
-                  </label>
-                  <input
-                    value={editManagerForm.phone}
-                    onChange={(e) => setEditManagerForm({ ...editManagerForm, phone: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#261c22] border border-[#c5a059]/40 text-xs text-[#fdfbf7] focus:outline-none focus:border-[#dfba73]"
-                  />
-                </div>
-              </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold mb-1">
+                      Venue Name
+                    </label>
+                    <input
+                      value={editManagerForm.venueName}
+                      onChange={(e) => setEditManagerForm({ ...editManagerForm, venueName: e.target.value })}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#1a1217] border border-[#c5a059]/40 text-xs text-[#fdfbf7] focus:outline-none focus:border-[#dfba73]"
+                    />
+                  </div>
 
-              {/* Password Reset Section */}
-              <div className="p-4 rounded-2xl bg-[#241a22] border border-[#c5a059]/30 space-y-2">
-                <div className="flex items-center gap-2 text-xs font-cinzel font-semibold text-[#dfba73]">
-                  <Key className="w-3.5 h-3.5 text-[#edd892]" />
-                  <span>Reset Planner Password (Optional)</span>
+                  <div>
+                    <label className="block text-xs uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold mb-1">
+                      Contact Phone
+                    </label>
+                    <input
+                      value={editManagerForm.contactPhone}
+                      onChange={(e) => setEditManagerForm({ ...editManagerForm, contactPhone: e.target.value })}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#1a1217] border border-[#c5a059]/40 text-xs text-[#fdfbf7] focus:outline-none focus:border-[#dfba73]"
+                    />
+                  </div>
                 </div>
-                <p className="text-[11px] text-[#fdfbf7]/60">
-                  Leave this field blank to keep their current password unchanged. Enter a new password (min 5 characters) to immediately overwrite it.
-                </p>
-                <input
-                  type="password"
-                  placeholder="New password (leave blank to keep current)"
-                  value={editManagerForm.newPassword}
-                  onChange={(e) => setEditManagerForm({ ...editManagerForm, newPassword: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#191116] border border-[#c5a059]/35 text-xs text-[#fdfbf7] placeholder-[#fdfbf7]/30 focus:outline-none focus:border-[#dfba73]"
-                />
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold mb-1">
+                      Package Plan Tier
+                    </label>
+                    <select
+                      value={editManagerForm.plan}
+                      onChange={(e) => setEditManagerForm({ ...editManagerForm, plan: e.target.value })}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#1a1217] border border-[#c5a059]/40 text-xs text-[#edd892] font-semibold focus:outline-none cursor-pointer"
+                    >
+                      <option value="FREE">FREE TIER (4 Guests limit)</option>
+                      <option value="SILVER">SILVER ROYAL (රු. 5,000)</option>
+                      <option value="GOLD">👑 GOLD PRESTIGE (රු. 8,500)</option>
+                      <option value="PLATINUM">💎 PLATINUM HERITAGE (රු. 14,500)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs uppercase tracking-wider text-[#dfba73] font-cinzel font-semibold mb-1">
+                      Active Template
+                    </label>
+                    <select
+                      value={editManagerForm.templateId}
+                      onChange={(e) => setEditManagerForm({ ...editManagerForm, templateId: e.target.value })}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#1a1217] border border-[#c5a059]/40 text-xs text-[#edd892] focus:outline-none cursor-pointer"
+                    >
+                      {TEMPLATE_LIST.map((t) => (
+                        <option key={t.id} value={t.id}>
+                          {t.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
               </div>
 
               <div className="pt-3 flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2">
@@ -7398,10 +7958,292 @@ export default function AdminDashboard() {
                   className="flex-1 sm:flex-initial btn-gold-shimmer px-6 py-2.5 rounded-xl text-xs font-cinzel font-bold shadow-lg disabled:opacity-50 cursor-pointer flex items-center justify-center gap-1.5 min-h-[42px] touch-manipulation"
                 >
                   {updatingManager ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
-                  {updatingManager ? "Saving Changes..." : "Save Manager Changes"}
+                  {updatingManager ? "Saving Changes..." : "Save Account & Wedding"}
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ACCOUNT & WEDDING DOSSIER (VIEW ALL DETAILS MODAL) */}
+      {viewingAccountDetails && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-3 sm:p-4 overflow-y-auto overscroll-contain">
+          <div className="relative w-full max-w-2xl max-h-[92dvh] overflow-y-auto overscroll-contain rounded-3xl saas-card p-5 sm:p-8 shadow-2xl my-auto space-y-5">
+            <button
+              onClick={() => setViewingAccountDetails(null)}
+              className="absolute top-4 right-4 sm:top-5 sm:right-5 text-[#fdfbf7]/60 hover:text-[#dfba73] cursor-pointer min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg hover:bg-[#c5a059]/10 transition-colors"
+              aria-label="Close modal"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            {/* Header info */}
+            {(() => {
+              const primaryEvent = viewingAccountDetails.events?.[0];
+              const evPlan: PlanTier = (primaryEvent?.plan || "FREE").toUpperCase() as PlanTier;
+              const tpl = primaryEvent?.templateId ? getTemplate(primaryEvent.templateId) : null;
+              const guestCount = primaryEvent?._count?.guests || 0;
+              const photoCount = primaryEvent?._count?.photos || 0;
+              const tableCount = primaryEvent?._count?.tables || 0;
+              const wishesCount = primaryEvent?._count?.wishes || 0;
+              const initials = (primaryEvent?.coupleNames || viewingAccountDetails.name || "EM")
+                .trim()
+                .split(/\s+/)
+                .map((w) => w[0])
+                .slice(0, 2)
+                .join("")
+                .toUpperCase();
+
+              return (
+                <div className="space-y-4">
+                  <div className="flex items-start gap-4">
+                    <div className="saas-avatar w-14 h-14 rounded-2xl flex items-center justify-center font-cinzel font-bold text-lg shadow-xl shrink-0">
+                      {initials}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h2 className="font-cinzel text-xl sm:text-2xl font-bold text-[#fdfbf7] text-hero-couple">
+                          {primaryEvent?.coupleNames || viewingAccountDetails.name}
+                        </h2>
+                        {viewingAccountDetails.role === "SUPER_ADMIN" ? (
+                          <span className="px-2.5 py-0.5 rounded-full bg-[#800020] text-white text-[10px] font-cinzel font-bold border border-[#dfba73]/40">
+                            Super Admin
+                          </span>
+                        ) : (
+                          <span className="px-2.5 py-0.5 rounded-full bg-emerald-950 text-emerald-300 text-[10px] font-mono border border-emerald-600/40">
+                            Planner
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-xs text-[#edd892] text-secondary-sub mt-0.5 flex items-center gap-2">
+                        <span>@{viewingAccountDetails.username}</span>
+                        <span>•</span>
+                        <span>{viewingAccountDetails.company || "Independent Studio"}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Section 1: Account Profile & Identity */}
+                  <div className="rounded-2xl saas-inner-box p-4 space-y-2 text-xs">
+                    <div className="text-[11px] font-cinzel font-bold text-[#dfba73] text-gold-accent uppercase tracking-wider flex items-center gap-1.5">
+                      <User className="w-3.5 h-3.5" /> Account Identity & Credentials
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 text-[11px]">
+                      <div>
+                        <span className="text-secondary-sub opacity-70 block">Account ID (Primary Key):</span>
+                        <span className="font-mono text-[#edd892] text-gold-accent break-all">{viewingAccountDetails.id}</span>
+                      </div>
+                      <div>
+                        <span className="text-secondary-sub opacity-70 block">Registered Date:</span>
+                        <span className="font-mono text-secondary-sub">
+                          {new Date(viewingAccountDetails.createdAt).toLocaleString()}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-secondary-sub opacity-70 block">Email Address:</span>
+                        {viewingAccountDetails.email ? (
+                          <a href={`mailto:${viewingAccountDetails.email}`} className="text-[#dfba73] text-gold-accent hover:underline font-mono">
+                            {viewingAccountDetails.email}
+                          </a>
+                        ) : (
+                          <span className="text-secondary-sub italic opacity-50">Not provided</span>
+                        )}
+                      </div>
+                      <div>
+                        <span className="text-secondary-sub opacity-70 block">Contact Phone:</span>
+                        {viewingAccountDetails.phone ? (
+                          <a href={`tel:${viewingAccountDetails.phone}`} className="text-[#dfba73] text-gold-accent hover:underline font-mono">
+                            {viewingAccountDetails.phone}
+                          </a>
+                        ) : (
+                          <span className="text-secondary-sub italic opacity-50">Not provided</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Section 2: Dedicated Wedding Portfolio */}
+                  {primaryEvent ? (
+                    <div className="rounded-2xl saas-inner-box p-4 space-y-3 text-xs">
+                      <div className="flex items-center justify-between">
+                        <div className="text-[11px] font-cinzel font-bold text-[#dfba73] text-gold-accent uppercase tracking-wider flex items-center gap-1.5">
+                          <Heart className="w-3.5 h-3.5 text-[#dfba73]" /> Wedding Suite Details
+                        </div>
+                        <span className="px-2 py-0.5 rounded-full saas-stat-tile text-[#edd892] text-gold-accent font-mono text-[10px]">
+                          Event ID: {primaryEvent.id.slice(0, 10)}...
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-[11px]">
+                        <div>
+                          <span className="text-secondary-sub opacity-70 block">Couple Names:</span>
+                          <span className="font-cinzel text-sm font-bold text-[#fdfbf7] text-hero-couple">{primaryEvent.coupleNames}</span>
+                        </div>
+                        <div>
+                          <span className="text-secondary-sub opacity-70 block">Wedding Date:</span>
+                          <span className="text-secondary-sub font-medium">
+                            {new Date(primaryEvent.eventDate).toLocaleDateString(undefined, { dateStyle: "full" })}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-secondary-sub opacity-70 block">Reception Venue:</span>
+                          <span className="text-secondary-sub font-medium">{primaryEvent.venueName}</span>
+                          {primaryEvent.venueAddress && (
+                            <span className="text-secondary-sub opacity-70 block text-[10px] mt-0.5">{primaryEvent.venueAddress}</span>
+                          )}
+                        </div>
+                        <div>
+                          <span className="text-secondary-sub opacity-70 block">Wedding Contact Phone:</span>
+                          <span className="font-mono text-secondary-sub">{primaryEvent.contactPhone || viewingAccountDetails.phone || "Not set"}</span>
+                        </div>
+                      </div>
+
+                      {/* Live Invitation URL */}
+                      <div className="p-3 rounded-xl saas-stat-tile flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
+                        <div className="min-w-0">
+                          <span className="text-[10px] uppercase font-cinzel text-secondary-sub opacity-70 block">Live Invitation Link:</span>
+                          <div className="font-mono text-xs text-[#dfba73] text-gold-accent truncate">
+                            {getAppBaseUrl()}/e/{primaryEvent.slug}
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 shrink-0">
+                          <button
+                            onClick={() => copyWeddingLink(primaryEvent.slug)}
+                            className="saas-btn-secondary px-3 py-1.5 rounded-lg text-xs font-cinzel transition flex items-center gap-1 cursor-pointer"
+                          >
+                            <Copy className="w-3 h-3" /> Copy
+                          </button>
+                          <a
+                            href={`/e/${primaryEvent.slug}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="px-3 py-1.5 rounded-lg bg-[#800020] text-white text-xs font-cinzel font-bold transition flex items-center gap-1 shadow"
+                          >
+                            <ExternalLink className="w-3 h-3" /> Preview
+                          </a>
+                        </div>
+                      </div>
+
+                      {/* Quota & Capacity Grid */}
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 text-center">
+                        <div className="p-2.5 rounded-xl saas-stat-tile">
+                          <span className="text-[10px] text-secondary-sub opacity-70 block">Guest Links</span>
+                          <span className="font-mono text-base font-bold text-[#dfba73] text-gold-accent">
+                            {guestCount} <span className="text-xs text-secondary-sub opacity-60">/ {evPlan === "FREE" ? "4" : "∞"}</span>
+                          </span>
+                        </div>
+                        <div className="p-2.5 rounded-xl saas-stat-tile">
+                          <span className="text-[10px] text-secondary-sub opacity-70 block">Photos</span>
+                          <span className="font-mono text-base font-bold text-emerald-400">{photoCount}</span>
+                        </div>
+                        <div className="p-2.5 rounded-xl saas-stat-tile">
+                          <span className="text-[10px] text-secondary-sub opacity-70 block">Tables</span>
+                          <span className="font-mono text-base font-bold text-[#edd892] text-gold-accent">{tableCount}</span>
+                        </div>
+                        <div className="p-2.5 rounded-xl saas-stat-tile">
+                          <span className="text-[10px] text-secondary-sub opacity-70 block">Guest Wishes</span>
+                          <span className="font-mono text-base font-bold text-amber-400">{wishesCount}</span>
+                        </div>
+                      </div>
+
+                      {/* Plan & Template Strip */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                        <div className="p-2.5 rounded-xl saas-inner-box flex items-center justify-between">
+                          <div>
+                            <span className="text-[10px] uppercase font-cinzel text-secondary-sub opacity-70 block">Active Plan:</span>
+                            <span className="font-cinzel font-bold text-sm text-[#edd892] text-gold-accent">{evPlan} TIER</span>
+                          </div>
+                          <select
+                            value={evPlan}
+                            onChange={(e) => handleQuickPlanChange(primaryEvent.id, e.target.value as PlanTier)}
+                            className="saas-select px-2 py-1 rounded-lg text-xs font-cinzel cursor-pointer"
+                          >
+                            <option value="FREE">FREE</option>
+                            <option value="SILVER">SILVER</option>
+                            <option value="GOLD">GOLD</option>
+                            <option value="PLATINUM">PLATINUM</option>
+                          </select>
+                        </div>
+
+                        <div className="p-2.5 rounded-xl saas-inner-box flex items-center justify-between">
+                          <div>
+                            <span className="text-[10px] uppercase font-cinzel text-secondary-sub opacity-70 block">Visual Theme:</span>
+                            <span className="font-cinzel font-bold text-xs text-[#edd892] text-gold-accent">{tpl?.name || "Royal Heritage"}</span>
+                          </div>
+                          {tpl && (
+                            <a
+                              href={`/templates/${tpl.id}/preview`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-[10px] font-cinzel text-[#dfba73] text-gold-accent hover:underline flex items-center gap-1"
+                            >
+                              Theme Demo <ExternalLink className="w-2.5 h-2.5" />
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="p-5 rounded-2xl saas-inner-box border-dashed text-center text-xs text-secondary-sub italic">
+                      No dedicated wedding linked to this account yet.
+                    </div>
+                  )}
+
+                  {/* Actions Footer */}
+                  <div className="pt-2 flex flex-wrap items-center justify-between gap-2 border-t border-[#c5a059]/20">
+                    <div className="flex items-center gap-2">
+                      {primaryEvent && (
+                        <button
+                          onClick={() => {
+                            handleSelectEvent(primaryEvent.id);
+                            setViewingAccountDetails(null);
+                            setActiveTab("guests");
+                          }}
+                          className="btn-gold-shimmer px-4 py-2.5 rounded-xl text-xs font-cinzel font-bold flex items-center gap-1.5 cursor-pointer shadow"
+                        >
+                          <Sparkles className="w-3.5 h-3.5" /> Enter Suite as Admin
+                        </button>
+                      )}
+
+                      <button
+                        onClick={() => {
+                          const target = viewingAccountDetails;
+                          setViewingAccountDetails(null);
+                          handleOpenEditManager(target);
+                        }}
+                        className="saas-btn-secondary px-3.5 py-2.5 rounded-xl text-xs font-cinzel font-semibold flex items-center gap-1.5 cursor-pointer"
+                      >
+                        <Pencil className="w-3.5 h-3.5" /> Edit Account
+                      </button>
+
+                      {viewingAccountDetails.phone && (
+                        <button
+                          onClick={() =>
+                            openWhatsAppCouple(
+                              viewingAccountDetails.phone,
+                              primaryEvent?.coupleNames || viewingAccountDetails.name,
+                              primaryEvent?.slug || ""
+                            )
+                          }
+                          className="px-3.5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-sans font-medium flex items-center gap-1.5 cursor-pointer shadow-sm"
+                        >
+                          <MessageCircle className="w-3.5 h-3.5" /> WhatsApp
+                        </button>
+                      )}
+                    </div>
+
+                    <button
+                      onClick={() => setViewingAccountDetails(null)}
+                      className="saas-btn-secondary px-4 py-2.5 rounded-xl text-xs font-cinzel cursor-pointer"
+                    >
+                      Close Dossier
+                    </button>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         </div>
       )}
@@ -7416,7 +8258,7 @@ export default function AdminDashboard() {
 
             <div>
               <h2 className="font-cinzel text-xl font-bold text-[#fdfbf7]">
-                Delete Event Manager Account
+                Delete Account & Weddings
               </h2>
               <p className="text-xs text-[#fdfbf7]/70 mt-1.5 leading-relaxed">
                 Are you sure you want to permanently delete account{" "}
@@ -7429,7 +8271,7 @@ export default function AdminDashboard() {
                 <AlertTriangle className="w-3.5 h-3.5" /> Permanent Impact Notice:
               </div>
               <p className="text-[11px] text-rose-200/75 leading-relaxed">
-                This account manages <strong className="text-white">{managerToDelete.weddingCount} wedding portfolio(s)</strong>. Deleting this account will permanently cascade-erase all associated wedding portals, guest lists, seating tables, and RSVP logs.
+                This account manages <strong className="text-white">{managerToDelete.weddingCount} wedding portfolio(s)</strong>. Deleting this account will permanently cascade-erase all associated wedding portals, guest lists, seating tables, photos, and RSVP logs.
               </p>
             </div>
 
@@ -7449,7 +8291,54 @@ export default function AdminDashboard() {
                 className="flex-1 px-5 py-2.5 rounded-xl bg-gradient-to-r from-rose-800 to-rose-900 hover:from-rose-700 hover:to-rose-800 text-white text-xs font-cinzel font-bold shadow-lg border border-rose-600/50 flex items-center justify-center gap-1.5 min-h-[42px] touch-manipulation cursor-pointer disabled:opacity-50"
               >
                 {deletingManager ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
-                {deletingManager ? "Deleting Account..." : "Permanently Delete"}
+                {deletingManager ? "Deleting..." : "Permanently Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* DELETE WEDDING CONFIRMATION MODAL */}
+      {eventToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-3 sm:p-4 overflow-y-auto overscroll-contain">
+          <div className="relative w-full max-w-md rounded-3xl bg-gradient-to-b from-[#1f141b] to-[#161014] border border-rose-800/60 p-6 sm:p-8 shadow-2xl my-auto text-center space-y-4">
+            <div className="w-14 h-14 rounded-2xl bg-rose-950/60 border border-rose-700/50 flex items-center justify-center mx-auto text-rose-300 shadow-lg">
+              <Trash2 className="w-7 h-7 text-rose-400" />
+            </div>
+
+            <div>
+              <h2 className="font-cinzel text-xl font-bold text-[#fdfbf7]">
+                Delete Wedding Event
+              </h2>
+              <p className="text-xs text-[#fdfbf7]/70 mt-1.5 leading-relaxed">
+                Are you sure you want to permanently delete wedding{" "}
+                <span className="font-cinzel text-[#edd892] font-semibold">{eventToDelete.coupleNames}</span> (/e/{eventToDelete.slug})?
+              </p>
+            </div>
+
+            <div className="rounded-2xl bg-rose-950/30 border border-rose-800/40 p-3.5 text-left text-xs text-rose-200/90 space-y-1">
+              <p className="text-[11px] text-rose-200/75 leading-relaxed">
+                This will permanently remove the wedding invitation portal, guest invitations, RSVPs, photo gallery, and seating arrangements for this wedding.
+              </p>
+            </div>
+
+            <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-2.5">
+              <button
+                type="button"
+                onClick={() => setEventToDelete(null)}
+                disabled={deletingEvent}
+                className="flex-1 px-4 py-2.5 rounded-xl bg-[#261c22] text-[#fdfbf7]/70 text-xs font-cinzel font-semibold hover:bg-[#c5a059]/10 cursor-pointer min-h-[42px] touch-manipulation"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDeleteEvent}
+                disabled={deletingEvent}
+                className="flex-1 px-5 py-2.5 rounded-xl bg-gradient-to-r from-rose-800 to-rose-900 hover:from-rose-700 hover:to-rose-800 text-white text-xs font-cinzel font-bold shadow-lg border border-rose-600/50 flex items-center justify-center gap-1.5 min-h-[42px] touch-manipulation cursor-pointer disabled:opacity-50"
+              >
+                {deletingEvent ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                {deletingEvent ? "Deleting..." : "Delete Wedding"}
               </button>
             </div>
           </div>

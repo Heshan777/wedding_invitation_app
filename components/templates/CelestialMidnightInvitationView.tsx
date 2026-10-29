@@ -33,12 +33,12 @@ export default function CelestialMidnightInvitationView({
   photos = [],
   initialOpened = false,
 }: CelestialMidnightInvitationViewProps) {
-  const [envelopeOpened, setEnvelopeOpened] = useState(initialOpened);
+  const [envelopeOpened, setEnvelopeOpened] = useState(Boolean(initialOpened));
 
   useEffect(() => {
     if (typeof window !== "undefined") {
       const sp = new URLSearchParams(window.location.search);
-      if (sp.get("opened") === "true") {
+      if (sp.get("opened") === "true" || sessionStorage.getItem("invite_envelope_opened") === "true") {
         setEnvelopeOpened(true);
       }
     }

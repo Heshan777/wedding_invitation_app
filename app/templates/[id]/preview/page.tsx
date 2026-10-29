@@ -22,22 +22,17 @@ import InvitationView from "@/components/InvitationView";
 
 export default function TemplatePreviewPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams?: Promise<{ [key: string]: string | undefined }>;
 }) {
   const resolvedParams = use(params);
+  const resolvedSearchParams = searchParams ? use(searchParams) : {};
   const router = useRouter();
   const [activeId, setActiveId] = useState<string>(resolvedParams.id);
-  const [isEmbedded, setIsEmbedded] = useState(false);
-  const [isOpened, setIsOpened] = useState(false);
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const sp = new URLSearchParams(window.location.search);
-      setIsEmbedded(sp.get("embed") === "true");
-      setIsOpened(sp.get("opened") === "true");
-    }
-  }, []);
+  const isEmbedded = resolvedSearchParams?.embed === "true";
+  const isOpened = resolvedSearchParams?.opened === "true";
 
   const template = useMemo(() => getTemplate(activeId), [activeId]);
 

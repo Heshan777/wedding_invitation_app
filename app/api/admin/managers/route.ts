@@ -54,6 +54,19 @@ export async function GET() {
             coupleNames: true,
             eventDate: true,
             venueName: true,
+            venueAddress: true,
+            contactPhone: true,
+            heroImageUrl: true,
+            templateId: true,
+            plan: true,
+            _count: {
+              select: {
+                guests: true,
+                photos: true,
+                tables: true,
+                wishes: true,
+              },
+            },
           },
         },
       },
@@ -93,6 +106,10 @@ export async function POST(req: NextRequest) {
       createStarterWedding = false,
       starterCoupleNames = "",
       starterVenueName = "",
+      starterVenueAddress = "",
+      starterTemplateId = "royal-heritage",
+      starterPlan = "FREE",
+      starterContactPhone = "",
     } = body;
 
     // Validation
@@ -193,9 +210,12 @@ export async function POST(req: NextRequest) {
           coupleNames: couple,
           eventDate: new Date(Date.now() + 60 * 24 * 3600 * 1000), // ~60 days ahead
           venueName: starterVenueName ? starterVenueName.trim() : "Grand Ballroom & Royal Garden",
-          venueAddress: "Colombo, Sri Lanka",
+          venueAddress: starterVenueAddress ? starterVenueAddress.trim() : "Colombo, Sri Lanka",
           venueLat: 6.9271,
           venueLng: 79.8447,
+          templateId: starterTemplateId || "royal-heritage",
+          plan: (starterPlan || "FREE").toUpperCase(),
+          contactPhone: starterContactPhone ? starterContactPhone.trim() : phone ? phone.trim() : "+94 77 123 4567",
         },
       });
 
@@ -296,7 +316,23 @@ export async function PATCH(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { id, name, company, email, phone, role, newPassword } = body;
+    const {
+      id,
+      name,
+      company,
+      email,
+      phone,
+      role,
+      newPassword,
+      weddingId,
+      coupleNames,
+      venueName,
+      venueAddress,
+      contactPhone,
+      templateId,
+      plan,
+      slug,
+    } = body;
 
     if (!id) {
       return NextResponse.json({ error: "Manager ID is required" }, { status: 400 });
@@ -304,6 +340,7 @@ export async function PATCH(req: NextRequest) {
 
     const targetManager = await prisma.eventManager.findUnique({
       where: { id },
+      include: { events: true },
     });
 
     if (!targetManager) {
@@ -365,6 +402,55 @@ export async function PATCH(req: NextRequest) {
       updateData.password = await bcrypt.hash(newPassword.trim(), 10);
     }
 
+    // Optional: Update associated wedding event details if provided
+    const targetWedding = weddingId
+      ? targetManager.events.find((e: any) => e.id === weddingId)
+      : targetManager.events[0];
+
+    if (targetWedding) {
+      const weddingUpdateData: any = {};
+      if (coupleNames !== undefined && coupleNames.trim()) {
+        weddingUpdateData.coupleNames = coupleNames.trim();
+      }
+      if (venueName !== undefined && venueName.trim()) {
+        weddingUpdateData.venueName = venueName.trim();
+      }
+      if (venueAddress !== undefined) {
+        weddingUpdateData.venueAddress = venueAddress.trim();
+      }
+      if (contactPhone !== undefined) {
+        weddingUpdateData.contactPhone = contactPhone.trim();
+      }
+      if (templateId !== undefined && templateId.trim()) {
+        weddingUpdateData.templateId = templateId.trim();
+      }
+      if (plan !== undefined && plan.trim()) {
+        weddingUpdateData.plan = plan.trim().toUpperCase();
+      }
+      if (slug !== undefined && slug.trim()) {
+        const cleanSlug = slug.trim().toLowerCase().replace(/[^a-z0-9_-]/g, "-");
+        if (cleanSlug !== targetWedding.slug) {
+          const conflict = await prisma.weddingEvent.findUnique({
+            where: { slug: cleanSlug },
+          });
+          if (conflict && conflict.id !== targetWedding.id) {
+            return NextResponse.json(
+              { error: `The link slug "${cleanSlug}" is already in use by another wedding.` },
+              { status: 409 }
+            );
+          }
+          weddingUpdateData.slug = cleanSlug;
+        }
+      }
+
+      if (Object.keys(weddingUpdateData).length > 0) {
+        await prisma.weddingEvent.update({
+          where: { id: targetWedding.id },
+          data: weddingUpdateData,
+        });
+      }
+    }
+
     const updated = await prisma.eventManager.update({
       where: { id },
       data: updateData,
@@ -389,6 +475,19 @@ export async function PATCH(req: NextRequest) {
             coupleNames: true,
             eventDate: true,
             venueName: true,
+            venueAddress: true,
+            contactPhone: true,
+            heroImageUrl: true,
+            templateId: true,
+            plan: true,
+            _count: {
+              select: {
+                guests: true,
+                photos: true,
+                tables: true,
+                wishes: true,
+              },
+            },
           },
         },
       },

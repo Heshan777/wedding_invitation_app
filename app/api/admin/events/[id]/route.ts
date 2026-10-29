@@ -70,9 +70,25 @@ export async function PUT(
 
     const body = await req.json();
 
+    let newSlug = existing.slug;
+    if (body.slug && body.slug.trim() && body.slug.trim().toLowerCase() !== existing.slug) {
+      const cleanSlug = body.slug.trim().toLowerCase().replace(/[^a-z0-9_-]/g, "-");
+      const conflict = await prisma.weddingEvent.findUnique({
+        where: { slug: cleanSlug },
+      });
+      if (conflict && conflict.id !== id) {
+        return NextResponse.json(
+          { error: `The link slug "${cleanSlug}" is already in use by another wedding.` },
+          { status: 409 }
+        );
+      }
+      newSlug = cleanSlug;
+    }
+
     const updated = await prisma.weddingEvent.update({
       where: { id },
       data: {
+        slug: newSlug,
         coupleNames: body.coupleNames ?? existing.coupleNames,
         hostIntro: body.hostIntro ?? existing.hostIntro,
         invitationBody: body.invitationBody ?? existing.invitationBody,
@@ -93,6 +109,8 @@ export async function PUT(
         blessingImageUrl: body.blessingImageUrl ?? existing.blessingImageUrl,
         musicUrl: body.musicUrl ?? existing.musicUrl,
         timelineJson: body.timelineJson ?? existing.timelineJson,
+        templateId: body.templateId ?? existing.templateId,
+        plan: body.plan ? (body.plan as string).toUpperCase() : existing.plan,
       },
     });
 

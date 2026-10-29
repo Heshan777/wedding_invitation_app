@@ -203,7 +203,7 @@ export default function InvitationView({
   const [copiedAddress, setCopiedAddress] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [qrDataUrl, setQrDataUrl] = useState<string>("");
-  const [envelopeOpened, setEnvelopeOpened] = useState(initialOpened);
+  const [envelopeOpened, setEnvelopeOpened] = useState(Boolean(initialOpened));
   const [showFloatingNav, setShowFloatingNav] = useState(false);
   const [isQrPassModalOpen, setIsQrPassModalOpen] = useState(false);
 
@@ -217,7 +217,7 @@ export default function InvitationView({
       const params = new URLSearchParams(window.location.search);
       const t = params.get("template");
       if (t) setUrlTemplateId(t);
-      if (params.get("opened") === "true") {
+      if (params.get("opened") === "true" || sessionStorage.getItem("invite_envelope_opened") === "true") {
         setEnvelopeOpened(true);
       }
     }
