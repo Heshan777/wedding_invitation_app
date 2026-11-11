@@ -229,8 +229,12 @@ export async function POST(req: NextRequest) {
     });
   } catch (error: any) {
     console.error("Onboarding error:", error);
+    let friendlyMessage = error?.message || "An unexpected error occurred while creating your invitation.";
+    if (error?.message?.includes("Can't reach database server") || error?.code === "P1001") {
+      friendlyMessage = "Database is momentarily connecting or busy. Please click 'Save & Open My Dashboard' again in 5 seconds.";
+    }
     return NextResponse.json(
-      { error: error?.message || "An unexpected error occurred while creating your invitation." },
+      { error: friendlyMessage },
       { status: 500 }
     );
   }

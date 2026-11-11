@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 
 export async function GET(req: NextRequest) {
+  let cleanSlug = "";
   try {
     const { searchParams } = new URL(req.url);
     const slug = searchParams.get("slug");
@@ -10,7 +11,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ available: false, message: "URL slug must be at least 3 characters." });
     }
 
-    const cleanSlug = slug
+    cleanSlug = slug
       .trim()
       .toLowerCase()
       .replace(/[^a-z0-9-]+/g, "-")
@@ -59,6 +60,12 @@ export async function GET(req: NextRequest) {
         : "This link is available!",
     });
   } catch (error: any) {
-    return NextResponse.json({ available: false, error: error.message }, { status: 500 });
+    console.error("Check slug error:", error);
+    // If database check is temporarily unreachable, allow user to proceed with clean slug
+    return NextResponse.json({
+      available: true,
+      slug: cleanSlug,
+      message: "Link format is valid.",
+    });
   }
 }

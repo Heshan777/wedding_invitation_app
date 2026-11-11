@@ -21,6 +21,7 @@ import {
   Crown,
 } from "lucide-react";
 import EnvelopeOpening from "@/components/EnvelopeOpening";
+import AuspiciousWeddingCrest from "@/components/AuspiciousWeddingCrest";
 
 interface GoldenMandalaInvitationViewProps {
   guest: any;
@@ -317,46 +318,26 @@ export default function GoldenMandalaInvitationView({
           {/* Subtle Ambient Radial Gold Glow */}
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-80 h-80 bg-[#c5a059]/10 rounded-full blur-3xl pointer-events-none -z-0" />
 
-          {/* Sacred Golden Mandala Circular Crest */}
-          <div className="relative w-44 h-44 sm:w-48 sm:h-48 mb-6 pointer-events-none">
-            <svg viewBox="0 0 200 200" className="w-full h-full text-[#dfba73] drop-shadow-[0_0_12px_rgba(223,186,115,0.4)] animate-spin-slow">
-              <circle cx="100" cy="100" r="88" fill="none" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" opacity="0.6" />
-              <circle cx="100" cy="100" r="80" fill="none" stroke="currentColor" strokeWidth="2.5" />
-              <circle cx="100" cy="100" r="70" fill="none" stroke="currentColor" strokeWidth="1.5" />
-              <circle cx="100" cy="100" r="58" fill="none" stroke="currentColor" strokeWidth="1" strokeDasharray="2 2" opacity="0.7" />
-              <circle cx="100" cy="100" r="28" fill="none" stroke="currentColor" strokeWidth="2" />
-              <circle cx="100" cy="100" r="8" fill="currentColor" opacity="0.8" />
-              {[...Array(16)].map((_, i) => (
-                <path
-                  key={i}
-                  d="M 100 100 L 100 22 Q 108 38 100 54"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  transform={`rotate(${i * 22.5} 100 100)`}
-                />
-              ))}
-              {[...Array(8)].map((_, i) => (
-                <circle
-                  key={i}
-                  cx="100"
-                  cy="42"
-                  r="3.5"
-                  fill="currentColor"
-                  transform={`rotate(${i * 45} 100 100)`}
-                />
-              ))}
-            </svg>
+          {/* Sacred Auspicious Poruwa Wedding Crest with Interlocking Rings, Lotus Halo & Diamond Sparkle Animation */}
+          <div className="mb-5 sm:mb-6">
+            <AuspiciousWeddingCrest
+              groomName={groomName}
+              brideName={brideName}
+              className="w-48 h-48 sm:w-56 sm:h-56"
+              showMonogram={true}
+            />
           </div>
 
           {/* Auspicious Sinhala & English Blessing */}
-          <div className="space-y-1 mb-3">
-            <span className="font-serif text-lg sm:text-xl font-bold tracking-wider text-[#e6b962] block">
+          <div className="space-y-1.5 mb-3 max-w-[400px]">
+            <span className="font-serif text-lg sm:text-xl font-bold tracking-wider text-[#e6b962] block leading-snug drop-shadow-sm">
               {settings?.hostIntro || "ශ්‍රී සුභ මංගලම් • SRI SUBA MANGALAM!"}
             </span>
-            <span className="text-[9px] sm:text-[10px] uppercase tracking-[0.28em] text-[#a89078] font-serif font-medium block">
-              You are cordially invited to the auspicious Poruwa ceremony of
-            </span>
+            {(!settings?.hostIntro || !settings.hostIntro.toLowerCase().includes("invited")) && (
+              <span className="text-[9px] sm:text-[10px] uppercase tracking-[0.28em] text-[#a89078] font-serif font-medium block">
+                You are cordially invited to the auspicious Poruwa ceremony of
+              </span>
+            )}
           </div>
 
           {/* Couple Names */}
