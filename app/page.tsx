@@ -41,86 +41,20 @@ import {
   Calendar,
   Share2,
 } from "lucide-react";
-import { TEMPLATE_LIST, InvitationTemplate } from "@/lib/templates";
+import { TEMPLATE_LIST, InvitationTemplate, getTemplate } from "@/lib/templates";
 import TemplatePhoneMockup from "@/components/TemplatePhoneMockup";
+import { BUSINESS_CONFIG } from "@/lib/config";
 
-// Featured simulator templates for the interactive hero phone switcher
-const HERO_PHONE_DEMOS = [
-  {
-    id: "golden-mandala-heritage",
-    shortLabel: "Mandala",
-    fullTitle: "Golden Mandala & Silk",
-    couple: "Nethmi & Sanuja",
-    eventLabel: "Traditional Poruwa Ceremony",
-    dateText: "Saturday, 12th December 2026",
-    venue: "Rose Garden Banquet Hall, Kadawatha",
-    table: "Table #03",
-    music: "Poruwa Flute & Magul Bera",
-    primaryColor: "#c5a059",
-    accentColor: "#8b1e2a",
-    guestSalutation: "Personalized for Kasun & Dinithi",
-    greetingQuote: "We cordially invite you to celebrate our holy union & Poruwa ceremony.",
-  },
-  {
-    id: "botanical-silk-sanduni",
-    shortLabel: "Botanical",
-    fullTitle: "Botanical Silk & Foliage",
-    couple: "Sanduni & Ravindu",
-    eventLabel: "Garden Nuptials & Reception",
-    dateText: "Saturday, 12th December 2026",
-    venue: "Waters Edge Grand Lawn, Battaramulla",
-    table: "Table #07",
-    music: "Acoustic Forest Symphony",
-    primaryColor: "#2d6a4f",
-    accentColor: "#c5a059",
-    guestSalutation: "Personalized for Dr. & Mrs. Perera",
-    greetingQuote: "Surrounded by nature and love, join us as we begin our forever.",
-  },
-  {
-    id: "cathedral-palace-doors",
-    shortLabel: "Cathedral",
-    fullTitle: "Cathedral Palace Doors",
-    couple: "Kavindi & Shenal",
-    eventLabel: "Holy Nuptials & Grand Banquet",
-    dateText: "Sunday, 27th December 2026",
-    venue: "St. Mary's Cathedral & Cinnamon Grand",
-    table: "Table #01",
-    music: "Royal Strings in D Major",
-    primaryColor: "#4a3b32",
-    accentColor: "#c5a059",
-    guestSalutation: "Personalized for Malini & Bandula",
-    greetingQuote: "Two souls, one sacred vow. Celebrate our holy matrimony with us.",
-  },
-  {
-    id: "velvet-homecoming",
-    shortLabel: "Blush Floral",
-    fullTitle: "Blush Floral Romance",
-    couple: "Sachin & Kavindi",
-    eventLabel: "Beachside Nuptials & Dinner",
-    dateText: "Saturday, 14th November 2026",
-    venue: "Citrus Beach Lawn, Hikkaduwa",
-    table: "Table #05",
-    music: "Romantic Piano Melody",
-    primaryColor: "#8a3b53",
-    accentColor: "#d6a57c",
-    guestSalutation: "Personalized for Ashan & Nisansala",
-    greetingQuote: "Under the coastal sky, witness our love story unfold by the sea.",
-  },
-  {
-    id: "embossed-ivory-envelope",
-    shortLabel: "Tuscan Villa",
-    fullTitle: "Tuscan Villa Romance",
-    couple: "Sophia & Marcus",
-    eventLabel: "Riviera Elegance Reception",
-    dateText: "Saturday, 24th October 2026",
-    venue: "Mount Lavinia Hotel, Grand Ballroom",
-    table: "Table #09",
-    music: "Acoustic Romance Serenade",
-    primaryColor: "#5c1c2e",
-    accentColor: "#dfba73",
-    guestSalutation: "Personalized for Mr. Sunil Fernando",
-    greetingQuote: "An intimate evening of fine wine, warm laughter, and timeless romance.",
-  },
+// Featured style prototypes for the interactive hero phone switcher
+const HERO_STYLE_OPTIONS = [
+  { id: "golden-mandala-heritage", label: "Mandala" },
+  { id: "botanical-silk-sanduni", label: "Botanical" },
+  { id: "cathedral-palace-doors", label: "Cathedral" },
+  { id: "velvet-homecoming", label: "Blush Floral" },
+  { id: "embossed-ivory-envelope", label: "Tuscan Villa" },
+  { id: "celestial-midnight", label: "Celestial" },
+  { id: "royal-heritage", label: "Royal Velvet" },
+  { id: "modern-ivory", label: "Modern Ivory" },
 ];
 
 export default function LandingPage() {
@@ -133,43 +67,14 @@ export default function LandingPage() {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [activeFeatureToggles, setActiveFeatureToggles] = useState<string[]>([]);
 
-  // Hero Phone Simulator Interactive States
-  const [activeHeroDemoIndex, setActiveHeroDemoIndex] = useState<number>(0);
-  const [sealOpened, setSealOpened] = useState(false);
-  const [mockupRsvpStatus, setMockupRsvpStatus] = useState<"pending" | "attending" | "declined">("pending");
-  const [soundPlaying, setSoundPlaying] = useState(false);
-
-  const currentHeroDemo = HERO_PHONE_DEMOS[activeHeroDemoIndex];
-
-  // Countdown timer simulation for hero phone mockup
-  const [timeLeft, setTimeLeft] = useState({ days: 42, hours: 14, mins: 28, secs: 50 });
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev.secs > 0) return { ...prev, secs: prev.secs - 1 };
-        if (prev.mins > 0) return { ...prev, mins: 59, secs: 59 };
-        if (prev.hours > 0) return { ...prev, hours: prev.hours - 1, mins: 59, secs: 59 };
-        return { ...prev, days: Math.max(0, prev.days - 1), hours: 23, mins: 59, secs: 59 };
-      });
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
-
-  // Handle Mockup RSVP Trigger with Festive Confetti
-  const handleRsvp = (status: "attending" | "declined") => {
-    setMockupRsvpStatus(status);
-    if (status === "attending") {
-      try {
-        confetti({
-          particleCount: 80,
-          spread: 70,
-          origin: { y: 0.65 },
-          colors: ["#d62851", "#fcecef", "#c5a059", "#ffd700"],
-        });
-      } catch {}
-    }
-  };
+  // Hero Phone Simulator Selected Template
+  const [selectedHeroTemplateId, setSelectedHeroTemplateId] = useState<string>("golden-mandala-heritage");
+  const currentHeroTemplate = useMemo(() => {
+    return getTemplate(selectedHeroTemplateId) || TEMPLATE_LIST[0];
+  }, [selectedHeroTemplateId]);
+  const currentHeroStyle = useMemo(() => {
+    return HERO_STYLE_OPTIONS.find((s) => s.id === selectedHeroTemplateId) || HERO_STYLE_OPTIONS[0];
+  }, [selectedHeroTemplateId]);
 
   // Toggle quick feature tags
   const toggleFeature = (feat: string) => {
@@ -556,186 +461,35 @@ export default function LandingPage() {
           {/* Right Smartphone Simulator with Template Switcher */}
           <div className="lg:col-span-5 flex flex-col items-center">
             {/* Quick Template Switcher Pills Above Phone */}
-            <div className="mb-3 flex flex-wrap items-center justify-center gap-1.5 max-w-[340px]">
-              {HERO_PHONE_DEMOS.map((demo, idx) => (
-                <button
-                  key={demo.id}
-                  type="button"
-                  onClick={() => {
-                    setActiveHeroDemoIndex(idx);
-                    setSealOpened(false);
-                    setMockupRsvpStatus("pending");
-                  }}
-                  className={`px-2.5 py-1 rounded-full text-[11px] font-semibold transition cursor-pointer ${
-                    activeHeroDemoIndex === idx
-                      ? "bg-[#d62851] text-white shadow-xs"
-                      : "bg-white border border-gray-200 text-gray-600 hover:border-gray-300"
-                  }`}
-                >
-                  {demo.shortLabel}
-                </button>
-              ))}
-            </div>
-
-            {/* Smartphone Frame */}
-            <div className="relative w-[320px] sm:w-[340px] aspect-[9/18.5] rounded-[48px] p-3 bg-gradient-to-b from-[#2d2f33] via-[#111315] to-[#0a0a0c] shadow-[0_25px_60px_-15px_rgba(0,0,0,0.35),0_0_0_2px_rgba(255,255,255,0.1)]">
-              {/* Dynamic Island / Notch */}
-              <div className="absolute top-5 left-1/2 -translate-x-1/2 w-26 h-5 bg-black rounded-full z-30 flex items-center justify-between px-3">
-                <span className="w-2 h-2 rounded-full bg-[#1c2833]" />
-                <span className="w-2.5 h-2.5 rounded-full bg-[#0d141e] border border-white/10" />
-              </div>
-
-              {/* Screen Interior */}
-              <div className="w-full h-full rounded-[38px] overflow-hidden bg-gradient-to-b from-[#fff5f7] via-[#ffffff] to-[#fffdfa] flex flex-col relative text-[#111827] p-4 text-center border border-rose-100 select-none">
-                {/* Status Bar */}
-                <div className="flex justify-between items-center text-[10px] text-gray-500 pt-2 px-3 pb-2 z-20">
-                  <span>9:41</span>
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-[9px]">5G</span>
-                    <div className="w-4 h-2 border border-gray-400 rounded-xs p-0.5">
-                      <div className="h-full w-full bg-gray-800" />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Top Audio Player Badge */}
-                <div className="flex items-center justify-between px-2 pt-1 pb-2 border-b border-rose-100/60 z-20">
-                  <div className="flex items-center gap-1 text-[10px] text-[#d62851] font-semibold">
-                    <Music className="w-3 h-3" />
-                    <span className="truncate max-w-[130px]">{currentHeroDemo.music}</span>
-                  </div>
+            <div className="mb-3.5 flex flex-wrap items-center justify-center gap-1.5 max-w-[360px]">
+              {HERO_STYLE_OPTIONS.map((opt) => {
+                const isActive = selectedHeroTemplateId === opt.id;
+                return (
                   <button
+                    key={opt.id}
                     type="button"
-                    onClick={() => setSoundPlaying(!soundPlaying)}
-                    className="p-1 rounded-full bg-[#fcecef] text-[#d62851] hover:scale-110 transition cursor-pointer"
-                    title="Toggle Music Demo"
+                    onClick={() => setSelectedHeroTemplateId(opt.id)}
+                    className={`px-3 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+                      isActive
+                        ? "bg-[#d62851] text-white shadow-sm ring-2 ring-[#d62851]/30 scale-105"
+                        : "bg-white border border-gray-200 text-gray-700 hover:border-gray-400 hover:text-gray-900 shadow-2xs"
+                    }`}
                   >
-                    {soundPlaying ? <Volume2 className="w-3 h-3" /> : <VolumeX className="w-3 h-3" />}
+                    {opt.label}
                   </button>
-                </div>
-
-                {/* Main Simulator Content Body */}
-                <div className="flex-1 overflow-y-auto pt-3 pb-3 space-y-3.5 flex flex-col justify-between">
-                  <div>
-                    {/* Personalized Salutation Pill */}
-                    <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#fcecef] text-[#d62851] text-[10px] font-bold">
-                      {currentHeroDemo.guestSalutation}
-                    </div>
-
-                    <h3 className="font-serif italic text-xl font-bold text-[#111827] mt-2">
-                      {currentHeroDemo.couple}
-                    </h3>
-                    <p className="text-[10px] text-gray-500 uppercase tracking-widest mt-0.5">
-                      {currentHeroDemo.eventLabel}
-                    </p>
-                  </div>
-
-                  {/* 3D Wax Seal Unboxing */}
-                  <div className="my-auto py-1">
-                    {!sealOpened ? (
-                      <div
-                        onClick={() => {
-                          setSealOpened(true);
-                          try {
-                            confetti({ particleCount: 50, spread: 60, origin: { y: 0.6 } });
-                          } catch {}
-                        }}
-                        className="cursor-pointer group flex flex-col items-center"
-                      >
-                        <div
-                          className="w-16 h-16 rounded-full flex items-center justify-center text-white shadow-lg border-2 border-white group-hover:scale-105 active:scale-95 transition-all animate-pulse"
-                          style={{
-                            background: `linear-gradient(135deg, ${currentHeroDemo.accentColor || "#d62851"}, ${currentHeroDemo.primaryColor || "#9e1637"})`,
-                          }}
-                        >
-                          <Heart className="w-7 h-7 fill-current" />
-                        </div>
-                        <span className="text-[10px] font-bold text-[#d62851] mt-2 group-hover:underline">
-                          Tap Wax Seal to Open
-                        </span>
-                      </div>
-                    ) : (
-                      <div className="p-3 rounded-2xl bg-white border border-rose-100 shadow-sm space-y-2 animate-in zoom-in-95 duration-200">
-                        <span className="text-[10px] uppercase font-bold text-[#d62851] tracking-wider block">
-                          Reserved {currentHeroDemo.table}
-                        </span>
-                        <p className="text-[11px] text-gray-700 leading-relaxed font-serif italic">
-                          &ldquo;{currentHeroDemo.greetingQuote}&rdquo;
-                        </p>
-                        <div className="text-[10px] text-gray-500 flex items-center justify-center gap-1">
-                          <MapPin className="w-3 h-3 text-[#d62851]" />
-                          <span>{currentHeroDemo.venue}</span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Countdown Ticker */}
-                  <div className="grid grid-cols-4 gap-1.5 px-1">
-                    {[
-                      { val: timeLeft.days, label: "Days" },
-                      { val: timeLeft.hours, label: "Hours" },
-                      { val: timeLeft.mins, label: "Mins" },
-                      { val: timeLeft.secs, label: "Secs" },
-                    ].map((c, i) => (
-                      <div key={i} className="p-1.5 rounded-xl bg-white border border-rose-100 shadow-2xs text-center">
-                        <div className="font-bold text-xs text-[#d62851] font-mono">{c.val}</div>
-                        <div className="text-[8px] text-gray-500 uppercase">{c.label}</div>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Confetti RSVP Buttons */}
-                  <div className="pt-1">
-                    <span className="text-[10px] text-gray-600 block mb-1.5 font-medium">
-                      Will you attend our celebration?
-                    </span>
-                    <div className="grid grid-cols-2 gap-2">
-                      <button
-                        type="button"
-                        onClick={() => handleRsvp("attending")}
-                        className={`py-2 rounded-xl text-[11px] font-bold transition cursor-pointer ${
-                          mockupRsvpStatus === "attending"
-                            ? "bg-[#d62851] text-white shadow-sm"
-                            : "bg-[#fcecef] text-[#d62851] hover:bg-rose-200"
-                        }`}
-                      >
-                        ✓ Attending
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleRsvp("declined")}
-                        className={`py-2 rounded-xl text-[11px] font-medium transition cursor-pointer ${
-                          mockupRsvpStatus === "declined"
-                            ? "bg-gray-800 text-white"
-                            : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                        }`}
-                      >
-                        Decline
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
+                );
+              })}
             </div>
 
-            {/* Direct Action Link Under Phone Simulator */}
-            <div className="mt-4 flex items-center gap-3">
-              <Link
-                href={`/templates/${currentHeroDemo.id}`}
-                className="text-xs font-semibold text-gray-600 hover:text-[#d62851] flex items-center gap-1 transition"
-              >
-                <span>Fullscreen Preview</span>
-                <ExternalLink className="w-3.5 h-3.5" />
-              </Link>
-              <span className="text-gray-300">•</span>
-              <Link
-                href={`/onboard?template=${currentHeroDemo.id}`}
-                className="text-xs font-bold text-[#d62851] hover:underline flex items-center gap-1"
-              >
-                <span>Use {currentHeroDemo.shortLabel} Design</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
+            {/* Smartphone Prototype using Authentic Photorealistic Cover, Wax Seal & Interactive Invitations */}
+            <div className="w-full flex justify-center">
+              <TemplatePhoneMockup
+                key={currentHeroTemplate.id}
+                template={currentHeroTemplate}
+                widthClass="w-[300px] sm:w-[325px]"
+                priorityImage={true}
+                showMetadata={false}
+              />
             </div>
           </div>
         </div>
@@ -1616,7 +1370,7 @@ export default function LandingPage() {
       {/* ========================================================================= */}
       <aside className="fixed bottom-5 right-5 z-50">
         <a
-          href="https://api.whatsapp.com/send?phone=94718881888&text=Hi!%20I%20would%20like%20to%20inquire%20about%20a%20digital%20wedding%20invitation"
+          href={`https://wa.me/${BUSINESS_CONFIG.supportPhone}?text=${encodeURIComponent("Hi! I would like to inquire about a digital wedding invitation on WedLink.")}`}
           target="_blank"
           rel="noopener noreferrer"
           className="flex items-center gap-2.5 px-4 py-2.5 rounded-full bg-white text-gray-800 shadow-[0_10px_30px_rgba(0,0,0,0.15)] border border-gray-200/80 hover:shadow-xl hover:scale-105 active:scale-95 transition-all group"

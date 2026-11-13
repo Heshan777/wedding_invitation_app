@@ -17,6 +17,8 @@ import {
   Film,
 } from "lucide-react";
 import { PLAN_CONFIGS, PlanTier } from "@/lib/plan";
+import { BUSINESS_CONFIG } from "@/lib/config";
+import { Copy, Building, CreditCard } from "lucide-react";
 
 interface UpgradePlanModalProps {
   isOpen: boolean;
@@ -37,6 +39,21 @@ export default function UpgradePlanModal({
 }: UpgradePlanModalProps) {
   const [upgradingTo, setUpgradingTo] = useState<PlanTier | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [showBankDetails, setShowBankDetails] = useState(false);
+  const [copiedAccount, setCopiedAccount] = useState(false);
+
+  const handleCopyAccount = () => {
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      navigator.clipboard.writeText(BUSINESS_CONFIG.bankTransfer.accountNumber);
+      setCopiedAccount(true);
+      setTimeout(() => setCopiedAccount(false), 2000);
+    }
+  };
+
+  const getWhatsAppUpgradeLink = (planName?: string) => {
+    const text = `Hi WedLink! I would like to activate the ${planName || "Gold"} package for our wedding (Event ID: ${eventId || "my account"}). Here is our bank transfer payment slip:`;
+    return `https://wa.me/${BUSINESS_CONFIG.supportPhone}?text=${encodeURIComponent(text)}`;
+  };
 
   if (!isOpen) return null;
 
@@ -340,15 +357,75 @@ export default function UpgradePlanModal({
           </div>
         </div>
 
+        {/* Bank Transfer Details Drawer (Sri Lankan Payment Workflow) */}
+        <div className="px-6 sm:px-8 pb-4">
+          <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-3">
+            <div className="flex items-center justify-between">
+              <button
+                type="button"
+                onClick={() => setShowBankDetails(!showBankDetails)}
+                className="flex items-center gap-2 text-xs font-bold text-[#dfba73] hover:text-white transition cursor-pointer"
+              >
+                <Building className="w-4 h-4" />
+                <span>Bank Transfer Details (Commercial / Sampath / FriMi)</span>
+                <span className="text-[10px] text-gray-400 font-normal">
+                  {showBankDetails ? "▲ Hide" : "▼ Click to View Account Details"}
+                </span>
+              </button>
+
+              <a
+                href={getWhatsAppUpgradeLink("Package Upgrade")}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#25D366]/20 hover:bg-[#25D366]/30 text-[#25D366] font-bold text-[11px] transition shrink-0"
+              >
+                <MessageCircle className="w-3.5 h-3.5 fill-[#25D366]" />
+                <span>Send Slip via WhatsApp</span>
+              </a>
+            </div>
+
+            {showBankDetails && (
+              <div className="pt-2 border-t border-white/10 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-gray-300">
+                <div className="space-y-1">
+                  <div className="text-[11px] text-gray-400">Bank: <strong className="text-white">{BUSINESS_CONFIG.bankTransfer.bankName}</strong></div>
+                  <div className="text-[11px] text-gray-400">Account Name: <strong className="text-white">{BUSINESS_CONFIG.bankTransfer.accountName}</strong></div>
+                  <div className="text-[11px] text-gray-400">Branch: <strong className="text-white">{BUSINESS_CONFIG.bankTransfer.branch}</strong></div>
+                </div>
+
+                <div className="space-y-1">
+                  <div className="text-[11px] text-gray-400 flex items-center gap-2">
+                    <span>Account Number:</span>
+                    <strong className="text-[#ffd700] font-mono text-sm">{BUSINESS_CONFIG.bankTransfer.accountNumber}</strong>
+                    <button
+                      type="button"
+                      onClick={handleCopyAccount}
+                      className="p-1 rounded bg-white/10 hover:bg-white/20 text-xs transition cursor-pointer"
+                      title="Copy Account Number"
+                    >
+                      {copiedAccount ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3 text-gray-300" />}
+                    </button>
+                  </div>
+                  {BUSINESS_CONFIG.bankTransfer.frimiOrGenie && (
+                    <div className="text-[11px] text-gray-400">FriMi / Genie: <strong className="text-white font-mono">{BUSINESS_CONFIG.bankTransfer.frimiOrGenie}</strong></div>
+                  )}
+                  <div className="text-[10px] text-amber-300/80 pt-1">
+                    * Transfer the fee, take a screenshot of your bank slip, and send it to our WhatsApp for instant activation!
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* Modal Footer / WhatsApp Concierge Support */}
         <div className="px-6 sm:px-8 py-4 bg-black/40 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-gray-400">
           <div className="flex items-center gap-2">
             <ShieldCheck className="w-4 h-4 text-[#ffd700]" />
-            <span>Bank Transfer (Commercial / Sampath / HNB) or Online Card Accepted</span>
+            <span>Bank Transfer & Card Payments Accepted • Fast WhatsApp Activation</span>
           </div>
 
           <a
-            href="https://wa.me/94771234567?text=Hi%20WedLink%2C%20I%20want%20to%20upgrade%20my%20wedding%20invitation%20package!"
+            href={getWhatsAppUpgradeLink()}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#25D366]/20 hover:bg-[#25D366]/30 text-[#25D366] font-bold text-[11px] transition"

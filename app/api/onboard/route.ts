@@ -229,10 +229,31 @@ export async function POST(req: NextRequest) {
     });
   } catch (error: any) {
     console.error("Onboarding error:", error);
-    let friendlyMessage = error?.message || "An unexpected error occurred while creating your invitation.";
-    if (error?.message?.includes("Can't reach database server") || error?.code === "P1001") {
-      friendlyMessage = "Database is momentarily connecting or busy. Please click 'Save & Open My Dashboard' again in 5 seconds.";
+    const msg = String(error?.message || "");
+    const code = String(error?.code || "");
+    let friendlyMessage = "An unexpected error occurred while creating your invitation.";
+
+    const isDbUnreachable =
+      code === "P1001" ||
+      code === "P1000" ||
+      code === "P1002" ||
+      code === "P1003" ||
+      code === "P2024" ||
+      msg.includes("Can't reach database") ||
+      msg.includes("ENOTFOUND") ||
+      msg.includes("tenant/user") ||
+      msg.includes("ETIMEDOUT") ||
+      msg.includes("ECONNREFUSED") ||
+      msg.includes("database server is running") ||
+      msg.includes("Error querying the database");
+
+    if (isDbUnreachable) {
+      friendlyMessage = "Database is paused or temporarily unreachable on Supabase. Please restore or wake up your Supabase project in the Supabase Dashboard, or retry in a few moments.";
+    } else if (msg) {
+      // Clean internal stack traces from error string
+      friendlyMessage = msg.split("\n").filter((l) => !l.includes("__TURBOPACK__") && !l.includes("at ")).join(" ").trim() || friendlyMessage;
     }
+
     return NextResponse.json(
       { error: friendlyMessage },
       { status: 500 }

@@ -16,6 +16,7 @@ import {
   Check,
 } from "lucide-react";
 import { TEMPLATE_LIST, InvitationTemplate } from "@/lib/templates";
+import { BUSINESS_CONFIG } from "@/lib/config";
 import TemplatePhoneMockup from "@/components/TemplatePhoneMockup";
 
 const CATEGORIES = [
@@ -295,7 +296,7 @@ export default function TemplatesPage() {
 
       {/* Floating WhatsApp Support Bubble */}
       <a
-        href="https://wa.me/94771234567?text=Hi%20WedLink%2C%20I%20am%20interested%20in%20customizing%20an%20invitation%20template!"
+        href={`https://wa.me/${BUSINESS_CONFIG.supportPhone}?text=${encodeURIComponent("Hi WedLink! I am interested in customizing an invitation template for our wedding.")}`}
         target="_blank"
         rel="noopener noreferrer"
         className="fixed bottom-6 right-6 z-40 bg-[#25D366] hover:bg-[#20ba59] text-white px-4 py-2.5 rounded-full shadow-lg flex items-center gap-2 text-xs font-bold hover:scale-105 active:scale-95 transition"

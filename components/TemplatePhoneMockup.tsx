@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
@@ -27,15 +27,26 @@ interface TemplatePhoneMockupProps {
   template: InvitationTemplate;
   onSelect?: () => void;
   className?: string;
+  widthClass?: string;
+  priorityImage?: boolean;
+  showMetadata?: boolean;
 }
 
 export default function TemplatePhoneMockup({
   template,
   onSelect,
   className = "",
+  widthClass = "w-[280px] sm:w-[290px]",
+  priorityImage = false,
+  showMetadata = true,
 }: TemplatePhoneMockupProps) {
   const [soundMuted, setSoundMuted] = useState(true);
   const [isOpen, setIsOpen] = useState(false);
+
+  // Reset to cover view whenever the active template changes
+  useEffect(() => {
+    setIsOpen(false);
+  }, [template.id]);
 
   // Retrieve rich preset theme & demo data for this template
   const theme = getWedLinkTemplate(template.id);
@@ -67,7 +78,7 @@ export default function TemplatePhoneMockup({
   return (
     <div className={`relative w-full flex flex-col items-center group ${className}`}>
       {/* Smartphone Outer Chassis with metallic silver/slate border */}
-      <div className="relative w-[280px] sm:w-[290px] max-w-full aspect-[9/18.8] rounded-[48px] p-2.5 sm:p-3 bg-gradient-to-b from-[#e5e7eb] via-[#d1d5db] to-[#9ca3af] shadow-[0_25px_60px_-15px_rgba(0,0,0,0.25)] border-[3px] border-[#9ca3af]/40 hover:shadow-[0_30px_70px_-10px_rgba(214,40,81,0.25)] transition-all duration-300 transform group-hover:-translate-y-1.5 shrink-0">
+      <div className={`relative ${widthClass} max-w-full aspect-[9/18.8] rounded-[48px] p-2.5 sm:p-3 bg-gradient-to-b from-[#e5e7eb] via-[#d1d5db] to-[#9ca3af] shadow-[0_25px_60px_-15px_rgba(0,0,0,0.25)] border-[3px] border-[#9ca3af]/40 hover:shadow-[0_30px_70px_-10px_rgba(214,40,81,0.25)] transition-all duration-300 transform group-hover:-translate-y-1.5 shrink-0`}>
         {/* Inner Black Bezel */}
         <div className="relative w-full h-full rounded-[38px] bg-black overflow-hidden flex flex-col">
           {/* Dynamic Island / Notch */}
@@ -115,9 +126,9 @@ export default function TemplatePhoneMockup({
                         src={template.previewImage}
                         alt={template.name}
                         fill
-                        priority
+                        priority={priorityImage}
                         className="object-cover transition-transform duration-700 group-hover:scale-105"
-                        sizes="(max-width: 640px) 280px, 290px"
+                        sizes="(max-width: 640px) 280px, 320px"
                       />
                     </div>
                   ) : (
@@ -233,30 +244,32 @@ export default function TemplatePhoneMockup({
       </div>
 
       {/* Template Metadata & Feature Badges (Matching invitation.lk) */}
-      <div className="w-[280px] sm:w-[290px] mt-3 px-1 text-left space-y-1">
-        <div className="flex items-center justify-between">
-          <h4 className="font-bold text-sm text-gray-900 leading-tight">
-            {template.name}
-          </h4>
-          <span className="text-[10px] font-bold text-[#d62851] bg-[#fcecef] px-2 py-0.5 rounded-full">
-            {template.badge || "Signature"}
-          </span>
+      {showMetadata && (
+        <div className="w-[280px] sm:w-[290px] mt-3 px-1 text-left space-y-1">
+          <div className="flex items-center justify-between">
+            <h4 className="font-bold text-sm text-gray-900 leading-tight">
+              {template.name}
+            </h4>
+            <span className="text-[10px] font-bold text-[#d62851] bg-[#fcecef] px-2 py-0.5 rounded-full">
+              {template.badge || "Signature"}
+            </span>
+          </div>
+          <p className="text-xs text-gray-500 font-medium">
+            {template.categoryLabel || "Wedding • Traditional"}
+          </p>
+          <div className="flex items-center gap-2 pt-1">
+            <span className="w-6 h-6 rounded-md bg-[#fcecef] text-[#d62851] flex items-center justify-center text-xs" title="Curated Music">
+              <BookOpen className="w-3.5 h-3.5" />
+            </span>
+            <span className="w-6 h-6 rounded-md bg-[#fcecef] text-[#d62851] flex items-center justify-center text-xs" title="Pre-shoot Gallery">
+              <Camera className="w-3.5 h-3.5" />
+            </span>
+            <span className="w-6 h-6 rounded-md bg-[#fcecef] text-[#d62851] flex items-center justify-center text-xs" title="Live RSVP & Guest Headcounts">
+              <Users className="w-3.5 h-3.5" />
+            </span>
+          </div>
         </div>
-        <p className="text-xs text-gray-500 font-medium">
-          {template.categoryLabel || "Wedding • Traditional"}
-        </p>
-        <div className="flex items-center gap-2 pt-1">
-          <span className="w-6 h-6 rounded-md bg-[#fcecef] text-[#d62851] flex items-center justify-center text-xs" title="Curated Music">
-            <BookOpen className="w-3.5 h-3.5" />
-          </span>
-          <span className="w-6 h-6 rounded-md bg-[#fcecef] text-[#d62851] flex items-center justify-center text-xs" title="Pre-shoot Gallery">
-            <Camera className="w-3.5 h-3.5" />
-          </span>
-          <span className="w-6 h-6 rounded-md bg-[#fcecef] text-[#d62851] flex items-center justify-center text-xs" title="Live RSVP & Guest Headcounts">
-            <Users className="w-3.5 h-3.5" />
-          </span>
-        </div>
-      </div>
+      )}
     </div>
   );
 }
