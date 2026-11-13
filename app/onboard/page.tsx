@@ -947,11 +947,33 @@ export default function OnboardWizardPage() {
                   </div>
 
                   {errorMessage && (
-                    <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-700 flex flex-col gap-2">
-                      <div className="flex items-center gap-2">
-                        <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
-                        <span>{errorMessage}</span>
+                    <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-700 flex flex-col gap-2.5">
+                      <div className="flex items-start gap-2">
+                        <AlertCircle className="w-4 h-4 shrink-0 text-rose-600 mt-0.5" />
+                        <span className="leading-relaxed">{errorMessage}</span>
                       </div>
+
+                      {/* Direct recovery actions when database is sleeping */}
+                      {errorMessage.toLowerCase().includes("supabase") && (
+                        <div className="pt-2 border-t border-rose-200/60 flex flex-col sm:flex-row gap-2">
+                          <a
+                            href="https://supabase.com/dashboard/project/yezrfyruybkvvjjhytpz"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold text-center transition flex items-center justify-center gap-1 shadow-xs"
+                          >
+                            <span>Restore Project in Supabase ↗</span>
+                          </a>
+                          <Link
+                            href={`/e/${formData.slug || "nethmi-and-sanuja-2026"}?template=${formData.templateId}`}
+                            target="_blank"
+                            className="px-3 py-1.5 rounded-lg bg-white border border-rose-300 text-[#d62851] hover:bg-rose-50 text-[11px] font-bold text-center transition flex items-center justify-center gap-1 shadow-2xs"
+                          >
+                            <span>Preview My Invitation Now ↗</span>
+                          </Link>
+                        </div>
+                      )}
+
                       {suggestedSlug && (
                         <div className="pt-2 border-t border-rose-200/60 flex items-center justify-between">
                           <span className="text-[11px] text-rose-800">
